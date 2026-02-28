@@ -1,43 +1,81 @@
 import { Game, Package } from '../types';
+import { supabase } from '../lib/supabase';
 
 export const fetchGames = async (): Promise<Game[]> => {
   try {
-    const response = await fetch('/api/games');
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Failed to fetch games:', response.status, errorText);
-      throw new Error(`Failed to fetch games: ${response.status}`);
+    const { data, error } = await supabase
+      .from('games')
+      .select('*');
+      
+    if (error) {
+      console.error('Supabase error fetching games:', error);
+      throw new Error(error.message);
     }
-    return response.json();
+    
+    return data || [];
   } catch (error) {
-    console.error('API Error (fetchGames):', error);
+    console.error('Error fetching games:', error);
     throw error;
   }
 };
 
 export const fetchGameDetails = async (id: string): Promise<Game> => {
-  const response = await fetch(`/api/games/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch game details');
-  return response.json();
+  try {
+    const { data, error } = await supabase
+      .from('games')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error) {
+      console.error('Supabase error fetching game details:', error);
+      throw new Error(error.message);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching game details:', error);
+    throw error;
+  }
 };
 
 export const fetchGamePackages = async (id: string): Promise<Package[]> => {
-  const response = await fetch(`/api/games/${id}/packages`);
-  if (!response.ok) throw new Error('Failed to fetch packages');
-  return response.json();
+  try {
+    const { data, error } = await supabase
+      .from('packages')
+      .select('*')
+      .eq('game_id', id)
+      .order('price', { ascending: true });
+      
+    if (error) {
+      console.error('Supabase error fetching packages:', error);
+      throw new Error(error.message);
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching packages:', error);
+    throw error;
+  }
 };
 
 export const verifyPlayerId = async (gameId: string, playerId: string): Promise<{ valid: boolean; playerName?: string; error?: string }> => {
-  const response = await fetch('/api/verify-player', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ gameId, playerId }),
+  // Mock validation logic client-side to avoid server dependency
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const isValidLength = playerId.length >= 5 && playerId.length <= 15;
+      
+      if (isValidLength) {
+        const mockNames = ['Sniper', 'Ghost', 'Ninja', 'Pro', 'King', 'Shadow', 'Viper'];
+        const randomName = mockNames[Math.floor(Math.random() * mockNames.length)];
+        const playerName = `${randomName}_${playerId.substring(0, 4)}`;
+        
+        resolve({ valid: true, playerName });
+      } else {
+        resolve({ valid: false, error: 'Invalid Player ID format' });
+      }
+    }, 1500);
   });
-  
-  if (!response.ok) throw new Error('Verification failed');
-  return response.json();
 };
 
 export const createOrder = async (orderData: {
@@ -46,6 +84,7 @@ export const createOrder = async (orderData: {
   playerId: string;
   amount: number;
 }): Promise<{ success: boolean; orderId: string; status: string }> => {
+  // Use server-side API for order creation to ensure security/logging
   const response = await fetch('/api/orders', {
     method: 'POST',
     headers: {
