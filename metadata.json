@@ -1,0 +1,5 @@
+{
+  "name": "Game Currency Store",
+  "description": "A web application for purchasing game currencies like PUBG UC and Free Fire Diamonds, similar to CodaShop.",
+  "requestFramePermissions": []
+}
