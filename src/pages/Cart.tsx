@@ -7,8 +7,18 @@ import { cn } from '../lib/utils';
 
 export default function Cart() {
   const { cart, removeFromCart, clearCart, t, language } = useStore();
+  const [isCheckingOut, setIsCheckingOut] = React.useState(false);
 
   const total = cart.reduce((sum, item) => sum + item.price, 0);
+
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsCheckingOut(false);
+    alert(language === 'en' ? 'Checkout functionality would go here!' : 'سيتم إضافة وظيفة إتمام الطلب هنا!');
+    clearCart();
+  };
 
   if (cart.length === 0) {
     return (
@@ -123,13 +133,25 @@ export default function Cart() {
               </div>
               
               <button 
-                onClick={() => {
-                  alert(language === 'en' ? 'Checkout functionality would go here!' : 'سيتم إضافة وظيفة إتمام الطلب هنا!');
-                  clearCart();
-                }}
-                className="w-full py-4 bg-creo-accent hover:bg-white text-black rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+                onClick={handleCheckout}
+                disabled={isCheckingOut}
+                className={cn(
+                  "w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
+                  isCheckingOut 
+                    ? "bg-creo-accent/50 text-black cursor-wait"
+                    : "bg-creo-accent hover:bg-white text-black"
+                )}
               >
-                {t('checkout')} <ArrowRight className={cn("w-5 h-5", language === 'ar' && "rotate-180")} />
+                {isCheckingOut ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    <span>{t('processing')}</span>
+                  </>
+                ) : (
+                  <>
+                    {t('checkout')} <ArrowRight className={cn("w-5 h-5", language === 'ar' && "rotate-180")} />
+                  </>
+                )}
               </button>
               
               <div className="mt-6 flex items-center justify-center gap-4 opacity-50">

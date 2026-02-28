@@ -1,6 +1,6 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
-import db from './server/db.js';
+import db from './server/db.ts';
 
 async function startServer() {
   const app = express();
