@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Gamepad2, Search, ShoppingCart, Menu, Globe } from 'lucide-react';
+import { Gamepad2, Search, ShoppingCart, Menu } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function Header() {
@@ -34,13 +34,22 @@ export default function Header() {
             />
           </div>
           
-          <button 
-            onClick={toggleLanguage}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-creo-border hover:border-creo-accent text-creo-text-sec hover:text-creo-accent transition-all text-xs font-bold uppercase tracking-wider"
-          >
-            <Globe className="w-4 h-4" />
-            <span className="hidden sm:inline">{language === 'en' ? 'EN / AR' : 'AR / EN'}</span>
-          </button>
+          <div className="flex items-center bg-creo-bg-sec/50 border border-creo-border rounded-full p-1">
+            <button 
+              onClick={() => language !== 'en' && toggleLanguage()}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${language === 'en' ? 'bg-creo-accent text-black shadow-sm' : 'text-creo-text-sec hover:text-white'}`}
+              aria-label="Switch to English"
+            >
+              EN
+            </button>
+            <button 
+              onClick={() => language !== 'ar' && toggleLanguage()}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${language === 'ar' ? 'bg-creo-accent text-black shadow-sm' : 'text-creo-text-sec hover:text-white'}`}
+              aria-label="Switch to Arabic"
+            >
+              AR
+            </button>
+          </div>
           
           <Link to="/cart" className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors relative">
             <ShoppingCart className="w-5 h-5" />
