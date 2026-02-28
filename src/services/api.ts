@@ -18,6 +18,19 @@ export const fetchGamePackages = async (id: string): Promise<Package[]> => {
   return response.json();
 };
 
+export const verifyPlayerId = async (gameId: string, playerId: string): Promise<{ valid: boolean; playerName?: string; error?: string }> => {
+  const response = await fetch('/api/verify-player', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ gameId, playerId }),
+  });
+  
+  if (!response.ok) throw new Error('Verification failed');
+  return response.json();
+};
+
 export const createOrder = async (orderData: {
   gameId: string;
   packageId: number;

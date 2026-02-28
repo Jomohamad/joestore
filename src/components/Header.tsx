@@ -4,11 +4,11 @@ import { Gamepad2, Search, ShoppingCart, Menu } from 'lucide-react';
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-6">
+      <div className="container mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
+        <div className="flex items-center gap-4 md:gap-6">
           <Link to="/" className="flex items-center gap-2 text-emerald-500 hover:text-emerald-400 transition-colors">
-            <Gamepad2 className="w-8 h-8" />
-            <span className="text-xl font-bold tracking-tight text-white hidden sm:block">
+            <Gamepad2 className="w-6 h-6 md:w-8 md:h-8" />
+            <span className="text-lg md:text-xl font-bold tracking-tight text-white hidden sm:block">
               GameCurrency
             </span>
           </Link>
@@ -20,13 +20,13 @@ export default function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
           <div className="relative hidden sm:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input 
               type="text" 
               placeholder="Search games..." 
-              className="bg-zinc-900 border border-zinc-800 rounded-full py-1.5 pl-9 pr-4 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 w-64 transition-all"
+              className="bg-zinc-900 border border-zinc-800 rounded-full py-1.5 pl-9 pr-4 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 w-48 md:w-64 transition-all"
             />
           </div>
           

@@ -39,6 +39,33 @@ async function startServer() {
     }
   });
 
+  app.post('/api/verify-player', (req, res) => {
+    const { gameId, playerId } = req.body;
+    
+    if (!gameId || !playerId) {
+      return res.status(400).json({ error: 'Missing gameId or playerId' });
+    }
+
+    // Simulate network delay for verification
+    setTimeout(() => {
+      // Mock validation logic: 
+      // In a real app, this would call the game's official API.
+      // Here, we'll assume any ID with 5-15 digits/characters is valid.
+      const isValidLength = playerId.length >= 5 && playerId.length <= 15;
+      
+      if (isValidLength) {
+        // Generate a mock player name based on the ID to look realistic
+        const mockNames = ['Sniper', 'Ghost', 'Ninja', 'Pro', 'King', 'Shadow', 'Viper'];
+        const randomName = mockNames[Math.floor(Math.random() * mockNames.length)];
+        const playerName = `${randomName}_${playerId.substring(0, 4)}`;
+        
+        res.json({ valid: true, playerName });
+      } else {
+        res.json({ valid: false, error: 'Invalid Player ID format' });
+      }
+    }, 1500); // 1.5s delay to simulate real API call
+  });
+
   app.post('/api/orders', (req, res) => {
     const { gameId, packageId, playerId, amount } = req.body;
     

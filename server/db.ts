@@ -40,7 +40,10 @@ db.exec(`
 `);
 
 // Seed initial data if empty or force re-seed for updates
+// Disable foreign keys temporarily for deletion
+db.pragma('foreign_keys = OFF');
 db.exec('DELETE FROM packages; DELETE FROM games;');
+db.pragma('foreign_keys = ON');
 
 const insertGame = db.prepare(`
   INSERT INTO games (id, name, publisher, image_url, currency_name, currency_icon, color_theme)
@@ -58,7 +61,7 @@ db.transaction(() => {
     'pubg-mobile',
     'PUBG Mobile',
     'Level Infinite',
-    'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop',
+    'https://images.igdb.com/igdb/image/upload/t_1080p/co1wyy.jpg',
     'UC',
     'uc-icon',
     '#F59E0B' // Amber
@@ -77,7 +80,7 @@ db.transaction(() => {
     'free-fire',
     'Free Fire',
     'Garena',
-    'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=2165&auto=format&fit=crop',
+    'https://images.igdb.com/igdb/image/upload/t_1080p/co22j8.jpg',
     'Diamonds',
     'diamond-icon',
     '#EF4444' // Red
@@ -96,7 +99,7 @@ db.transaction(() => {
     'mobile-legends',
     'Mobile Legends',
     'Moonton',
-    'https://images.unsplash.com/photo-1605901309584-818e25960b8f?q=80&w=2019&auto=format&fit=crop',
+    'https://images.igdb.com/igdb/image/upload/t_1080p/co20m0.jpg',
     'Diamonds',
     'diamond-icon',
     '#3B82F6' // Blue
@@ -110,6 +113,25 @@ db.transaction(() => {
   insertPackage.run('mobile-legends', 625, 81, 10.00);
   insertPackage.run('mobile-legends', 1860, 335, 30.00);
   insertPackage.run('mobile-legends', 3099, 589, 50.00);
+
+  // Rainbow Six Mobile
+  insertGame.run(
+    'rainbow-six-mobile',
+    'Rainbow Six Mobile',
+    'Ubisoft',
+    'https://images.igdb.com/igdb/image/upload/t_1080p/co4d97.jpg',
+    'R6 Credits',
+    'r6-icon',
+    '#EAB308' // Yellow
+  );
+
+  // R6 Mobile Packages
+  insertPackage.run('rainbow-six-mobile', 600, 0, 4.99);
+  insertPackage.run('rainbow-six-mobile', 1200, 0, 9.99);
+  insertPackage.run('rainbow-six-mobile', 2670, 270, 19.99);
+  insertPackage.run('rainbow-six-mobile', 4920, 720, 34.99);
+  insertPackage.run('rainbow-six-mobile', 7300, 1300, 49.99);
+  insertPackage.run('rainbow-six-mobile', 16000, 4000, 99.99);
 })();
 
 export default db;

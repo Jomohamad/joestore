@@ -56,24 +56,24 @@ export default function Games() {
   }
 
   return (
-    <div className="flex-1 bg-zinc-950 py-12">
+    <div className="flex-1 bg-zinc-950 py-12 md:py-16">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-4">All Games</h1>
-            <p className="text-zinc-400 max-w-xl">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 md:mb-4">All Games</h1>
+            <p className="text-sm md:text-base text-zinc-400 max-w-xl">
               Browse our complete catalog of supported games. Top up your favorite titles instantly and securely.
             </p>
           </div>
           
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
             <input 
               type="text" 
               placeholder="Search games or publishers..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 pl-12 pr-4 text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
             />
           </div>
         </div>
@@ -89,7 +89,7 @@ export default function Games() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {filteredGames.map((game, index) => (
               <motion.div
                 key={game.id}
@@ -113,14 +113,14 @@ export default function Games() {
                       <span className="px-2 py-1 bg-zinc-800/80 backdrop-blur-sm text-xs font-medium text-zinc-300 rounded mb-2 inline-block">
                         {game.publisher}
                       </span>
-                      <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
+                      <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
                         {game.name}
                       </h3>
                     </div>
                   </div>
-                  <div className="p-4 flex items-center justify-between border-t border-zinc-800/50">
-                    <span className="text-sm text-zinc-400">Top up {game.currency_name}</span>
-                    <span className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-colors">
+                  <div className="p-3 md:p-4 flex items-center justify-between border-t border-zinc-800/50">
+                    <span className="text-xs md:text-sm text-zinc-400">Top up {game.currency_name}</span>
+                    <span className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-zinc-800 flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-500 transition-colors text-sm md:text-base">
                       &rarr;
                     </span>
                   </div>
