@@ -1,5 +1,4 @@
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import supabase from './server/supabase.js';
 
 const app = express();
@@ -8,6 +7,17 @@ const PORT = 3000;
 app.use(express.json());
 
 // API Routes
+app.get('/api/health', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('games').select('count', { count: 'exact', head: true });
+    if (error) throw error;
+    res.json({ status: 'ok', database: 'connected' });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(500).json({ status: 'error', database: 'disconnected', error: String(error) });
+  }
+});
+
 app.get('/api/games', async (req, res) => {
   try {
     const { data: games, error } = await supabase.from('games').select('*');
@@ -115,6 +125,7 @@ app.post('/api/orders', async (req, res) => {
 // Vite middleware for development
 if (process.env.NODE_ENV !== 'production') {
   const startDevServer = async () => {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',

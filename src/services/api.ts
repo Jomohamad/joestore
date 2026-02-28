@@ -1,9 +1,18 @@
 import { Game, Package } from '../types';
 
 export const fetchGames = async (): Promise<Game[]> => {
-  const response = await fetch('/api/games');
-  if (!response.ok) throw new Error('Failed to fetch games');
-  return response.json();
+  try {
+    const response = await fetch('/api/games');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Failed to fetch games:', response.status, errorText);
+      throw new Error(`Failed to fetch games: ${response.status}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('API Error (fetchGames):', error);
+    throw error;
+  }
 };
 
 export const fetchGameDetails = async (id: string): Promise<Game> => {
