@@ -164,7 +164,11 @@ export default function GameDetails() {
             </div>
             <div className="flex justify-between mb-2 text-xs md:text-sm">
               <span className="text-creo-muted">{t('amount_paid')}</span>
-              <span className="text-white font-medium">{selectedPackage?.price.toFixed(2)} {t('egp')}</span>
+              <span className="text-white font-medium">
+                {language === 'ar' 
+                  ? `${selectedPackage?.price.toFixed(2)} ${t('egp')}` 
+                  : `${t('egp')} ${selectedPackage?.price.toFixed(2)}`}
+              </span>
             </div>
             <div className="flex justify-between text-xs md:text-sm">
               <span className="text-creo-muted">{t('item')}</span>
@@ -258,13 +262,18 @@ export default function GameDetails() {
                       "px-6 py-2.5 md:py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 min-w-[120px] text-sm md:text-base",
                       validatedPlayerName 
                         ? "bg-creo-accent/10 text-creo-accent cursor-default"
-                        : playerId && !isValidatingId
-                          ? "bg-creo-accent hover:bg-white text-black"
-                          : "bg-creo-bg-sec text-creo-muted cursor-not-allowed"
+                        : isValidatingId
+                          ? "bg-creo-accent/50 text-black cursor-wait"
+                          : playerId
+                            ? "bg-creo-accent hover:bg-white text-black"
+                            : "bg-creo-bg-sec text-creo-muted cursor-not-allowed"
                     )}
                   >
                     {isValidatingId ? (
-                      <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                      <>
+                        <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        <span>{t('verifying')}</span>
+                      </>
                     ) : validatedPlayerName ? (
                       <>{t('verified')}</>
                     ) : (
@@ -342,7 +351,9 @@ export default function GameDetails() {
                       "text-xs md:text-sm font-medium mt-auto",
                       selectedPackage?.id === pkg.id ? "text-creo-accent" : "text-creo-text-sec"
                     )}>
-                      {pkg.price.toFixed(2)} {t('egp')}
+                      {language === 'ar' 
+                        ? `${pkg.price.toFixed(2)} ${t('egp')}` 
+                        : `${t('egp')} ${pkg.price.toFixed(2)}`}
                     </div>
                   </button>
                 ))}
@@ -441,7 +452,9 @@ export default function GameDetails() {
                 <div className="flex justify-between items-end">
                   <span className="text-xs md:text-sm text-creo-muted font-medium">{t('total_price')}</span>
                   <span className="text-2xl md:text-3xl font-bold text-white">
-                    {selectedPackage ? selectedPackage.price.toFixed(2) : '0.00'} {t('egp')}
+                    {language === 'ar'
+                      ? `${selectedPackage ? selectedPackage.price.toFixed(2) : '0.00'} ${t('egp')}`
+                      : `${t('egp')} ${selectedPackage ? selectedPackage.price.toFixed(2) : '0.00'}`}
                   </span>
                 </div>
               </div>
@@ -452,13 +465,18 @@ export default function GameDetails() {
                   disabled={!validatedPlayerName || !selectedPackage || !selectedPayment || isProcessing}
                   className={cn(
                     "w-full py-3 md:py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center gap-2 transition-all",
-                    validatedPlayerName && selectedPackage && selectedPayment && !isProcessing
-                      ? "bg-creo-accent hover:bg-white text-black shadow-lg shadow-creo-accent/25"
-                      : "bg-creo-bg-sec text-creo-muted cursor-not-allowed"
+                    isProcessing
+                      ? "bg-creo-accent/50 text-black cursor-wait"
+                      : validatedPlayerName && selectedPackage && selectedPayment
+                        ? "bg-creo-accent hover:bg-white text-black shadow-lg shadow-creo-accent/25"
+                        : "bg-creo-bg-sec text-creo-muted cursor-not-allowed"
                   )}
                 >
                   {isProcessing ? (
-                    <div className="w-5 h-5 md:w-6 md:h-6 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    <>
+                      <div className="w-5 h-5 md:w-6 md:h-6 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                      <span>{t('processing')}</span>
+                    </>
                   ) : (
                     <>
                       {t('buy_now')}

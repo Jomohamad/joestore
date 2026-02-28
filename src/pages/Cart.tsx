@@ -70,7 +70,11 @@ export default function Cart() {
                 </div>
                 
                 <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto mt-4 sm:mt-0 gap-4">
-                  <span className="text-xl font-bold text-white">{item.price.toFixed(2)} {t('egp')}</span>
+                  <span className="text-xl font-bold text-white">
+                    {language === 'ar' 
+                      ? `${item.price.toFixed(2)} ${t('egp')}` 
+                      : `${t('egp')} ${item.price.toFixed(2)}`}
+                  </span>
                   <button 
                     onClick={() => removeFromCart(item.id)}
                     className="p-2 text-creo-muted hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
@@ -91,18 +95,30 @@ export default function Cart() {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-creo-text-sec">
                   <span>{t('subtotal')} ({cart.length} {t('item')})</span>
-                  <span className="text-white">{total.toFixed(2)} {t('egp')}</span>
+                  <span className="text-white">
+                    {language === 'ar' 
+                      ? `${total.toFixed(2)} ${t('egp')}` 
+                      : `${t('egp')} ${total.toFixed(2)}`}
+                  </span>
                 </div>
                 <div className="flex justify-between text-creo-text-sec">
                   <span>{t('processing_fee')}</span>
-                  <span className="text-white">0.00 {t('egp')}</span>
+                  <span className="text-white">
+                    {language === 'ar' 
+                      ? `0.00 ${t('egp')}` 
+                      : `${t('egp')} 0.00`}
+                  </span>
                 </div>
               </div>
               
               <div className="pt-4 border-t border-creo-border mb-8">
                 <div className="flex justify-between items-end">
                   <span className="text-creo-text-sec font-medium">{t('total')}</span>
-                  <span className="text-3xl font-bold text-creo-accent">{total.toFixed(2)} {t('egp')}</span>
+                  <span className="text-3xl font-bold text-creo-accent">
+                    {language === 'ar' 
+                      ? `${total.toFixed(2)} ${t('egp')}` 
+                      : `${t('egp')} ${total.toFixed(2)}`}
+                  </span>
                 </div>
               </div>
               

@@ -134,6 +134,18 @@ export const translations = {
     subtotal: 'Subtotal',
     checkout: 'Proceed to Checkout',
     clear_cart: 'Clear All',
+
+    // Payment Methods Page
+    payment_methods_title: 'Payment Methods',
+    payment_methods_desc: 'We offer a variety of secure payment methods to make your purchase as convenient as possible.',
+    credit_cards: 'Credit & Debit Cards',
+    credit_cards_desc: 'We accept all major credit and debit cards, including Visa, MasterCard, American Express, and Discover.',
+    digital_wallets: 'Digital Wallets',
+    digital_wallets_desc: 'You can securely pay using popular digital wallets like Apple Pay, Google Pay, and PayPal.',
+    local_payment: 'Local Payment Methods',
+    local_payment_desc: 'Depending on your region, we also support various local payment methods and bank transfers. These options will be displayed at checkout.',
+    crypto: 'Cryptocurrency',
+    crypto_desc: 'We accept Bitcoin, Ethereum, and USDT for fast and secure transactions.',
     
     // Footer
     newsletter_title: 'Join the Elite',
@@ -287,6 +299,18 @@ export const translations = {
     subtotal: 'المجموع الفرعي',
     checkout: 'إتمام الطلب',
     clear_cart: 'مسح الكل',
+
+    // Payment Methods Page
+    payment_methods_title: 'طرق الدفع',
+    payment_methods_desc: 'نحن نقدم مجموعة متنوعة من طرق الدفع الآمنة لجعل عملية الشراء مريحة قدر الإمكان.',
+    credit_cards: 'بطاقات الائتمان والخصم',
+    credit_cards_desc: 'نحن نقبل جميع بطاقات الائتمان والخصم الرئيسية، بما في ذلك Visa و MasterCard و American Express و Discover.',
+    digital_wallets: 'المحافظ الرقمية',
+    digital_wallets_desc: 'يمكنك الدفع بأمان باستخدام المحافظ الرقمية الشهيرة مثل Apple Pay و Google Pay و PayPal.',
+    local_payment: 'طرق الدفع المحلية',
+    local_payment_desc: 'بناءً على منطقتك، ندعم أيضًا طرق دفع محلية مختلفة وتحويلات بنكية. سيتم عرض هذه الخيارات عند الدفع.',
+    crypto: 'العملات المشفرة',
+    crypto_desc: 'نحن نقبل Bitcoin و Ethereum و USDT للمعاملات السريعة والآمنة.',
     
     // Footer
     newsletter_title: 'انضم للنخبة',
@@ -303,6 +327,6 @@ export const translations = {
     rights_reserved: 'جميع الحقوق محفوظة.',
     
     // General
-    egp: 'ج.م',
+    egp: 'EGP',
   }
 };
