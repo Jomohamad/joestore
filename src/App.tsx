@@ -4,6 +4,7 @@
  */
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { StoreProvider } from './context/StoreContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -17,29 +18,33 @@ import PaymentMethods from './pages/PaymentMethods';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
+import Cart from './pages/Cart';
 
 export default function App() {
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col bg-creo-bg text-creo-text font-sans selection:bg-creo-accent/30">
-        <Header />
-        <main className="flex-1 flex flex-col">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/games" element={<Games />} />
-            <Route path="/apps" element={<Apps />} />
-            <Route path="/game/:id" element={<GameDetails />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/payment-methods" element={<PaymentMethods />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/refund" element={<Refund />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </Router>
+    <StoreProvider>
+      <Router>
+        <div className="min-h-screen flex flex-col bg-creo-bg text-creo-text font-sans selection:bg-creo-accent/30">
+          <Header />
+          <main className="flex-1 flex flex-col">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/games" element={<Games />} />
+              <Route path="/apps" element={<Apps />} />
+              <Route path="/game/:id" element={<GameDetails />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/payment-methods" element={<PaymentMethods />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/refund" element={<Refund />} />
+              <Route path="/cart" element={<Cart />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
+    </StoreProvider>
   );
 }

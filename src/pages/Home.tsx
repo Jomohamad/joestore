@@ -52,26 +52,35 @@ export default function Home() {
   return (
     <div className="flex-1">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-24 md:pt-24 md:pb-32 overflow-hidden bg-creo-bg">
+      <section className="relative pt-20 pb-24 md:pt-32 md:pb-40 overflow-hidden bg-creo-bg">
         <div className="absolute inset-0">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[600px] bg-creo-accent/10 blur-[100px] rounded-[100%] opacity-80 pointer-events-none"></div>
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-5xl md:text-6xl lg:text-8xl font-display font-bold tracking-tight text-white mb-6 leading-[1.1]"
+          <div className="max-w-5xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="inline-block mb-6 px-4 py-1.5 rounded-full border border-creo-accent/30 bg-creo-accent/10 text-creo-accent text-xs md:text-sm font-bold tracking-widest uppercase"
             >
-              Level Up Your <span className="text-creo-accent">Gaming</span><br />Experience
+              The Ultimate Gaming Hub
+            </motion.div>
+            <motion.h1 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
+              className="text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tighter text-white mb-6 leading-[0.9]"
+            >
+              LEVEL UP <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-creo-accent to-creo-accent-sec">YOUR GAME</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-lg md:text-xl text-creo-text-sec mb-10 leading-relaxed max-w-2xl mx-auto"
+              transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+              className="text-lg md:text-2xl text-creo-text-sec mb-10 leading-relaxed max-w-3xl mx-auto font-light"
             >
               Instant delivery, secure payments, and the best prices for your favorite game currencies. Top up now and dominate the leaderboard.
             </motion.p>
@@ -79,16 +88,77 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
-              <a href="#games" className="w-full sm:w-auto px-8 py-4 bg-creo-accent hover:bg-white text-black rounded-full font-bold transition-colors text-center">
+              <button 
+                onClick={() => {
+                  document.getElementById('games')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="w-full sm:w-auto px-10 py-5 bg-creo-accent hover:bg-white text-black rounded-full font-bold transition-all duration-300 text-center text-lg hover:scale-105"
+              >
                 Browse Games
-              </a>
-              <a href="#features" className="w-full sm:w-auto px-8 py-4 bg-creo-bg-sec border border-creo-border hover:border-creo-accent text-white rounded-full font-bold transition-colors text-center">
+              </button>
+              <button 
+                onClick={() => {
+                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="w-full sm:w-auto px-10 py-5 bg-transparent border border-creo-border hover:border-creo-accent text-white rounded-full font-bold transition-all duration-300 text-center text-lg hover:bg-creo-accent/5"
+              >
                 Learn More
-              </a>
+              </button>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Marquee Section */}
+      <div className="py-6 bg-creo-accent overflow-hidden flex whitespace-nowrap border-y border-creo-border/20">
+        <motion.div 
+          animate={{ x: [0, -1000] }}
+          transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+          className="flex items-center gap-12 text-black font-display font-bold text-2xl md:text-4xl uppercase tracking-wider"
+        >
+          <span>Instant Delivery</span>
+          <span className="w-3 h-3 rounded-full bg-black"></span>
+          <span>Secure Payments</span>
+          <span className="w-3 h-3 rounded-full bg-black"></span>
+          <span>24/7 Support</span>
+          <span className="w-3 h-3 rounded-full bg-black"></span>
+          <span>Best Prices</span>
+          <span className="w-3 h-3 rounded-full bg-black"></span>
+          <span>Instant Delivery</span>
+          <span className="w-3 h-3 rounded-full bg-black"></span>
+          <span>Secure Payments</span>
+          <span className="w-3 h-3 rounded-full bg-black"></span>
+          <span>24/7 Support</span>
+          <span className="w-3 h-3 rounded-full bg-black"></span>
+          <span>Best Prices</span>
+        </motion.div>
+      </div>
+
+      {/* Statistics Section */}
+      <section className="py-16 md:py-24 bg-creo-bg border-b border-creo-border">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
+            {[
+              { value: '2M+', label: 'Active Gamers' },
+              { value: '50+', label: 'Supported Games' },
+              { value: '99.9%', label: 'Uptime' },
+              { value: '24/7', label: 'Customer Support' }
+            ].map((stat, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="flex flex-col items-center"
+              >
+                <div className="text-4xl md:text-6xl font-display font-bold text-white mb-2">{stat.value}</div>
+                <div className="text-sm md:text-base text-creo-accent font-bold uppercase tracking-widest">{stat.label}</div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>

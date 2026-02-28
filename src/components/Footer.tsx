@@ -2,12 +2,16 @@ import { Link } from 'react-router-dom';
 import { Gamepad2, Twitter, Facebook, Instagram, Youtube } from 'lucide-react';
 
 export default function Footer() {
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <footer className="bg-creo-bg border-t border-creo-border pt-12 md:pt-16 pb-8 mt-auto">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-12">
           <div className="col-span-1 sm:col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 text-creo-accent mb-4 md:mb-6">
+            <Link to="/" onClick={handleScrollToTop} className="flex items-center gap-2 text-creo-accent mb-4 md:mb-6">
               <Gamepad2 className="w-6 h-6 md:w-8 md:h-8" />
               <span className="text-xl md:text-2xl font-display font-bold tracking-tight text-white">
                 GameCurrency
@@ -27,18 +31,18 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-display font-semibold mb-4 md:mb-6 uppercase tracking-wider text-sm md:text-base">Support</h3>
             <ul className="space-y-3 md:space-y-4 text-sm text-creo-text-sec font-medium">
-              <li><Link to="/contact" className="hover:text-creo-accent transition-colors">Contact Us</Link></li>
-              <li><Link to="/faq" className="hover:text-creo-accent transition-colors">FAQ</Link></li>
-              <li><Link to="/payment-methods" className="hover:text-creo-accent transition-colors">Payment Methods</Link></li>
+              <li><Link to="/contact" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">Contact Us</Link></li>
+              <li><Link to="/faq" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">FAQ</Link></li>
+              <li><Link to="/payment-methods" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">Payment Methods</Link></li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-white font-display font-semibold mb-4 md:mb-6 uppercase tracking-wider text-sm md:text-base">Legal</h3>
             <ul className="space-y-3 md:space-y-4 text-sm text-creo-text-sec font-medium">
-              <li><Link to="/terms" className="hover:text-creo-accent transition-colors">Terms of Service</Link></li>
-              <li><Link to="/privacy" className="hover:text-creo-accent transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/refund" className="hover:text-creo-accent transition-colors">Refund Policy</Link></li>
+              <li><Link to="/terms" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">Terms of Service</Link></li>
+              <li><Link to="/privacy" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/refund" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">Refund Policy</Link></li>
             </ul>
           </div>
 

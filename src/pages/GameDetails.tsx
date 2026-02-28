@@ -3,12 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages, createOrder, verifyPlayerId } from '../services/api';
 import { Game, Package } from '../types';
-import { ShieldCheck, CreditCard, ChevronRight, CheckCircle2, UserCheck, AlertCircle } from 'lucide-react';
+import { ShieldCheck, CreditCard, ChevronRight, CheckCircle2, UserCheck, AlertCircle, ShoppingCart } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useStore } from '../context/StoreContext';
 
 export default function GameDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addToCart } = useStore();
   
   const [game, setGame] = useState<Game | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -94,6 +96,26 @@ export default function GameDetails() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleAddToCart = () => {
+    if (!game || !selectedPackage || !playerId || !validatedPlayerName) return;
+    
+    addToCart({
+      id: Math.random().toString(36).substr(2, 9),
+      gameId: game.id,
+      gameName: game.name,
+      gameImage: game.image_url,
+      packageId: selectedPackage.id,
+      packageName: `${selectedPackage.amount} ${game.currency_name}`,
+      amount: selectedPackage.amount,
+      currency: game.currency_name,
+      price: selectedPackage.price,
+      playerId: playerId,
+      playerName: validatedPlayerName
+    });
+    
+    navigate('/cart');
   };
 
   if (loading) {
@@ -424,25 +446,41 @@ export default function GameDetails() {
                 </div>
               </div>
 
-              <button
-                onClick={handleCheckout}
-                disabled={!validatedPlayerName || !selectedPackage || !selectedPayment || isProcessing}
-                className={cn(
-                  "w-full py-3 md:py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center gap-2 transition-all",
-                  validatedPlayerName && selectedPackage && selectedPayment && !isProcessing
-                    ? "bg-creo-accent hover:bg-white text-black shadow-lg shadow-creo-accent/25"
-                    : "bg-creo-bg-sec text-creo-muted cursor-not-allowed"
-                )}
-              >
-                {isProcessing ? (
-                  <div className="w-5 h-5 md:w-6 md:h-6 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Buy Now
-                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
-                  </>
-                )}
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleCheckout}
+                  disabled={!validatedPlayerName || !selectedPackage || !selectedPayment || isProcessing}
+                  className={cn(
+                    "w-full py-3 md:py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center gap-2 transition-all",
+                    validatedPlayerName && selectedPackage && selectedPayment && !isProcessing
+                      ? "bg-creo-accent hover:bg-white text-black shadow-lg shadow-creo-accent/25"
+                      : "bg-creo-bg-sec text-creo-muted cursor-not-allowed"
+                  )}
+                >
+                  {isProcessing ? (
+                    <div className="w-5 h-5 md:w-6 md:h-6 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      Buy Now
+                      <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!validatedPlayerName || !selectedPackage || isProcessing}
+                  className={cn(
+                    "w-full py-3 md:py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center gap-2 transition-all border",
+                    validatedPlayerName && selectedPackage && !isProcessing
+                      ? "border-creo-accent text-creo-accent hover:bg-creo-accent hover:text-black"
+                      : "border-creo-border text-creo-muted cursor-not-allowed"
+                  )}
+                >
+                  <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
+                  Add to Cart
+                </button>
+              </div>
               
               <p className="text-[10px] md:text-xs text-center text-creo-muted mt-3 md:mt-4">
                 By clicking "Buy Now", you agree to our Terms of Service and Privacy Policy.

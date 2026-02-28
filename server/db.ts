@@ -7,7 +7,11 @@ db.pragma('foreign_keys = ON');
 
 // Create tables
 db.exec(`
-  CREATE TABLE IF NOT EXISTS games (
+  DROP TABLE IF EXISTS orders;
+  DROP TABLE IF EXISTS packages;
+  DROP TABLE IF EXISTS games;
+
+  CREATE TABLE games (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     publisher TEXT NOT NULL,
@@ -18,7 +22,7 @@ db.exec(`
     category TEXT NOT NULL DEFAULT 'game'
   );
 
-  CREATE TABLE IF NOT EXISTS packages (
+  CREATE TABLE packages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     game_id TEXT NOT NULL,
     amount INTEGER NOT NULL,
@@ -27,7 +31,7 @@ db.exec(`
     FOREIGN KEY (game_id) REFERENCES games(id)
   );
 
-  CREATE TABLE IF NOT EXISTS orders (
+  CREATE TABLE orders (
     id TEXT PRIMARY KEY,
     game_id TEXT NOT NULL,
     package_id INTEGER NOT NULL,
@@ -237,6 +241,56 @@ db.transaction(() => {
     'app'
   );
   insertPackage.run('discord', 1, 0, 9.99); // 1 Month Nitro
+  // Steam
+  insertGame.run(
+    'steam',
+    'Steam',
+    'Valve',
+    'https://images.igdb.com/igdb/image/upload/t_1080p/co2v0n.jpg',
+    'Wallet Code',
+    'steam-icon',
+    '#171A21', // Dark Blue
+    'app'
+  );
+  insertPackage.run('steam', 5, 0, 5.00);
+  insertPackage.run('steam', 10, 0, 10.00);
+  insertPackage.run('steam', 20, 0, 20.00);
+  insertPackage.run('steam', 50, 0, 50.00);
+  insertPackage.run('steam', 100, 0, 100.00);
+
+  // Google Play
+  insertGame.run(
+    'google-play',
+    'Google Play',
+    'Google',
+    'https://images.igdb.com/igdb/image/upload/t_1080p/co2v0o.jpg',
+    'Gift Card',
+    'google-play-icon',
+    '#34A853', // Green
+    'app'
+  );
+  insertPackage.run('google-play', 5, 0, 5.00);
+  insertPackage.run('google-play', 10, 0, 10.00);
+  insertPackage.run('google-play', 25, 0, 25.00);
+  insertPackage.run('google-play', 50, 0, 50.00);
+  insertPackage.run('google-play', 100, 0, 100.00);
+
+  // App Store
+  insertGame.run(
+    'app-store',
+    'App Store & iTunes',
+    'Apple',
+    'https://images.igdb.com/igdb/image/upload/t_1080p/co2v0p.jpg',
+    'Gift Card',
+    'app-store-icon',
+    '#007AFF', // Blue
+    'app'
+  );
+  insertPackage.run('app-store', 5, 0, 5.00);
+  insertPackage.run('app-store', 10, 0, 10.00);
+  insertPackage.run('app-store', 25, 0, 25.00);
+  insertPackage.run('app-store', 50, 0, 50.00);
+  insertPackage.run('app-store', 100, 0, 100.00);
 })();
 
 export default db;
