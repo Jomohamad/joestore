@@ -1,6 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "ClashDisplay-Variable", "ClashDisplay", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-creo-bg: #0a0a0a;
+  --color-creo-bg-sec: #111111;
+  --color-creo-card: #141414;
+  --color-creo-text: #ffffff;
+  --color-creo-text-sec: #999999;
+  --color-creo-muted: #555555;
+  --color-creo-accent: #f0ff00;
+  --color-creo-accent-sec: #e8ff00;
+  --color-creo-border: #222222;
+}
+
+body {
+  background-color: var(--color-creo-bg);
+  color: var(--color-creo-text);
 }

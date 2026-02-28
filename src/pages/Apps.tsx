@@ -5,31 +5,31 @@ import { fetchGames } from '../services/api';
 import { Game } from '../types';
 import { Search } from 'lucide-react';
 
-export default function Games() {
-  const [games, setGames] = useState<Game[]>([]);
+export default function Apps() {
+  const [apps, setApps] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const loadGames = async () => {
+    const loadApps = async () => {
       try {
         const data = await fetchGames();
-        setGames(data);
+        setApps(data);
       } catch (err) {
-        setError('Failed to load games. Please try again later.');
+        setError('Failed to load apps. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    loadGames();
+    loadApps();
   }, []);
 
-  const filteredGames = games.filter(game => 
-    game.category === 'game' &&
-    (game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    game.publisher.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredApps = apps.filter(app => 
+    app.category === 'app' &&
+    (app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    app.publisher.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   if (loading) {
@@ -61,9 +61,9 @@ export default function Games() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
           <div>
-            <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-2 md:mb-4">All Games</h1>
+            <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-2 md:mb-4">All Apps</h1>
             <p className="text-sm md:text-base text-creo-text-sec max-w-xl">
-              Browse our complete catalog of supported games. Top up your favorite titles instantly and securely.
+              Browse our complete catalog of supported apps. Top up your favorite apps instantly and securely.
             </p>
           </div>
           
@@ -71,7 +71,7 @@ export default function Games() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-creo-muted" />
             <input 
               type="text" 
-              placeholder="Search games or publishers..." 
+              placeholder="Search apps or publishers..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-creo-bg-sec border border-creo-border rounded-xl py-3 pl-12 pr-4 text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all"
@@ -79,9 +79,9 @@ export default function Games() {
           </div>
         </div>
 
-        {filteredGames.length === 0 ? (
+        {filteredApps.length === 0 ? (
           <div className="text-center py-20 bg-creo-bg-sec/50 rounded-2xl border border-creo-border border-dashed">
-            <p className="text-creo-text-sec text-lg">No games found matching "{searchQuery}"</p>
+            <p className="text-creo-text-sec text-lg">No apps found matching "{searchQuery}"</p>
             <button 
               onClick={() => setSearchQuery('')}
               className="mt-4 text-creo-accent hover:text-white font-bold transition-colors"
@@ -91,21 +91,21 @@ export default function Games() {
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-            {filteredGames.map((game, index) => (
+            {filteredApps.map((app, index) => (
               <motion.div
-                key={game.id}
+                key={app.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
               >
                 <Link 
-                  to={`/game/${game.id}`}
+                  to={`/game/${app.id}`}
                   className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-2xl hover:shadow-creo-accent/10 flex flex-col h-full"
                 >
                   <div className="aspect-[3/4] relative overflow-hidden bg-creo-bg">
                     <img 
-                      src={game.image_url} 
-                      alt={game.name}
+                      src={app.image_url} 
+                      alt={app.name}
                       className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                       referrerPolicy="no-referrer"
                     />
@@ -118,7 +118,7 @@ export default function Games() {
                   </div>
                   <div className="p-2 md:p-3 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-1">
                     <h3 className="text-xs md:text-sm font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-2">
-                      {game.name}
+                      {app.name}
                     </h3>
                   </div>
                 </Link>

@@ -6,6 +6,7 @@ export interface Game {
   currency_name: string;
   currency_icon: string;
   color_theme: string;
+  category: 'game' | 'app';
 }
 
 export interface Package {
