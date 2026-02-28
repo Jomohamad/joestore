@@ -25,6 +25,7 @@ export default function GameDetails() {
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
 
   useEffect(() => {
@@ -98,9 +99,14 @@ export default function GameDetails() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!game || !selectedPackage || !playerId || !validatedPlayerName) return;
     
+    setIsAddingToCart(true);
+    
+    // Simulate a small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 600));
+
     addToCart({
       id: Math.random().toString(36).substr(2, 9),
       gameId: game.id,
@@ -115,6 +121,7 @@ export default function GameDetails() {
       playerName: validatedPlayerName
     });
     
+    setIsAddingToCart(false);
     navigate('/cart');
   };
 
@@ -487,16 +494,27 @@ export default function GameDetails() {
 
                 <button
                   onClick={handleAddToCart}
-                  disabled={!validatedPlayerName || !selectedPackage || isProcessing}
+                  disabled={!validatedPlayerName || !selectedPackage || isProcessing || isAddingToCart}
                   className={cn(
                     "w-full py-3 md:py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center gap-2 transition-all border",
-                    validatedPlayerName && selectedPackage && !isProcessing
-                      ? "border-creo-accent text-creo-accent hover:bg-creo-accent hover:text-black"
-                      : "border-creo-border text-creo-muted cursor-not-allowed"
+                    isAddingToCart 
+                      ? "border-creo-accent/50 text-creo-accent bg-creo-accent/10 cursor-wait"
+                      : validatedPlayerName && selectedPackage && !isProcessing
+                        ? "border-creo-accent text-creo-accent hover:bg-creo-accent hover:text-black"
+                        : "border-creo-border text-creo-muted cursor-not-allowed"
                   )}
                 >
-                  <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
-                  {t('add_to_cart')}
+                  {isAddingToCart ? (
+                    <>
+                      <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-creo-accent/30 border-t-creo-accent rounded-full animate-spin" />
+                      <span>{t('processing')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
+                      {t('add_to_cart')}
+                    </>
+                  )}
                 </button>
               </div>
               
