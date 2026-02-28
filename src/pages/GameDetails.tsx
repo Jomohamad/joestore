@@ -10,7 +10,7 @@ import { useStore } from '../context/StoreContext';
 export default function GameDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart } = useStore();
+  const { addToCart, t, language } = useStore();
   
   const [game, setGame] = useState<Game | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -39,14 +39,14 @@ export default function GameDetails() {
         setGame(gameData);
         setPackages(packagesData);
       } catch (err) {
-        setError('Failed to load game details.');
+        setError(t('failed_load_details'));
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [id]);
+  }, [id, t]);
 
   const handlePlayerIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPlayerId(e.target.value);
@@ -67,10 +67,10 @@ export default function GameDetails() {
       if (result.valid && result.playerName) {
         setValidatedPlayerName(result.playerName);
       } else {
-        setValidationError(result.error || 'Invalid Player ID');
+        setValidationError(result.error || t('invalid_player_id'));
       }
     } catch (err) {
-      setValidationError('Verification service unavailable. Please try again.');
+      setValidationError(t('verification_unavailable'));
     } finally {
       setIsValidatingId(false);
     }
@@ -106,7 +106,7 @@ export default function GameDetails() {
       gameId: game.id,
       gameName: game.name,
       gameImage: game.image_url,
-      packageId: selectedPackage.id,
+      packageId: selectedPackage.id.toString(),
       packageName: `${selectedPackage.amount} ${game.currency_name}`,
       amount: selectedPackage.amount,
       currency: game.currency_name,
@@ -130,12 +130,12 @@ export default function GameDetails() {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-red-400 mb-4">{error || 'Game not found'}</p>
+          <p className="text-red-400 mb-4">{error || t('game_not_found')}</p>
           <button 
             onClick={() => navigate('/')}
             className="px-6 py-2 bg-creo-bg-sec hover:bg-creo-border text-white rounded-lg transition-colors"
           >
-            Back to Home
+            {t('back_to_home')}
           </button>
         </div>
       </div>
@@ -153,21 +153,21 @@ export default function GameDetails() {
           <div className="w-16 h-16 md:w-20 md:h-20 bg-creo-accent/20 text-creo-accent rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
             <CheckCircle2 className="w-8 h-8 md:w-10 md:h-10" />
           </div>
-          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Payment Successful!</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{t('payment_success')}</h2>
           <p className="text-sm md:text-base text-creo-text-sec mb-6">
-            Your {game.currency_name} will be credited to <span className="text-white font-medium">{validatedPlayerName}</span> shortly.
+            {t('credited_to').replace('{currency}', game.currency_name).replace('{name}', validatedPlayerName || '')}
           </p>
           <div className="bg-creo-bg rounded-lg p-4 mb-6 md:mb-8 text-left border border-creo-border/50">
             <div className="flex justify-between mb-2 text-xs md:text-sm">
-              <span className="text-creo-muted">Order ID</span>
+              <span className="text-creo-muted">{t('order_id')}</span>
               <span className="text-white font-mono">{orderSuccess}</span>
             </div>
             <div className="flex justify-between mb-2 text-xs md:text-sm">
-              <span className="text-creo-muted">Amount Paid</span>
-              <span className="text-white font-medium">${selectedPackage?.price.toFixed(2)}</span>
+              <span className="text-creo-muted">{t('amount_paid')}</span>
+              <span className="text-white font-medium">{selectedPackage?.price.toFixed(2)} {t('egp')}</span>
             </div>
             <div className="flex justify-between text-xs md:text-sm">
-              <span className="text-creo-muted">Item</span>
+              <span className="text-creo-muted">{t('item')}</span>
               <span className="text-creo-accent font-medium">{selectedPackage?.amount} {game.currency_name}</span>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function GameDetails() {
             onClick={() => navigate('/')}
             className="w-full py-3 bg-creo-accent hover:bg-white text-black rounded-xl font-bold transition-colors text-sm md:text-base"
           >
-            Continue Shopping
+            {t('continue_shopping')}
           </button>
         </motion.div>
       </div>
@@ -209,7 +209,7 @@ export default function GameDetails() {
                 <span className="px-2 py-1 bg-creo-bg-sec rounded-md">{game.publisher}</span>
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 md:w-4 md:h-4 text-creo-accent" />
-                  Official Partner
+                  {t('official_partner')}
                 </span>
               </div>
             </div>
@@ -235,7 +235,7 @@ export default function GameDetails() {
                 )}>
                   {validatedPlayerName ? <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" /> : "1"}
                 </div>
-                <h2 className="text-lg md:text-xl font-bold text-white">Enter Player ID</h2>
+                <h2 className="text-lg md:text-xl font-bold text-white">{t('enter_player_id_step')}</h2>
               </div>
               
               <div className="relative">
@@ -244,7 +244,7 @@ export default function GameDetails() {
                     type="text" 
                     value={playerId}
                     onChange={handlePlayerIdChange}
-                    placeholder="e.g. 1234567890" 
+                    placeholder={t('player_id_placeholder')} 
                     className={cn(
                       "flex-1 bg-creo-bg border rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50 transition-all font-mono",
                       validationError ? "border-red-500/50 focus:border-red-500" : "border-creo-border focus:border-creo-accent",
@@ -266,9 +266,9 @@ export default function GameDetails() {
                     {isValidatingId ? (
                       <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                     ) : validatedPlayerName ? (
-                      <>Verified</>
+                      <>{t('verified')}</>
                     ) : (
-                      'Verify ID'
+                      t('verify_id')
                     )}
                   </button>
                 </div>
@@ -287,13 +287,13 @@ export default function GameDetails() {
                     className="flex items-center gap-2 text-creo-accent text-xs md:text-sm mt-3 bg-creo-accent/10 p-2.5 md:p-3 rounded-lg border border-creo-accent/20"
                   >
                     <UserCheck className="w-3 h-3 md:w-4 md:h-4" />
-                    Player Name: <span className="font-bold text-white">{validatedPlayerName}</span>
+                    {t('player_name')}: <span className="font-bold text-white">{validatedPlayerName}</span>
                   </motion.div>
                 )}
 
                 {!validationError && !validatedPlayerName && (
                   <p className="text-[11px] md:text-xs text-creo-muted mt-2 md:mt-3">
-                    To find your Player ID, click on your avatar in the top left corner of the main screen.
+                    {t('player_id_hint')}
                   </p>
                 )}
               </div>
@@ -306,7 +306,7 @@ export default function GameDetails() {
             )}>
               <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
                 <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-creo-accent/20 text-creo-accent flex items-center justify-center font-bold text-sm md:text-base">2</div>
-                <h2 className="text-lg md:text-xl font-bold text-white">Select Recharge</h2>
+                <h2 className="text-lg md:text-xl font-bold text-white">{t('select_recharge')}</h2>
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
@@ -334,7 +334,7 @@ export default function GameDetails() {
                     
                     {pkg.bonus > 0 && (
                       <div className="text-[10px] md:text-xs font-medium text-creo-accent mb-2 md:mb-3 bg-creo-accent/10 inline-block px-1.5 md:px-2 py-0.5 rounded">
-                        +{pkg.bonus} Bonus
+                        +{pkg.bonus} {t('bonus')}
                       </div>
                     )}
                     
@@ -342,7 +342,7 @@ export default function GameDetails() {
                       "text-xs md:text-sm font-medium mt-auto",
                       selectedPackage?.id === pkg.id ? "text-creo-accent" : "text-creo-text-sec"
                     )}>
-                      ${pkg.price.toFixed(2)}
+                      {pkg.price.toFixed(2)} {t('egp')}
                     </div>
                   </button>
                 ))}
@@ -356,7 +356,7 @@ export default function GameDetails() {
             )}>
               <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
                 <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-creo-accent/20 text-creo-accent flex items-center justify-center font-bold text-sm md:text-base">3</div>
-                <h2 className="text-lg md:text-xl font-bold text-white">Payment Method</h2>
+                <h2 className="text-lg md:text-xl font-bold text-white">{t('payment_method')}</h2>
               </div>
               
               <div className="space-y-2.5 md:space-y-3">
@@ -397,28 +397,28 @@ export default function GameDetails() {
           {/* Sidebar (Order Summary) */}
           <div className="lg:col-span-1">
             <div className="sticky top-20 md:top-24 bg-creo-card border border-creo-border rounded-2xl p-5 md:p-6 shadow-xl">
-              <h3 className="text-base md:text-lg font-bold text-white mb-4 md:mb-6 pb-3 md:pb-4 border-b border-creo-border">Order Summary</h3>
+              <h3 className="text-base md:text-lg font-bold text-white mb-4 md:mb-6 pb-3 md:pb-4 border-b border-creo-border">{t('order_summary')}</h3>
               
               <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
                 <div className="flex justify-between text-xs md:text-sm">
-                  <span className="text-creo-muted">Game</span>
+                  <span className="text-creo-muted">{language === 'en' ? 'Game' : 'اللعبة'}</span>
                   <span className="text-white font-medium">{game.name}</span>
                 </div>
                 
                 <div className="flex justify-between text-xs md:text-sm">
-                  <span className="text-creo-muted">Player ID</span>
+                  <span className="text-creo-muted">{t('player_id')}</span>
                   <span className="text-white font-mono">{playerId || '-'}</span>
                 </div>
 
                 {validatedPlayerName && (
                   <div className="flex justify-between text-xs md:text-sm">
-                    <span className="text-creo-muted">Player Name</span>
+                    <span className="text-creo-muted">{t('player_name')}</span>
                     <span className="text-creo-accent font-medium truncate max-w-[120px] md:max-w-[150px]">{validatedPlayerName}</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between text-xs md:text-sm">
-                  <span className="text-creo-muted">Item</span>
+                  <span className="text-creo-muted">{t('item')}</span>
                   <span className="text-white font-medium">
                     {selectedPackage ? `${selectedPackage.amount} ${game.currency_name}` : '-'}
                   </span>
@@ -426,22 +426,22 @@ export default function GameDetails() {
                 
                 {selectedPackage?.bonus ? (
                   <div className="flex justify-between text-xs md:text-sm">
-                    <span className="text-creo-muted">Bonus</span>
+                    <span className="text-creo-muted">{t('bonus')}</span>
                     <span className="text-creo-accent font-medium">+{selectedPackage.bonus}</span>
                   </div>
                 ) : null}
                 
                 <div className="flex justify-between text-xs md:text-sm">
-                  <span className="text-creo-muted">Payment</span>
+                  <span className="text-creo-muted">{t('payment_method')}</span>
                   <span className="text-white font-medium">{selectedPayment || '-'}</span>
                 </div>
               </div>
 
               <div className="pt-3 md:pt-4 border-t border-creo-border mb-6 md:mb-8">
                 <div className="flex justify-between items-end">
-                  <span className="text-xs md:text-sm text-creo-muted font-medium">Total Price</span>
+                  <span className="text-xs md:text-sm text-creo-muted font-medium">{t('total_price')}</span>
                   <span className="text-2xl md:text-3xl font-bold text-white">
-                    ${selectedPackage ? selectedPackage.price.toFixed(2) : '0.00'}
+                    {selectedPackage ? selectedPackage.price.toFixed(2) : '0.00'} {t('egp')}
                   </span>
                 </div>
               </div>
@@ -461,8 +461,8 @@ export default function GameDetails() {
                     <div className="w-5 h-5 md:w-6 md:h-6 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                   ) : (
                     <>
-                      Buy Now
-                      <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                      {t('buy_now')}
+                      <ChevronRight className={cn("w-4 h-4 md:w-5 md:h-5", language === 'ar' && "rotate-180")} />
                     </>
                   )}
                 </button>
@@ -478,12 +478,12 @@ export default function GameDetails() {
                   )}
                 >
                   <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
-                  Add to Cart
+                  {t('add_to_cart')}
                 </button>
               </div>
               
               <p className="text-[10px] md:text-xs text-center text-creo-muted mt-3 md:mt-4">
-                By clicking "Buy Now", you agree to our Terms of Service and Privacy Policy.
+                {t('terms_agree')}
               </p>
             </div>
           </div>

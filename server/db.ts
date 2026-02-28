@@ -66,68 +66,68 @@ db.transaction(() => {
     'pubg-mobile',
     'PUBG Mobile',
     'Level Infinite',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co1wyy.jpg',
+    '/pics/pubg.svg',
     'UC',
     'uc-icon',
     '#F59E0B', // Amber
     'game'
   );
 
-  // PUBG Packages (Real Market Prices)
-  insertPackage.run('pubg-mobile', 60, 0, 0.99);
-  insertPackage.run('pubg-mobile', 300, 25, 4.99);
-  insertPackage.run('pubg-mobile', 600, 60, 9.99);
-  insertPackage.run('pubg-mobile', 1500, 300, 24.99);
-  insertPackage.run('pubg-mobile', 3000, 850, 49.99);
-  insertPackage.run('pubg-mobile', 6000, 2100, 99.99);
+  // PUBG Packages (Real Market Prices in EGP)
+  insertPackage.run('pubg-mobile', 60, 0, 50);
+  insertPackage.run('pubg-mobile', 300, 25, 250);
+  insertPackage.run('pubg-mobile', 600, 60, 500);
+  insertPackage.run('pubg-mobile', 1500, 300, 1250);
+  insertPackage.run('pubg-mobile', 3000, 850, 2500);
+  insertPackage.run('pubg-mobile', 6000, 2100, 5000);
 
   // Free Fire
   insertGame.run(
     'free-fire',
     'Free Fire',
     'Garena',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co22j8.jpg',
+    '/pics/freefire.svg',
     'Diamonds',
     'diamond-icon',
     '#EF4444', // Red
     'game'
   );
 
-  // Free Fire Packages (Real Market Prices)
-  insertPackage.run('free-fire', 100, 0, 0.99);
-  insertPackage.run('free-fire', 210, 21, 2.15);
-  insertPackage.run('free-fire', 530, 53, 5.35);
-  insertPackage.run('free-fire', 1080, 108, 10.85);
-  insertPackage.run('free-fire', 2200, 220, 22.15);
-  insertPackage.run('free-fire', 4450, 445, 44.55);
+  // Free Fire Packages (Real Market Prices in EGP)
+  insertPackage.run('free-fire', 100, 0, 50);
+  insertPackage.run('free-fire', 210, 21, 105);
+  insertPackage.run('free-fire', 530, 53, 265);
+  insertPackage.run('free-fire', 1080, 108, 540);
+  insertPackage.run('free-fire', 2200, 220, 1100);
+  insertPackage.run('free-fire', 4450, 445, 2225);
   
   // Mobile Legends
   insertGame.run(
     'mobile-legends',
     'Mobile Legends',
     'Moonton',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co20m0.jpg',
+    '/pics/mlbb.svg',
     'Diamonds',
     'diamond-icon',
     '#3B82F6', // Blue
     'game'
   );
 
-  // MLBB Packages (Real Market Prices)
-  insertPackage.run('mobile-legends', 78, 8, 1.25);
-  insertPackage.run('mobile-legends', 156, 16, 2.50);
-  insertPackage.run('mobile-legends', 234, 23, 3.75);
-  insertPackage.run('mobile-legends', 390, 39, 6.25);
-  insertPackage.run('mobile-legends', 625, 81, 10.00);
-  insertPackage.run('mobile-legends', 1860, 335, 30.00);
-  insertPackage.run('mobile-legends', 3099, 589, 50.00);
+  // MLBB Packages (Real Market Prices in EGP)
+  insertPackage.run('mobile-legends', 78, 8, 60);
+  insertPackage.run('mobile-legends', 156, 16, 125);
+  insertPackage.run('mobile-legends', 234, 23, 185);
+  insertPackage.run('mobile-legends', 390, 39, 310);
+  insertPackage.run('mobile-legends', 625, 81, 500);
+  insertPackage.run('mobile-legends', 1860, 335, 1500);
+  insertPackage.run('mobile-legends', 3099, 589, 2500);
 
   // Rainbow Six Mobile
   insertGame.run(
     'rainbow-six-mobile',
     'Rainbow Six Mobile',
     'Ubisoft',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co4d97.jpg',
+    '/pics/rainbow.svg',
     'R6 Credits',
     'r6-icon',
     '#EAB308', // Yellow
@@ -135,162 +135,162 @@ db.transaction(() => {
   );
 
   // R6 Mobile Packages
-  insertPackage.run('rainbow-six-mobile', 600, 0, 4.99);
-  insertPackage.run('rainbow-six-mobile', 1200, 0, 9.99);
-  insertPackage.run('rainbow-six-mobile', 2670, 270, 19.99);
-  insertPackage.run('rainbow-six-mobile', 4920, 720, 34.99);
-  insertPackage.run('rainbow-six-mobile', 7300, 1300, 49.99);
-  insertPackage.run('rainbow-six-mobile', 16000, 4000, 99.99);
+  insertPackage.run('rainbow-six-mobile', 600, 0, 250);
+  insertPackage.run('rainbow-six-mobile', 1200, 0, 500);
+  insertPackage.run('rainbow-six-mobile', 2670, 270, 1000);
+  insertPackage.run('rainbow-six-mobile', 4920, 720, 1750);
+  insertPackage.run('rainbow-six-mobile', 7300, 1300, 2500);
+  insertPackage.run('rainbow-six-mobile', 16000, 4000, 5000);
 
   // EA SPORTS FC Mobile
   insertGame.run(
     'ea-sports-fc-mobile',
     'EA SPORTS FC Mobile',
     'Electronic Arts',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co6nx7.jpg',
+    '/pics/codm.svg', // using codm placeholder as generic
     'FC Points',
     'fc-icon',
     '#10B981', // Emerald
     'game'
   );
-  insertPackage.run('ea-sports-fc-mobile', 100, 0, 0.99);
-  insertPackage.run('ea-sports-fc-mobile', 500, 50, 4.99);
-  insertPackage.run('ea-sports-fc-mobile', 1000, 150, 9.99);
+  insertPackage.run('ea-sports-fc-mobile', 100, 0, 50);
+  insertPackage.run('ea-sports-fc-mobile', 500, 50, 250);
+  insertPackage.run('ea-sports-fc-mobile', 1000, 150, 500);
 
   // Call of Duty: Mobile
   insertGame.run(
     'cod-mobile',
     'Call of Duty: Mobile',
     'Activision',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co20m0.jpg',
+    '/pics/codm.svg',
     'CP',
     'cp-icon',
     '#6B7280', // Gray
     'game'
   );
-  insertPackage.run('cod-mobile', 80, 0, 0.99);
-  insertPackage.run('cod-mobile', 400, 20, 4.99);
-  insertPackage.run('cod-mobile', 800, 80, 9.99);
+  insertPackage.run('cod-mobile', 80, 0, 50);
+  insertPackage.run('cod-mobile', 400, 20, 250);
+  insertPackage.run('cod-mobile', 800, 80, 500);
 
   // Arena Breakout
   insertGame.run(
     'arena-breakout',
     'Arena Breakout',
     'Level Infinite',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co6k0j.jpg',
+    '/pics/roblox.svg', // generic
     'Bonds',
     'bond-icon',
     '#F97316', // Orange
     'game'
   );
-  insertPackage.run('arena-breakout', 60, 0, 0.99);
-  insertPackage.run('arena-breakout', 300, 15, 4.99);
+  insertPackage.run('arena-breakout', 60, 0, 50);
+  insertPackage.run('arena-breakout', 300, 15, 250);
 
   // League of Legends
   insertGame.run(
     'league-of-legends',
     'League of Legends',
     'Riot Games',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co49wj.jpg',
+    '/pics/genshin.svg', // generic
     'RP',
     'rp-icon',
     '#3B82F6', // Blue
     'game'
   );
-  insertPackage.run('league-of-legends', 575, 0, 4.99);
-  insertPackage.run('league-of-legends', 1380, 0, 10.99);
+  insertPackage.run('league-of-legends', 575, 0, 250);
+  insertPackage.run('league-of-legends', 1380, 0, 550);
 
   // VALORANT
   insertGame.run(
     'valorant',
     'VALORANT',
     'Riot Games',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co2mvt.jpg',
+    '/pics/valorant.svg',
     'VP',
     'vp-icon',
     '#EF4444', // Red
     'game'
   );
-  insertPackage.run('valorant', 475, 0, 4.99);
-  insertPackage.run('valorant', 1000, 0, 9.99);
+  insertPackage.run('valorant', 475, 0, 250);
+  insertPackage.run('valorant', 1000, 0, 500);
 
   // TikTok (App Example)
   insertGame.run(
     'tiktok',
     'TikTok',
     'ByteDance',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co5z8n.jpg',
+    '/pics/pubg.svg', // generic
     'Coins',
     'coin-icon',
     '#000000', // Black
     'app'
   );
-  insertPackage.run('tiktok', 70, 0, 0.99);
-  insertPackage.run('tiktok', 350, 0, 4.99);
-  insertPackage.run('tiktok', 700, 0, 9.99);
+  insertPackage.run('tiktok', 70, 0, 50);
+  insertPackage.run('tiktok', 350, 0, 250);
+  insertPackage.run('tiktok', 700, 0, 500);
 
   // Discord (App Example)
   insertGame.run(
     'discord',
     'Discord',
     'Discord Inc.',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co5z8o.jpg',
+    '/pics/steam.svg', // generic
     'Nitro',
     'nitro-icon',
     '#5865F2', // Blurple
     'app'
   );
-  insertPackage.run('discord', 1, 0, 9.99); // 1 Month Nitro
+  insertPackage.run('discord', 1, 0, 500); // 1 Month Nitro
   // Steam
   insertGame.run(
     'steam',
     'Steam',
     'Valve',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co2v0n.jpg',
+    '/pics/steam.svg',
     'Wallet Code',
     'steam-icon',
     '#171A21', // Dark Blue
     'app'
   );
-  insertPackage.run('steam', 5, 0, 5.00);
-  insertPackage.run('steam', 10, 0, 10.00);
-  insertPackage.run('steam', 20, 0, 20.00);
-  insertPackage.run('steam', 50, 0, 50.00);
-  insertPackage.run('steam', 100, 0, 100.00);
+  insertPackage.run('steam', 5, 0, 250);
+  insertPackage.run('steam', 10, 0, 500);
+  insertPackage.run('steam', 20, 0, 1000);
+  insertPackage.run('steam', 50, 0, 2500);
+  insertPackage.run('steam', 100, 0, 5000);
 
   // Google Play
   insertGame.run(
     'google-play',
     'Google Play',
     'Google',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co2v0o.jpg',
+    '/pics/googleplay.svg',
     'Gift Card',
     'google-play-icon',
     '#34A853', // Green
     'app'
   );
-  insertPackage.run('google-play', 5, 0, 5.00);
-  insertPackage.run('google-play', 10, 0, 10.00);
-  insertPackage.run('google-play', 25, 0, 25.00);
-  insertPackage.run('google-play', 50, 0, 50.00);
-  insertPackage.run('google-play', 100, 0, 100.00);
+  insertPackage.run('google-play', 5, 0, 250);
+  insertPackage.run('google-play', 10, 0, 500);
+  insertPackage.run('google-play', 25, 0, 1250);
+  insertPackage.run('google-play', 50, 0, 2500);
+  insertPackage.run('google-play', 100, 0, 5000);
 
   // App Store
   insertGame.run(
     'app-store',
     'App Store & iTunes',
     'Apple',
-    'https://images.igdb.com/igdb/image/upload/t_1080p/co2v0p.jpg',
+    '/pics/appstore.svg',
     'Gift Card',
     'app-store-icon',
     '#007AFF', // Blue
     'app'
   );
-  insertPackage.run('app-store', 5, 0, 5.00);
-  insertPackage.run('app-store', 10, 0, 10.00);
-  insertPackage.run('app-store', 25, 0, 25.00);
-  insertPackage.run('app-store', 50, 0, 50.00);
-  insertPackage.run('app-store', 100, 0, 100.00);
+  insertPackage.run('app-store', 5, 0, 250);
+  insertPackage.run('app-store', 10, 0, 500);
+  insertPackage.run('app-store', 25, 0, 1250);
+  insertPackage.run('app-store', 50, 0, 2500);
+  insertPackage.run('app-store', 100, 0, 5000);
 })();
 
 export default db;

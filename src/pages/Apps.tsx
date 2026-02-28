@@ -4,12 +4,14 @@ import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
 import { Search } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
 
 export default function Apps() {
   const [apps, setApps] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const { t, language } = useStore();
 
   useEffect(() => {
     const loadApps = async () => {
@@ -61,32 +63,32 @@ export default function Apps() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
           <div>
-            <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-2 md:mb-4">All Apps</h1>
+            <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-2 md:mb-4">{t('all_apps')}</h1>
             <p className="text-sm md:text-base text-creo-text-sec max-w-xl">
-              Browse our complete catalog of supported apps. Top up your favorite apps instantly and securely.
+              {t('all_apps_desc')}
             </p>
           </div>
           
           <div className="relative w-full md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-creo-muted" />
+            <Search className={`absolute ${language === 'en' ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 w-5 h-5 text-creo-muted`} />
             <input 
               type="text" 
-              placeholder="Search apps or publishers..." 
+              placeholder={t('search_apps')} 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-creo-bg-sec border border-creo-border rounded-xl py-3 pl-12 pr-4 text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all"
+              className={`w-full bg-creo-bg-sec border border-creo-border rounded-xl py-3 ${language === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
             />
           </div>
         </div>
 
         {filteredApps.length === 0 ? (
           <div className="text-center py-20 bg-creo-bg-sec/50 rounded-2xl border border-creo-border border-dashed">
-            <p className="text-creo-text-sec text-lg">No apps found matching "{searchQuery}"</p>
+            <p className="text-creo-text-sec text-lg">{t('no_apps_found')} "{searchQuery}"</p>
             <button 
               onClick={() => setSearchQuery('')}
               className="mt-4 text-creo-accent hover:text-white font-bold transition-colors"
             >
-              Clear search
+              {t('clear_search')}
             </button>
           </div>
         ) : (
@@ -100,15 +102,16 @@ export default function Apps() {
               >
                 <Link 
                   to={`/game/${app.id}`}
-                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-2xl hover:shadow-creo-accent/10 flex flex-col h-full"
+                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
                 >
                   <div className="aspect-[3/4] relative overflow-hidden bg-creo-bg">
                     <img 
                       src={app.image_url} 
                       alt={app.name}
-                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
                       referrerPolicy="no-referrer"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
                     {/* Wavy/Jagged edge overlay */}
                     <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10">
                       <svg className="relative block w-full h-[10px] md:h-[15px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10" preserveAspectRatio="none">

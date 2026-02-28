@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { translations } from '../translations';
 
 type Language = 'en' | 'ar';
 
@@ -23,6 +24,7 @@ interface StoreContextType {
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
   clearCart: () => void;
+  t: (key: keyof typeof translations['en']) => string;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -52,8 +54,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCart([]);
   };
 
+  const t = (key: keyof typeof translations['en']) => {
+    return translations[language][key] || key;
+  };
+
   return (
-    <StoreContext.Provider value={{ language, toggleLanguage, cart, addToCart, removeFromCart, clearCart }}>
+    <StoreContext.Provider value={{ language, toggleLanguage, cart, addToCart, removeFromCart, clearCart, t }}>
       {children}
     </StoreContext.Provider>
   );

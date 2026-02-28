@@ -1,10 +1,13 @@
 import React from 'react';
+import { useStore } from '../context/StoreContext';
 
 export default function Privacy() {
+  const { t } = useStore();
+
   return (
     <div className="flex-1 bg-creo-bg py-12 md:py-16">
       <div className="container mx-auto px-4 max-w-3xl">
-        <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-6">Privacy Policy</h1>
+        <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-6">{t('privacy')}</h1>
         <div className="bg-creo-card border border-creo-border rounded-2xl p-6 md:p-8 text-creo-text-sec space-y-6">
           <p>Last updated: October 2023</p>
           

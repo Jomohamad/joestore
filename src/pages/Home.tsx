@@ -4,11 +4,13 @@ import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
 import { Zap, ShieldCheck, Clock, Trophy } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
 
 export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useStore();
 
   useEffect(() => {
     const loadGames = async () => {
@@ -55,6 +57,8 @@ export default function Home() {
       <section className="relative pt-20 pb-24 md:pt-32 md:pb-40 overflow-hidden bg-creo-bg">
         <div className="absolute inset-0">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[600px] bg-creo-accent/10 blur-[100px] rounded-[100%] opacity-80 pointer-events-none"></div>
+          {/* Gaming Grid Pattern */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
@@ -63,9 +67,9 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.7, ease: "easeOut" }}
-              className="inline-block mb-6 px-4 py-1.5 rounded-full border border-creo-accent/30 bg-creo-accent/10 text-creo-accent text-xs md:text-sm font-bold tracking-widest uppercase"
+              className="inline-block mb-6 px-4 py-1.5 rounded-full border border-creo-accent/30 bg-creo-accent/10 text-creo-accent text-xs md:text-sm font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(255,215,0,0.2)]"
             >
-              The Ultimate Gaming Hub
+              {t('hero_badge')}
             </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: 30 }}
@@ -73,8 +77,8 @@ export default function Home() {
               transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
               className="text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tighter text-white mb-6 leading-[0.9]"
             >
-              LEVEL UP <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-creo-accent to-creo-accent-sec">YOUR GAME</span>
+              {t('hero_title_1')} <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-creo-accent to-creo-accent-sec drop-shadow-sm">{t('hero_title_2')}</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -82,7 +86,7 @@ export default function Home() {
               transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
               className="text-lg md:text-2xl text-creo-text-sec mb-10 leading-relaxed max-w-3xl mx-auto font-light"
             >
-              Instant delivery, secure payments, and the best prices for your favorite game currencies. Top up now and dominate the leaderboard.
+              {t('hero_desc')}
             </motion.p>
             
             <motion.div 
@@ -95,9 +99,9 @@ export default function Home() {
                 onClick={() => {
                   document.getElementById('games')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-full sm:w-auto px-10 py-5 bg-creo-accent hover:bg-white text-black rounded-full font-bold transition-all duration-300 text-center text-lg hover:scale-105"
+                className="w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-creo-accent to-creo-accent-sec hover:from-white hover:to-white text-black rounded-full font-bold transition-all duration-300 text-center text-lg hover:scale-105 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]"
               >
-                Browse Games
+                {t('browse_games')}
               </button>
               <button 
                 onClick={() => {
@@ -105,59 +109,34 @@ export default function Home() {
                 }}
                 className="w-full sm:w-auto px-10 py-5 bg-transparent border border-creo-border hover:border-creo-accent text-white rounded-full font-bold transition-all duration-300 text-center text-lg hover:bg-creo-accent/5"
               >
-                Learn More
+                {t('learn_more')}
               </button>
             </motion.div>
           </div>
         </div>
-      </section>
 
-      {/* Marquee Section */}
-      <div className="py-6 bg-creo-accent overflow-hidden flex whitespace-nowrap border-y border-creo-border/20">
-        <motion.div 
-          animate={{ x: [0, -1000] }}
-          transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-          className="flex items-center gap-12 text-black font-display font-bold text-2xl md:text-4xl uppercase tracking-wider"
-        >
-          <span>Instant Delivery</span>
-          <span className="w-3 h-3 rounded-full bg-black"></span>
-          <span>Secure Payments</span>
-          <span className="w-3 h-3 rounded-full bg-black"></span>
-          <span>24/7 Support</span>
-          <span className="w-3 h-3 rounded-full bg-black"></span>
-          <span>Best Prices</span>
-          <span className="w-3 h-3 rounded-full bg-black"></span>
-          <span>Instant Delivery</span>
-          <span className="w-3 h-3 rounded-full bg-black"></span>
-          <span>Secure Payments</span>
-          <span className="w-3 h-3 rounded-full bg-black"></span>
-          <span>24/7 Support</span>
-          <span className="w-3 h-3 rounded-full bg-black"></span>
-          <span>Best Prices</span>
-        </motion.div>
-      </div>
-
-      {/* Statistics Section */}
-      <section className="py-16 md:py-24 bg-creo-bg border-b border-creo-border">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
-            {[
-              { value: '2M+', label: 'Active Gamers' },
-              { value: '50+', label: 'Supported Games' },
-              { value: '99.9%', label: 'Uptime' },
-              { value: '24/7', label: 'Customer Support' }
-            ].map((stat, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="flex flex-col items-center"
-              >
-                <div className="text-4xl md:text-6xl font-display font-bold text-white mb-2">{stat.value}</div>
-                <div className="text-sm md:text-base text-creo-accent font-bold uppercase tracking-widest">{stat.label}</div>
-              </motion.div>
+        {/* Marquee */}
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden border-y border-creo-border bg-creo-bg-sec/50 backdrop-blur-sm py-3">
+          <div className="flex whitespace-nowrap animate-marquee-slow">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex items-center gap-8 px-4">
+                <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-creo-accent" /> {t('feat_instant')}
+                </span>
+                <span className="text-creo-border text-xl">•</span>
+                <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-creo-accent" /> {t('feat_secure')}
+                </span>
+                <span className="text-creo-border text-xl">•</span>
+                <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-creo-accent" /> {t('feat_prices')}
+                </span>
+                <span className="text-creo-border text-xl">•</span>
+                <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-creo-accent" /> {t('feat_support')}
+                </span>
+                <span className="text-creo-border text-xl">•</span>
+              </div>
             ))}
           </div>
         </div>
@@ -166,35 +145,43 @@ export default function Home() {
       {/* Games Grid Section */}
       <section id="games" className="py-16 md:py-20 bg-creo-bg-sec relative">
         <div className="container mx-auto px-4">
-          <div className="flex items-end justify-between mb-8 md:mb-12">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="flex items-end justify-between mb-8 md:mb-12"
+          >
             <div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">Popular Games</h2>
-              <p className="text-sm md:text-base text-creo-text-sec">Top up your favorite titles instantly</p>
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">{t('popular_games')}</h2>
+              <p className="text-sm md:text-base text-creo-text-sec">{t('popular_games_desc')}</p>
             </div>
             <Link to="/games" className="text-creo-accent hover:text-white font-bold hidden sm:block transition-colors">
-              View All Games &rarr;
+              {t('view_all')} &rarr;
             </Link>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
             {games.filter(g => g.category === 'game').map((game, index) => (
               <motion.div
                 key={game.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
               >
                 <Link 
                   to={`/game/${game.id}`}
-                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-2xl hover:shadow-creo-accent/10 flex flex-col h-full"
+                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
                 >
                   <div className="aspect-[3/4] relative overflow-hidden bg-creo-bg">
                     <img 
                       src={game.image_url} 
                       alt={game.name}
-                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
                       referrerPolicy="no-referrer"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
                     {/* Wavy/Jagged edge overlay */}
                     <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10">
                       <svg className="relative block w-full h-[10px] md:h-[15px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10" preserveAspectRatio="none">
@@ -214,7 +201,7 @@ export default function Home() {
           
           <div className="mt-8 text-center sm:hidden">
             <Link to="/games" className="inline-block px-6 py-3 bg-creo-card border border-creo-border rounded-xl text-creo-accent font-bold w-full">
-              View All Games
+              {t('view_all')}
             </Link>
           </div>
         </div>
@@ -223,35 +210,43 @@ export default function Home() {
       {/* Apps Grid Section */}
       <section id="apps" className="py-16 md:py-20 bg-creo-bg relative border-t border-creo-border">
         <div className="container mx-auto px-4">
-          <div className="flex items-end justify-between mb-8 md:mb-12">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="flex items-end justify-between mb-8 md:mb-12"
+          >
             <div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">Popular Apps</h2>
-              <p className="text-sm md:text-base text-creo-text-sec">Top up your favorite apps instantly</p>
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">{t('popular_apps')}</h2>
+              <p className="text-sm md:text-base text-creo-text-sec">{t('popular_apps_desc')}</p>
             </div>
             <Link to="/apps" className="text-creo-accent hover:text-white font-bold hidden sm:block transition-colors">
-              View All Apps &rarr;
+              {t('view_all')} &rarr;
             </Link>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
             {games.filter(g => g.category === 'app').map((app, index) => (
               <motion.div
                 key={app.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
               >
                 <Link 
                   to={`/game/${app.id}`}
-                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-2xl hover:shadow-creo-accent/10 flex flex-col h-full"
+                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
                 >
                   <div className="aspect-[3/4] relative overflow-hidden bg-creo-bg">
                     <img 
                       src={app.image_url} 
                       alt={app.name}
-                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
                       referrerPolicy="no-referrer"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
                     {/* Wavy/Jagged edge overlay */}
                     <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10">
                       <svg className="relative block w-full h-[10px] md:h-[15px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10" preserveAspectRatio="none">
@@ -271,34 +266,48 @@ export default function Home() {
           
           <div className="mt-8 text-center sm:hidden">
             <Link to="/apps" className="inline-block px-6 py-3 bg-creo-card border border-creo-border rounded-xl text-creo-accent font-bold w-full">
-              View All Apps
+              {t('view_all')}
             </Link>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-16 md:py-24 bg-creo-bg-sec border-y border-creo-border">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-3 md:mb-4">Why Choose Us?</h2>
-            <p className="text-sm md:text-base text-creo-text-sec">We provide the best top-up experience for gamers worldwide.</p>
-          </div>
+      <section id="features" className="py-16 md:py-24 bg-creo-bg-sec border-y border-creo-border relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-creo-accent/5 blur-[100px] rounded-full pointer-events-none"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="text-center max-w-2xl mx-auto mb-12 md:mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-3 md:mb-4">{t('features_title')}</h2>
+            <p className="text-sm md:text-base text-creo-text-sec">{t('features_desc')}</p>
+          </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             {[
-              { icon: Zap, title: 'Instant Delivery', desc: 'Your game credits are delivered instantly after successful payment.' },
-              { icon: ShieldCheck, title: 'Secure Payments', desc: '100% secure payment processing with multiple payment options.' },
-              { icon: Trophy, title: 'Best Prices', desc: 'We offer competitive prices and regular promotional discounts.' },
-              { icon: Clock, title: '24/7 Support', desc: 'Our customer support team is available around the clock to help you.' },
+              { icon: Zap, title: t('feat_instant'), desc: t('feat_instant_desc') },
+              { icon: ShieldCheck, title: t('feat_secure'), desc: t('feat_secure_desc') },
+              { icon: Trophy, title: t('feat_prices'), desc: t('feat_prices_desc') },
+              { icon: Clock, title: t('feat_support'), desc: t('feat_support_desc') },
             ].map((feature, i) => (
-              <div key={i} className="bg-creo-card p-5 md:p-6 rounded-2xl border border-creo-border hover:border-creo-accent/50 transition-colors">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-creo-accent/10 text-creo-accent rounded-xl flex items-center justify-center mb-4 md:mb-6">
+              <motion.div 
+                key={i} 
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
+                className="bg-creo-card p-5 md:p-6 rounded-2xl border border-creo-border hover:border-creo-accent/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_30px_rgba(255,215,0,0.1)]"
+              >
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-creo-accent/10 text-creo-accent rounded-xl flex items-center justify-center mb-4 md:mb-6 shadow-[inset_0_0_10px_rgba(255,215,0,0.2)]">
                   <feature.icon className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
                 <h3 className="text-base md:text-lg font-bold text-white mb-2">{feature.title}</h3>
                 <p className="text-xs md:text-sm text-creo-text-sec leading-relaxed">{feature.desc}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

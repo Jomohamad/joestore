@@ -3,7 +3,7 @@ import { Gamepad2, Search, ShoppingCart, Menu, Globe } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function Header() {
-  const { language, toggleLanguage, cart } = useStore();
+  const { language, toggleLanguage, cart, t } = useStore();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-creo-border bg-creo-bg/80 backdrop-blur-md">
@@ -17,10 +17,10 @@ export default function Header() {
           </Link>
           
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-creo-text-sec uppercase tracking-wider">
-            <Link to="/" className="hover:text-creo-accent transition-colors">{language === 'en' ? 'Home' : 'الرئيسية'}</Link>
-            <Link to="/games" className="hover:text-creo-accent transition-colors">{language === 'en' ? 'Games' : 'الألعاب'}</Link>
-            <Link to="/apps" className="hover:text-creo-accent transition-colors">{language === 'en' ? 'Apps' : 'التطبيقات'}</Link>
-            <Link to="/support" className="hover:text-creo-accent transition-colors">{language === 'en' ? 'Support' : 'الدعم'}</Link>
+            <Link to="/" className="hover:text-creo-accent transition-colors">{t('home')}</Link>
+            <Link to="/games" className="hover:text-creo-accent transition-colors">{t('games')}</Link>
+            <Link to="/apps" className="hover:text-creo-accent transition-colors">{t('apps')}</Link>
+            <Link to="/support" className="hover:text-creo-accent transition-colors">{t('support')}</Link>
           </nav>
         </div>
 
@@ -29,7 +29,7 @@ export default function Header() {
             <Search className={`absolute ${language === 'en' ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-muted`} />
             <input 
               type="text" 
-              placeholder={language === 'en' ? 'Search...' : 'بحث...'}
+              placeholder={t('search')}
               className={`bg-creo-bg-sec border border-creo-border rounded-full py-2 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent w-48 xl:w-64 transition-all`}
             />
           </div>

@@ -1,7 +1,10 @@
 import { motion } from 'motion/react';
-import { Mail, MessageSquare, Phone, HelpCircle, FileText, AlertCircle } from 'lucide-react';
+import { Mail, MessageSquare, Phone, HelpCircle, FileText } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
 
 export default function Support() {
+  const { t } = useStore();
+
   return (
     <div className="flex-1 bg-creo-bg py-12 md:py-16">
       <div className="container mx-auto px-4 max-w-5xl">
@@ -11,7 +14,7 @@ export default function Support() {
             animate={{ opacity: 1, y: 0 }}
             className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-white mb-4 md:mb-6"
           >
-            How can we help you?
+            {t('support_title')}
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -19,15 +22,15 @@ export default function Support() {
             transition={{ delay: 0.1 }}
             className="text-base md:text-lg text-creo-text-sec max-w-2xl mx-auto"
           >
-            Our support team is available 24/7 to assist you with your orders, payments, and account issues.
+            {t('support_desc')}
           </motion.p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-16">
           {[
-            { icon: MessageSquare, title: 'Live Chat', desc: 'Chat with our support agents in real-time.', action: 'Start Chat' },
-            { icon: Mail, title: 'Email Support', desc: 'Send us an email and we will reply within 24 hours.', action: 'support@gamecurrency.com' },
-            { icon: Phone, title: 'Phone Support', desc: 'Call us directly for urgent matters.', action: '+1 (800) 123-4567' },
+            { icon: MessageSquare, title: t('live_chat'), desc: t('live_chat_desc'), action: t('start_chat') },
+            { icon: Mail, title: t('email_support'), desc: t('email_support_desc'), action: 'support@gamecurrency.com' },
+            { icon: Phone, title: t('phone_support'), desc: t('phone_support_desc'), action: '+1 (800) 123-4567' },
           ].map((item, i) => (
             <motion.div 
               key={i}
@@ -52,14 +55,14 @@ export default function Support() {
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 flex items-center gap-2">
               <HelpCircle className="w-5 h-5 md:w-6 md:h-6 text-creo-accent" />
-              Frequently Asked Questions
+              {t('faq_title')}
             </h2>
             <div className="space-y-3 md:space-y-4">
               {[
-                { q: 'How long does it take to receive my game currency?', a: 'Most transactions are processed instantly. In rare cases, it might take up to 15 minutes depending on the game server.' },
-                { q: 'What payment methods do you accept?', a: 'We accept all major credit cards, PayPal, Apple Pay, Google Pay, and selected cryptocurrencies.' },
-                { q: 'I entered the wrong Player ID, what should I do?', a: 'Please contact our support team immediately. If the currency has not been delivered yet, we can cancel or modify the order.' },
-                { q: 'Is my payment information secure?', a: 'Yes, we use industry-standard encryption and do not store your full credit card details on our servers.' },
+                { q: t('faq_q1'), a: t('faq_a1') },
+                { q: t('faq_q2'), a: t('faq_a2') },
+                { q: t('faq_q3'), a: t('faq_a3') },
+                { q: t('faq_q4'), a: t('faq_a4') },
               ].map((faq, i) => (
                 <div key={i} className="bg-creo-card border border-creo-border rounded-xl p-4 md:p-5">
                   <h4 className="text-white font-bold mb-2 text-sm md:text-base">{faq.q}</h4>
@@ -72,37 +75,37 @@ export default function Support() {
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 flex items-center gap-2">
               <FileText className="w-5 h-5 md:w-6 md:h-6 text-creo-accent" />
-              Send us a message
+              {t('send_message')}
             </h2>
             <form className="bg-creo-card border border-creo-border rounded-2xl p-5 md:p-6 space-y-3 md:space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">First Name</label>
+                  <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">{t('first_name')}</label>
                   <input type="text" className="w-full bg-creo-bg border border-creo-border rounded-lg px-3 py-2 md:px-4 md:py-2.5 text-sm md:text-base text-white focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent" />
                 </div>
                 <div>
-                  <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">Last Name</label>
+                  <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">{t('last_name')}</label>
                   <input type="text" className="w-full bg-creo-bg border border-creo-border rounded-lg px-3 py-2 md:px-4 md:py-2.5 text-sm md:text-base text-white focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent" />
                 </div>
               </div>
               
               <div>
-                <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">Email Address</label>
+                <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">{t('email_address')}</label>
                 <input type="email" className="w-full bg-creo-bg border border-creo-border rounded-lg px-3 py-2 md:px-4 md:py-2.5 text-sm md:text-base text-white focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent" />
               </div>
 
               <div>
-                <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">Order ID (Optional)</label>
+                <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">{t('order_id_optional')}</label>
                 <input type="text" className="w-full bg-creo-bg border border-creo-border rounded-lg px-3 py-2 md:px-4 md:py-2.5 text-sm md:text-base text-white focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent" />
               </div>
 
               <div>
-                <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">Message</label>
+                <label className="block text-xs md:text-sm font-bold text-creo-text-sec mb-1">{t('message')}</label>
                 <textarea rows={4} className="w-full bg-creo-bg border border-creo-border rounded-lg px-3 py-2 md:px-4 md:py-2.5 text-sm md:text-base text-white focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent resize-none"></textarea>
               </div>
 
               <button type="button" className="w-full py-2.5 md:py-3 bg-creo-accent hover:bg-white text-black rounded-lg font-bold transition-colors text-sm md:text-base">
-                Submit Request
+                {t('submit_request')}
               </button>
             </form>
           </div>
