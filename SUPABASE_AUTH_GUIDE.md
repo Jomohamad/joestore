@@ -30,11 +30,17 @@ To make the Login and Signup functionality work, you need to configure Authentic
 
 ## 3. URL Configuration
 
+**IMPORTANT:** Since you are running this in the AI Studio preview, you **cannot** use `localhost:3000`. You must use the App URL provided by the environment.
+
 1.  In Supabase, go to **Authentication** > **URL Configuration**.
-2.  Set the **Site URL** to your deployed application URL (e.g., `https://your-app.vercel.app`).
-3.  In **Redirect URLs**, add:
-    *   `http://localhost:3000/` (for local development)
-    *   `https://your-app.vercel.app/` (for production)
+2.  Set the **Site URL** to:
+    ```
+    https://ais-dev-dfiay2thx25ovzffu7hue6-90317905161.europe-west1.run.app
+    ```
+3.  In **Redirect URLs**, add the following URLs:
+    *   `https://ais-dev-dfiay2thx25ovzffu7hue6-90317905161.europe-west1.run.app`
+    *   `https://ais-dev-dfiay2thx25ovzffu7hue6-90317905161.europe-west1.run.app/`
+    *   `https://ais-pre-dfiay2thx25ovzffu7hue6-90317905161.europe-west1.run.app` (for the shared view)
 
 ## 4. Testing
 
