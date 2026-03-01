@@ -6,7 +6,7 @@ import { useStore } from '../context/StoreContext';
 import React, { useState } from 'react';
 
 export default function Wishlist() {
-  const { wishlist, removeFromWishlist, t } = useStore();
+  const { wishlist, removeFromWishlist, t, formatPrice } = useStore();
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   const handleRemove = (e: React.MouseEvent, gameId: string, pkgId?: number) => {
@@ -92,23 +92,23 @@ export default function Wishlist() {
                         </div>
                       )}
 
-                      {/* Remove Button */}
+                      {/* Remove Button (Heart) */}
                       <button
                         onClick={(e) => handleRemove(e, game.id, pkg?.id)}
-                        className={`absolute top-2 left-2 p-2 rounded-xl backdrop-blur-md transition-all duration-300 z-30 flex items-center gap-2 ${
+                        className={`absolute top-1.5 right-1.5 p-1.5 rounded-full backdrop-blur-md transition-all duration-300 z-30 flex items-center gap-1.5 ${
                           confirmRemoveId === uniqueKey 
-                            ? "bg-red-500 text-white px-3 shadow-lg shadow-red-500/20" 
-                            : "bg-black/40 text-white hover:bg-red-500/20 hover:text-red-500"
+                            ? "bg-red-500 text-white px-2.5 shadow-lg shadow-red-500/20" 
+                            : "bg-black/40 text-creo-accent hover:bg-red-500/20"
                         }`}
                         title={confirmRemoveId === uniqueKey ? "Confirm removal" : "Remove from wishlist"}
                       >
                         {confirmRemoveId === uniqueKey ? (
                           <>
-                            <AlertCircle className="w-4 h-4 animate-pulse" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Confirm?</span>
+                            <AlertCircle className="w-3 h-3 animate-pulse" />
+                            <span className="text-[8px] font-bold uppercase tracking-wider">Remove?</span>
                           </>
                         ) : (
-                          <Trash2 className="w-4 h-4" />
+                          <Heart className="w-3.5 h-3.5 fill-creo-accent" />
                         )}
                       </button>
                     </div>
@@ -119,12 +119,12 @@ export default function Wishlist() {
                       <div className="flex items-center justify-between w-full mt-1">
                         {pkg ? (
                           <p className="text-xs font-bold text-creo-accent">
-                            {pkg.price.toFixed(2)}
+                            {formatPrice(pkg.price)}
                           </p>
                         ) : (
                           game.min_price && (
                             <p className="text-[10px] font-bold text-creo-accent">
-                              From ${game.min_price}
+                              {t('from') || 'From'} {formatPrice(game.min_price)}
                             </p>
                           )
                         )}

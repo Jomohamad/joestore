@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages } from '../services/api';
 import { Game, Package } from '../types';
-import { ShieldCheck, ShoppingCart, Heart } from 'lucide-react';
+import { ShieldCheck, ShoppingCart, Heart, CheckCircle2, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
 
@@ -17,6 +17,8 @@ export default function GameDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addingToCartId, setAddingToCartId] = useState<number | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [lastAddedPkg, setLastAddedPkg] = useState<Package | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -61,7 +63,11 @@ export default function GameDetails() {
     });
     
     setAddingToCartId(null);
-    // Removed navigate('/cart') to keep user on the same page
+    setLastAddedPkg(pkg);
+    setShowSuccess(true);
+    
+    // Hide toast after 3 seconds
+    setTimeout(() => setShowSuccess(false), 3000);
   };
 
   const toggleWishlist = (pkg: Package) => {
@@ -98,7 +104,39 @@ export default function GameDetails() {
   }
 
   return (
-    <div className="flex-1 bg-creo-bg pb-20 md:pb-24">
+    <div className="flex-1 bg-creo-bg pb-20 md:pb-24 relative">
+      {/* Success Toast */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%' }}
+            className="fixed bottom-8 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md"
+          >
+            <div className="bg-creo-card border border-creo-accent/50 rounded-2xl p-4 shadow-2xl shadow-creo-accent/20 flex items-center gap-4 backdrop-blur-xl">
+              <div className="w-10 h-10 bg-creo-accent rounded-full flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-6 h-6 text-black" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-white font-bold text-sm">
+                  {t('added_to_cart') || 'Added to Cart!'}
+                </h4>
+                <p className="text-creo-text-sec text-xs">
+                  {lastAddedPkg?.amount} {game.currency_name} {t('has_been_added') || 'has been added to your cart.'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowSuccess(false)}
+                className="p-1 text-creo-muted hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Game Header */}
       <div className="relative h-48 md:h-64 lg:h-80 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-creo-bg-sec/50 via-creo-bg/80 to-creo-bg z-10"></div>
@@ -123,7 +161,7 @@ export default function GameDetails() {
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
               </div>
               <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-creo-text-sec">
-                <span className="px-2 py-1 bg-creo-bg-sec rounded-md">{game.publisher}</span>
+                {/* Publisher name removed */}
               </div>
             </div>
           </div>

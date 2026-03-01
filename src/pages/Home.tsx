@@ -1,16 +1,27 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
 import { Zap, ShieldCheck, Clock, Trophy, ShoppingCart, Heart } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { cn } from '../lib/utils';
 
 export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { t } = useStore();
+  const { t, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+
+  const toggleWishlist = (e: React.MouseEvent, game: Game) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isInWishlist(game.id)) {
+      removeFromWishlist(game.id);
+    } else {
+      addToWishlist(game);
+    }
+  };
 
   useEffect(() => {
     const loadGames = async () => {
@@ -186,11 +197,17 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
                     
                     {/* Heart Icon on side */}
-                    <div className="absolute top-1.5 right-1.5 z-30">
-                      <div className="p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-creo-muted group-hover:text-creo-accent transition-colors">
-                        <Heart className="w-3 h-3" />
-                      </div>
-                    </div>
+                    <button 
+                      onClick={(e) => toggleWishlist(e, game)}
+                      className="absolute top-1.5 right-1.5 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-sm transition-all duration-300 hover:scale-110"
+                    >
+                      <Heart 
+                        className={cn(
+                          "w-3 h-3 transition-colors",
+                          isInWishlist(game.id) ? "text-creo-accent fill-creo-accent" : "text-creo-muted group-hover:text-creo-accent"
+                        )} 
+                      />
+                    </button>
 
                     {/* Hover Overlay with Action */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">
@@ -255,11 +272,17 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
                     
                     {/* Heart Icon on side */}
-                    <div className="absolute top-1.5 right-1.5 z-30">
-                      <div className="p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-creo-muted group-hover:text-creo-accent transition-colors">
-                        <Heart className="w-3 h-3" />
-                      </div>
-                    </div>
+                    <button 
+                      onClick={(e) => toggleWishlist(e, app)}
+                      className="absolute top-1.5 right-1.5 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-sm transition-all duration-300 hover:scale-110"
+                    >
+                      <Heart 
+                        className={cn(
+                          "w-3 h-3 transition-colors",
+                          isInWishlist(app.id) ? "text-creo-accent fill-creo-accent" : "text-creo-muted group-hover:text-creo-accent"
+                        )} 
+                      />
+                    </button>
 
                     {/* Hover Overlay with Action */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">

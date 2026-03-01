@@ -1,17 +1,28 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
 import { Search, Heart } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { cn } from '../lib/utils';
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t } = useStore();
+  const { t, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+
+  const toggleWishlist = (e: React.MouseEvent, game: Game) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isInWishlist(game.id)) {
+      removeFromWishlist(game.id);
+    } else {
+      addToWishlist(game);
+    }
+  };
 
   useEffect(() => {
     const loadResults = async () => {
@@ -80,11 +91,17 @@ export default function SearchPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
                     
                     {/* Heart Icon on side */}
-                    <div className="absolute top-1.5 right-1.5 z-30">
-                      <div className="p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-creo-muted group-hover:text-creo-accent transition-colors">
-                        <Heart className="w-3 h-3" />
-                      </div>
-                    </div>
+                    <button 
+                      onClick={(e) => toggleWishlist(e, item)}
+                      className="absolute top-1.5 right-1.5 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-sm transition-all duration-300 hover:scale-110"
+                    >
+                      <Heart 
+                        className={cn(
+                          "w-3 h-3 transition-colors",
+                          isInWishlist(item.id) ? "text-creo-accent fill-creo-accent" : "text-creo-muted group-hover:text-creo-accent"
+                        )} 
+                      />
+                    </button>
 
                     {/* Category Badge */}
                     <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] uppercase font-bold text-white/80 border border-white/10">
