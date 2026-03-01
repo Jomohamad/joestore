@@ -22,7 +22,6 @@ import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
-import Signup from './pages/Signup';
 import SearchPage from './pages/SearchPage';
 
 export default function App() {
@@ -48,7 +47,6 @@ export default function App() {
                 <Route path="/refund" element={<Refund />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
                 <Route path="/search" element={<SearchPage />} />
               </Routes>
             </main>
