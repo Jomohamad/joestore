@@ -1,17 +1,75 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Trash2, ShoppingCart, ArrowRight } from 'lucide-react';
+import { Trash2, ShoppingCart, ArrowRight, CreditCard, Tag, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { cn } from '../lib/utils';
+import { validateCoupon } from '../services/api';
 
 export default function Cart() {
-  const { cart, removeFromCart, clearCart, t, language } = useStore();
-  const [isCheckingOut, setIsCheckingOut] = React.useState(false);
+  const { cart, removeFromCart, updateCartItem, clearCart, t, language } = useStore();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; type: 'percent' | 'fixed'; value: number } | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
 
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+  
+  let discount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'percent') {
+      discount = subtotal * (appliedCoupon.value / 100);
+    } else {
+      discount = appliedCoupon.value;
+    }
+  }
+  
+  const total = Math.max(0, subtotal - discount);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return;
+    
+    setIsValidatingCoupon(true);
+    setCouponError(null);
+    
+    try {
+      const result = await validateCoupon(couponCode);
+      if (result.valid && result.discountType && result.value) {
+        setAppliedCoupon({
+          code: couponCode,
+          type: result.discountType,
+          value: result.value
+        });
+        setCouponCode('');
+      } else {
+        setCouponError(result.error || 'Invalid coupon');
+      }
+    } catch (err) {
+      setCouponError('Error validating coupon');
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+  };
 
   const handleCheckout = async () => {
+    // Validate all items have Player ID
+    const missingPlayerId = cart.some(item => !item.playerId);
+    if (missingPlayerId) {
+      alert(language === 'ar' ? 'الرجاء إدخال معرف اللاعب لجميع المنتجات' : 'Please enter Player ID for all items');
+      return;
+    }
+
+    if (!selectedPayment) {
+      alert(language === 'ar' ? 'الرجاء اختيار طريقة الدفع' : 'Please select a payment method');
+      return;
+    }
+
     setIsCheckingOut(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -64,22 +122,31 @@ export default function Cart() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-creo-card border border-creo-border rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 relative"
+                className="bg-creo-card border border-creo-border rounded-2xl p-4 flex flex-col md:flex-row gap-4 md:gap-6 relative"
               >
-                <div className="w-20 h-20 rounded-xl overflow-hidden bg-creo-bg shrink-0 border border-creo-border">
-                  <img src={item.gameImage} alt={item.gameName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-white truncate">{item.gameName}</h3>
-                  <p className="text-sm text-creo-accent font-medium mt-1">{item.amount} {item.currency}</p>
-                  <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-creo-muted">
-                    <span className="bg-creo-bg-sec px-2 py-1 rounded">{t('player_id')}: {item.playerId}</span>
-                    {item.playerName && <span className="bg-creo-bg-sec px-2 py-1 rounded truncate max-w-[150px]">{item.playerName}</span>}
+                <div className="flex gap-4 flex-1">
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden bg-creo-bg shrink-0 border border-creo-border">
+                    <img src={item.gameImage} alt={item.gameName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-white truncate">{item.gameName}</h3>
+                    <p className="text-sm text-creo-accent font-medium mt-1">{item.amount} {item.currency}</p>
+                    
+                    <div className="mt-3 md:mt-4">
+                      <label className="block text-xs text-creo-muted mb-1.5">{t('player_id')}</label>
+                      <input 
+                        type="text" 
+                        value={item.playerId || ''}
+                        onChange={(e) => updateCartItem(item.id, { playerId: e.target.value })}
+                        placeholder={t('player_id_placeholder')}
+                        className="w-full max-w-xs bg-creo-bg border border-creo-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-creo-accent transition-colors font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
                 
-                <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto mt-4 sm:mt-0 gap-4">
+                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start gap-4 pt-4 md:pt-0 border-t md:border-t-0 border-creo-border">
                   <span className="text-xl font-bold text-white">
                     {language === 'ar' 
                       ? `${item.price.toFixed(2)} ${t('egp')}` 
@@ -99,73 +166,161 @@ export default function Cart() {
           
           {/* Order Summary */}
           <div className="w-full lg:w-96 shrink-0">
-            <div className="bg-creo-card border border-creo-border rounded-2xl p-6 sticky top-24">
-              <h3 className="text-xl font-bold text-white mb-6 pb-4 border-b border-creo-border">{t('order_summary')}</h3>
+            <div className="bg-creo-card border border-creo-border rounded-2xl p-6 sticky top-24 space-y-6">
               
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between text-creo-text-sec">
-                  <span>{t('subtotal')} ({cart.length} {t('item')})</span>
-                  <span className="text-white">
-                    {language === 'ar' 
-                      ? `${total.toFixed(2)} ${t('egp')}` 
-                      : `${t('egp')} ${total.toFixed(2)}`}
-                  </span>
-                </div>
-                <div className="flex justify-between text-creo-text-sec">
-                  <span>{t('processing_fee')}</span>
-                  <span className="text-white">
-                    {language === 'ar' 
-                      ? `0.00 ${t('egp')}` 
-                      : `${t('egp')} 0.00`}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t border-creo-border mb-8">
-                <div className="flex justify-between items-end">
-                  <span className="text-creo-text-sec font-medium">{t('total')}</span>
-                  <span className="text-3xl font-bold text-creo-accent">
-                    {language === 'ar' 
-                      ? `${total.toFixed(2)} ${t('egp')}` 
-                      : `${t('egp')} ${total.toFixed(2)}`}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="mb-4 text-xs text-creo-text-sec text-center">
-                {t('agree_terms')}
-                <Link to="/terms" className="text-creo-accent hover:underline">{t('terms')}</Link>
-                {t('and')}
-                <Link to="/privacy" className="text-creo-accent hover:underline">{t('privacy')}</Link>
+              {/* Coupon Code */}
+              <div>
+                <h3 className="text-sm font-bold text-white mb-3">{language === 'ar' ? 'كود الخصم' : 'Discount Code'}</h3>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-creo-accent/10 border border-creo-accent/30 rounded-xl p-3">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-creo-accent" />
+                      <span className="font-mono font-bold text-creo-accent">{appliedCoupon.code}</span>
+                    </div>
+                    <button onClick={removeCoupon} className="text-creo-muted hover:text-white">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder={language === 'ar' ? 'أدخل الكود' : 'Enter code'}
+                        className={cn(
+                          "flex-1 bg-creo-bg border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50 transition-all font-mono uppercase",
+                          couponError ? "border-red-500/50" : "border-creo-border"
+                        )}
+                      />
+                      <button 
+                        onClick={handleApplyCoupon}
+                        disabled={!couponCode || isValidatingCoupon}
+                        className="bg-creo-bg-sec hover:bg-creo-border text-white px-4 rounded-xl font-medium text-sm transition-colors disabled:opacity-50"
+                      >
+                        {isValidatingCoupon ? '...' : (language === 'ar' ? 'تطبيق' : 'Apply')}
+                      </button>
+                    </div>
+                    {couponError && (
+                      <div className="flex items-center gap-1.5 text-red-400 text-xs">
+                        <AlertCircle className="w-3 h-3" />
+                        {couponError}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <button 
-                onClick={handleCheckout}
-                disabled={isCheckingOut}
-                className={cn(
-                  "w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
-                  isCheckingOut 
-                    ? "bg-creo-accent/50 text-black cursor-wait"
-                    : "bg-creo-accent hover:bg-white text-black"
-                )}
-              >
-                {isCheckingOut ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                    <span>{t('processing')}</span>
-                  </>
-                ) : (
-                  <>
-                    {t('checkout')} <ArrowRight className={cn("w-5 h-5", language === 'ar' && "rotate-180")} />
-                  </>
-                )}
-              </button>
-              
-              <div className="mt-6 flex items-center justify-center gap-4 opacity-50">
-                {/* Mock payment icons */}
-                <div className="w-10 h-6 bg-white rounded flex items-center justify-center text-[8px] font-bold text-black">VISA</div>
-                <div className="w-10 h-6 bg-white rounded flex items-center justify-center text-[8px] font-bold text-black">MC</div>
-                <div className="w-10 h-6 bg-white rounded flex items-center justify-center text-[8px] font-bold text-black">PAYPAL</div>
+              {/* Payment Method */}
+              <div>
+                <h3 className="text-sm font-bold text-white mb-3">{t('payment_method')}</h3>
+                <div className="space-y-2">
+                  {['Credit Card', 'PayPal', 'Crypto'].map((method) => (
+                    <button
+                      key={method}
+                      onClick={() => setSelectedPayment(method)}
+                      className={cn(
+                        "w-full flex items-center justify-between p-3 rounded-xl border transition-all duration-200 text-sm",
+                        selectedPayment === method
+                          ? "bg-creo-accent/10 border-creo-accent"
+                          : "bg-creo-bg border-creo-border hover:border-creo-muted hover:bg-creo-bg-sec"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <CreditCard className={cn(
+                          "w-4 h-4",
+                          selectedPayment === method ? "text-creo-accent" : "text-creo-muted"
+                        )} />
+                        <span className={cn(
+                          "font-medium",
+                          selectedPayment === method ? "text-white" : "text-creo-text-sec"
+                        )}>{method}</span>
+                      </div>
+                      <div className={cn(
+                        "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                        selectedPayment === method ? "border-creo-accent" : "border-creo-border"
+                      )}>
+                        {selectedPayment === method && <div className="w-2 h-2 bg-creo-accent rounded-full" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div>
+                <h3 className="text-xl font-bold text-white mb-4 pb-4 border-b border-creo-border">{t('order_summary')}</h3>
+                <div className="space-y-3 mb-4">
+                  <div className="flex justify-between text-creo-text-sec text-sm">
+                    <span>{t('subtotal')}</span>
+                    <span className="text-white">
+                      {language === 'ar' 
+                        ? `${subtotal.toFixed(2)} ${t('egp')}` 
+                        : `${t('egp')} ${subtotal.toFixed(2)}`}
+                    </span>
+                  </div>
+                  
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-creo-accent text-sm">
+                      <span>{language === 'ar' ? 'خصم' : 'Discount'} ({appliedCoupon.code})</span>
+                      <span>
+                        - {language === 'ar' 
+                          ? `${discount.toFixed(2)} ${t('egp')}` 
+                          : `${t('egp')} ${discount.toFixed(2)}`}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-creo-text-sec text-sm">
+                    <span>{t('processing_fee')}</span>
+                    <span className="text-white">
+                      {language === 'ar' 
+                        ? `0.00 ${t('egp')}` 
+                        : `${t('egp')} 0.00`}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t border-creo-border mb-6">
+                  <div className="flex justify-between items-end">
+                    <span className="text-creo-text-sec font-medium">{t('total')}</span>
+                    <span className="text-3xl font-bold text-creo-accent">
+                      {language === 'ar' 
+                        ? `${total.toFixed(2)} ${t('egp')}` 
+                        : `${t('egp')} ${total.toFixed(2)}`}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="mb-4 text-xs text-creo-text-sec text-center">
+                  {t('agree_terms')}
+                  <Link to="/terms" className="text-creo-accent hover:underline">{t('terms')}</Link>
+                  {t('and')}
+                  <Link to="/privacy" className="text-creo-accent hover:underline">{t('privacy')}</Link>
+                </div>
+
+                <button 
+                  onClick={handleCheckout}
+                  disabled={isCheckingOut}
+                  className={cn(
+                    "w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
+                    isCheckingOut 
+                      ? "bg-creo-accent/50 text-black cursor-wait"
+                      : "bg-creo-accent hover:bg-white text-black"
+                  )}
+                >
+                  {isCheckingOut ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                      <span>{t('processing')}</span>
+                    </>
+                  ) : (
+                    <>
+                      {t('checkout')} <ArrowRight className={cn("w-5 h-5", language === 'ar' && "rotate-180")} />
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>

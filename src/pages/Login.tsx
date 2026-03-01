@@ -73,15 +73,7 @@ export default function Login() {
             {t('login_with_google')}
           </button>
 
-          <button
-            onClick={() => handleSocialLogin('apple')}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-creo-border rounded-xl shadow-sm bg-creo-bg hover:bg-creo-bg-sec text-sm font-medium text-creo-text transition-colors"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.74 1.18 0 2.45-1.64 3.57-1.64.6 0 2.31.13 3.4 1.75-3.17 1.58-2.65 6.25.6 7.63-.69 1.98-1.68 3.96-2.65 4.49zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-            </svg>
-            {t('login_with_apple')}
-          </button>
+
 
           <button
             onClick={() => handleSocialLogin('discord')}

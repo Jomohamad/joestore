@@ -78,26 +78,26 @@ export const verifyPlayerId = async (gameId: string, playerId: string): Promise<
   });
 };
 
-export const fetchWishlist = async (userId: string): Promise<string[]> => {
+export const fetchWishlist = async (userId: string): Promise<{ game_id: string; package_id?: number }[]> => {
   try {
     const { data, error } = await supabase
       .from('wishlist')
-      .select('game_id')
+      .select('game_id, package_id')
       .eq('user_id', userId);
 
     if (error) throw error;
-    return data.map(item => item.game_id);
+    return data || [];
   } catch (error) {
     console.error('Error fetching wishlist:', error);
     return [];
   }
 };
 
-export const addToWishlistApi = async (userId: string, gameId: string): Promise<void> => {
+export const addToWishlistApi = async (userId: string, gameId: string, packageId?: number): Promise<void> => {
   try {
     const { error } = await supabase
       .from('wishlist')
-      .insert([{ user_id: userId, game_id: gameId }]);
+      .insert([{ user_id: userId, game_id: gameId, package_id: packageId }]);
 
     if (error) throw error;
   } catch (error) {
@@ -106,18 +106,50 @@ export const addToWishlistApi = async (userId: string, gameId: string): Promise<
   }
 };
 
-export const removeFromWishlistApi = async (userId: string, gameId: string): Promise<void> => {
+export const removeFromWishlistApi = async (userId: string, gameId: string, packageId?: number): Promise<void> => {
   try {
-    const { error } = await supabase
+    let query = supabase
       .from('wishlist')
       .delete()
       .eq('user_id', userId)
       .eq('game_id', gameId);
+      
+    if (packageId) {
+      query = query.eq('package_id', packageId);
+    } else {
+      query = query.is('package_id', null);
+    }
+
+    const { error } = await query;
 
     if (error) throw error;
   } catch (error) {
     console.error('Error removing from wishlist:', error);
     throw error;
+  }
+};
+
+export const validateCoupon = async (code: string): Promise<{ valid: boolean; discountType?: 'percent' | 'fixed'; value?: number; error?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('coupons')
+      .select('*')
+      .eq('code', code)
+      .eq('active', true)
+      .single();
+
+    if (error || !data) {
+      return { valid: false, error: 'Invalid coupon code' };
+    }
+
+    return { 
+      valid: true, 
+      discountType: data.discount_type, 
+      value: data.value 
+    };
+  } catch (error) {
+    console.error('Error validating coupon:', error);
+    return { valid: false, error: 'Error validating coupon' };
   }
 };
 

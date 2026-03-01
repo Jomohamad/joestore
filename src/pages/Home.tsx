@@ -156,9 +156,7 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">{t('popular_games')}</h2>
               <p className="text-sm md:text-base text-creo-text-sec">{t('popular_games_desc')}</p>
             </div>
-            <Link to="/games" className="text-creo-accent hover:text-white font-bold hidden sm:block transition-colors">
-              {t('view_all')} &rarr;
-            </Link>
+
           </motion.div>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
@@ -213,12 +211,6 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
-          
-          <div className="mt-8 text-center sm:hidden">
-            <Link to="/games" className="inline-block px-6 py-3 bg-creo-card border border-creo-border rounded-xl text-creo-accent font-bold w-full">
-              {t('view_all')}
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -236,9 +228,7 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">{t('popular_apps')}</h2>
               <p className="text-sm md:text-base text-creo-text-sec">{t('popular_apps_desc')}</p>
             </div>
-            <Link to="/apps" className="text-creo-accent hover:text-white font-bold hidden sm:block transition-colors">
-              {t('view_all')} &rarr;
-            </Link>
+
           </motion.div>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
@@ -292,12 +282,6 @@ export default function Home() {
                 </Link>
               </motion.div>
             ))}
-          </div>
-          
-          <div className="mt-8 text-center sm:hidden">
-            <Link to="/apps" className="inline-block px-6 py-3 bg-creo-card border border-creo-border rounded-xl text-creo-accent font-bold w-full">
-              {t('view_all')}
-            </Link>
           </div>
         </div>
       </section>

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { fetchGameDetails, fetchGamePackages, createOrder, verifyPlayerId } from '../services/api';
+import { fetchGameDetails, fetchGamePackages } from '../services/api';
 import { Game, Package } from '../types';
-import { ShieldCheck, CreditCard, ChevronRight, CheckCircle2, UserCheck, AlertCircle, ShoppingCart, Heart } from 'lucide-react';
+import { ShieldCheck, ShoppingCart, Heart } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
 
@@ -16,17 +16,7 @@ export default function GameDetails() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [playerId, setPlayerId] = useState('');
-  const [isValidatingId, setIsValidatingId] = useState(false);
-  const [validatedPlayerName, setValidatedPlayerName] = useState<string | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
-  const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
+  const [addingToCartId, setAddingToCartId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -49,60 +39,10 @@ export default function GameDetails() {
     loadData();
   }, [id, t]);
 
-  const handlePlayerIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPlayerId(e.target.value);
-    setValidatedPlayerName(null);
-    setValidationError(null);
-    setSelectedPackage(null);
-    setSelectedPayment(null);
-  };
-
-  const handleVerifyId = async () => {
-    if (!game || !playerId) return;
+  const handleAddToCart = async (pkg: Package) => {
+    if (!game) return;
     
-    setIsValidatingId(true);
-    setValidationError(null);
-    
-    try {
-      const result = await verifyPlayerId(game.id, playerId);
-      if (result.valid && result.playerName) {
-        setValidatedPlayerName(result.playerName);
-      } else {
-        setValidationError(result.error || t('invalid_player_id'));
-      }
-    } catch (err) {
-      setValidationError(t('verification_unavailable'));
-    } finally {
-      setIsValidatingId(false);
-    }
-  };
-
-  const handleCheckout = async () => {
-    if (!game || !selectedPackage || !playerId || !selectedPayment || !validatedPlayerName) return;
-
-    setIsProcessing(true);
-    try {
-      const result = await createOrder({
-        gameId: game.id,
-        packageId: selectedPackage.id,
-        playerId,
-        amount: selectedPackage.price
-      });
-
-      if (result.success) {
-        setOrderSuccess(result.orderId);
-      }
-    } catch (err) {
-      alert('Payment failed. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleAddToCart = async () => {
-    if (!game || !selectedPackage || !playerId || !validatedPlayerName) return;
-    
-    setIsAddingToCart(true);
+    setAddingToCartId(pkg.id);
     
     // Simulate a small delay for better UX
     await new Promise(resolve => setTimeout(resolve, 600));
@@ -112,25 +52,24 @@ export default function GameDetails() {
       gameId: game.id,
       gameName: game.name,
       gameImage: game.image_url,
-      packageId: selectedPackage.id.toString(),
-      packageName: `${selectedPackage.amount} ${game.currency_name}`,
-      amount: selectedPackage.amount,
+      packageId: pkg.id.toString(),
+      packageName: `${pkg.amount} ${game.currency_name}`,
+      amount: pkg.amount,
       currency: game.currency_name,
-      price: selectedPackage.price,
-      playerId: playerId,
-      playerName: validatedPlayerName
+      price: pkg.price,
+      playerId: '', // Will be filled in Cart
     });
     
-    setIsAddingToCart(false);
+    setAddingToCartId(null);
     navigate('/cart');
   };
 
-  const toggleWishlist = () => {
+  const toggleWishlist = (pkg: Package) => {
     if (!game) return;
-    if (isInWishlist(game.id)) {
-      removeFromWishlist(game.id);
+    if (isInWishlist(game.id, pkg.id)) {
+      removeFromWishlist(game.id, pkg.id);
     } else {
-      addToWishlist(game);
+      addToWishlist(game, pkg);
     }
   };
 
@@ -154,50 +93,6 @@ export default function GameDetails() {
             {t('back_to_home')}
           </button>
         </div>
-      </div>
-    );
-  }
-
-  if (orderSuccess) {
-    return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh] p-4">
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="bg-creo-card border border-creo-border rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl"
-        >
-          <div className="w-16 h-16 md:w-20 md:h-20 bg-creo-accent/20 text-creo-accent rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
-            <CheckCircle2 className="w-8 h-8 md:w-10 md:h-10" />
-          </div>
-          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{t('payment_success')}</h2>
-          <p className="text-sm md:text-base text-creo-text-sec mb-6">
-            {t('credited_to').replace('{currency}', game.currency_name).replace('{name}', validatedPlayerName || '')}
-          </p>
-          <div className="bg-creo-bg rounded-lg p-4 mb-6 md:mb-8 text-left border border-creo-border/50">
-            <div className="flex justify-between mb-2 text-xs md:text-sm">
-              <span className="text-creo-muted">{t('order_id')}</span>
-              <span className="text-white font-mono">{orderSuccess}</span>
-            </div>
-            <div className="flex justify-between mb-2 text-xs md:text-sm">
-              <span className="text-creo-muted">{t('amount_paid')}</span>
-              <span className="text-white font-medium">
-                {language === 'ar' 
-                  ? `${selectedPackage?.price.toFixed(2)} ${t('egp')}` 
-                  : `${t('egp')} ${selectedPackage?.price.toFixed(2)}`}
-              </span>
-            </div>
-            <div className="flex justify-between text-xs md:text-sm">
-              <span className="text-creo-muted">{t('item')}</span>
-              <span className="text-creo-accent font-medium">{selectedPackage?.amount} {game.currency_name}</span>
-            </div>
-          </div>
-          <button 
-            onClick={() => navigate('/')}
-            className="w-full py-3 bg-creo-accent hover:bg-white text-black rounded-xl font-bold transition-colors text-sm md:text-base"
-          >
-            {t('continue_shopping')}
-          </button>
-        </motion.div>
       </div>
     );
   }
@@ -226,327 +121,79 @@ export default function GameDetails() {
             <div className="mb-1 md:mb-2 flex-1">
               <div className="flex items-center gap-4">
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
-                <button 
-                  onClick={toggleWishlist}
-                  className="p-2 rounded-full bg-creo-bg-sec/50 hover:bg-creo-accent/20 transition-colors group mb-1"
-                  title={isInWishlist(game.id) ? "Remove from wishlist" : "Add to wishlist"}
-                >
-                  <Heart 
-                    className={cn(
-                      "w-6 h-6 transition-colors",
-                      isInWishlist(game.id) ? "fill-creo-accent text-creo-accent" : "text-creo-muted group-hover:text-creo-accent"
-                    )} 
-                  />
-                </button>
               </div>
               <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-creo-text-sec">
                 <span className="px-2 py-1 bg-creo-bg-sec rounded-md">{game.publisher}</span>
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 md:w-4 md:h-4 text-creo-accent" />
-                  {t('official_partner')}
-                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 mt-6 md:mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-          
-          {/* Main Content (Steps) */}
-          <div className="lg:col-span-2 space-y-4 md:space-y-6">
-            
-            {/* Step 1: Player ID */}
-            <section className={cn(
-              "bg-creo-card border rounded-2xl p-5 md:p-6 shadow-lg transition-colors duration-300",
-              validatedPlayerName ? "border-creo-accent/30" : "border-creo-border"
-            )}>
-              <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-                <div className={cn(
-                  "w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold transition-colors text-sm md:text-base",
-                  validatedPlayerName ? "bg-creo-accent text-black" : "bg-creo-accent/20 text-creo-accent"
-                )}>
-                  {validatedPlayerName ? <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" /> : "1"}
-                </div>
-                <h2 className="text-lg md:text-xl font-bold text-white">{t('enter_player_id_step')}</h2>
-              </div>
+      <div className="container mx-auto px-4 mt-8 md:mt-12">
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">{t('select_package')}</h2>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          {packages.map((pkg) => (
+            <motion.div
+              key={pkg.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-creo-card border border-creo-border rounded-2xl p-5 md:p-6 hover:border-creo-accent/50 transition-all duration-300 group relative overflow-hidden flex flex-col"
+            >
+              {/* Background Glow */}
+              <div className="absolute inset-0 bg-gradient-to-br from-creo-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
-              <div className="relative">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input 
-                    type="text" 
-                    value={playerId}
-                    onChange={handlePlayerIdChange}
-                    placeholder={t('player_id_placeholder')} 
-                    className={cn(
-                      "flex-1 bg-creo-bg border rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50 transition-all font-mono",
-                      validationError ? "border-red-500/50 focus:border-red-500" : "border-creo-border focus:border-creo-accent",
-                      validatedPlayerName ? "border-creo-accent/50" : ""
-                    )}
-                  />
-                  <button
-                    onClick={handleVerifyId}
-                    disabled={!playerId || isValidatingId || !!validatedPlayerName}
-                    className={cn(
-                      "px-6 py-2.5 md:py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 min-w-[120px] text-sm md:text-base",
-                      validatedPlayerName 
-                        ? "bg-creo-accent/10 text-creo-accent cursor-default"
-                        : isValidatingId
-                          ? "bg-creo-accent/50 text-black cursor-wait"
-                          : playerId
-                            ? "bg-creo-accent hover:bg-white text-black"
-                            : "bg-creo-bg-sec text-creo-muted cursor-not-allowed"
-                    )}
-                  >
-                    {isValidatingId ? (
-                      <>
-                        <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                        <span>{t('verifying')}</span>
-                      </>
-                    ) : validatedPlayerName ? (
-                      <>{t('verified')}</>
-                    ) : (
-                      t('verify_id')
-                    )}
-                  </button>
+              {pkg.bonus > 0 && (
+                <div className="absolute top-0 right-0 bg-creo-accent text-black text-xs font-bold px-3 py-1 rounded-bl-xl z-10">
+                  +{pkg.bonus} {t('bonus')}
+                </div>
+              )}
+
+              <div className="relative z-10 flex-1">
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-2xl md:text-3xl font-bold text-white">{pkg.amount}</span>
+                  <span className="text-sm md:text-base font-medium text-creo-text-sec">{game.currency_name}</span>
                 </div>
                 
-                {validationError && (
-                  <div className="flex items-center gap-1.5 text-red-400 text-xs md:text-sm mt-3">
-                    <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />
-                    {validationError}
-                  </div>
-                )}
-
-                {validatedPlayerName && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 text-creo-accent text-xs md:text-sm mt-3 bg-creo-accent/10 p-2.5 md:p-3 rounded-lg border border-creo-accent/20"
-                  >
-                    <UserCheck className="w-3 h-3 md:w-4 md:h-4" />
-                    {t('player_name')}: <span className="font-bold text-white">{validatedPlayerName}</span>
-                  </motion.div>
-                )}
-
-                {!validationError && !validatedPlayerName && (
-                  <p className="text-[11px] md:text-xs text-creo-muted mt-2 md:mt-3">
-                    {t('player_id_hint')}
-                  </p>
-                )}
-              </div>
-            </section>
-
-            {/* Step 2: Select Package */}
-            <section className={cn(
-              "bg-creo-card border border-creo-border rounded-2xl p-5 md:p-6 shadow-lg transition-opacity duration-300",
-              !validatedPlayerName && "opacity-50 pointer-events-none"
-            )}>
-              <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-creo-accent/20 text-creo-accent flex items-center justify-center font-bold text-sm md:text-base">2</div>
-                <h2 className="text-lg md:text-xl font-bold text-white">{t('select_recharge')}</h2>
-              </div>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
-                {packages.map((pkg) => (
-                  <button
-                    key={pkg.id}
-                    onClick={() => setSelectedPackage(pkg)}
-                    className={cn(
-                      "relative p-3 md:p-4 rounded-xl border text-left transition-all duration-200 overflow-hidden group",
-                      selectedPackage?.id === pkg.id 
-                        ? "bg-creo-accent/10 border-creo-accent shadow-[0_0_15px_rgba(204,255,0,0.15)]" 
-                        : "bg-creo-bg border-creo-border hover:border-creo-muted hover:bg-creo-bg-sec"
-                    )}
-                  >
-                    {selectedPackage?.id === pkg.id && (
-                      <div className="absolute top-0 right-0 w-0 h-0 border-t-[20px] md:border-t-[24px] border-r-[20px] md:border-r-[24px] border-t-creo-accent border-r-transparent">
-                        <CheckCircle2 className="absolute -top-[18px] md:-top-[22px] right-[2px] w-2.5 h-2.5 md:w-3 md:h-3 text-black" />
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
-                      <span className="text-lg md:text-xl font-bold text-white">{pkg.amount}</span>
-                      <span className="text-xs md:text-sm font-medium text-creo-text-sec">{game.currency_name}</span>
-                    </div>
-                    
-                    {pkg.bonus > 0 && (
-                      <div className="text-[10px] md:text-xs font-medium text-creo-accent mb-2 md:mb-3 bg-creo-accent/10 inline-block px-1.5 md:px-2 py-0.5 rounded">
-                        +{pkg.bonus} {t('bonus')}
-                      </div>
-                    )}
-                    
-                    <div className={cn(
-                      "text-xs md:text-sm font-medium mt-auto",
-                      selectedPackage?.id === pkg.id ? "text-creo-accent" : "text-creo-text-sec"
-                    )}>
-                      {language === 'ar' 
-                        ? `${pkg.price.toFixed(2)} ${t('egp')}` 
-                        : `${t('egp')} ${pkg.price.toFixed(2)}`}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* Step 3: Payment Method */}
-            <section className={cn(
-              "bg-creo-card border border-creo-border rounded-2xl p-5 md:p-6 shadow-lg transition-opacity duration-300",
-              (!validatedPlayerName || !selectedPackage) && "opacity-50 pointer-events-none"
-            )}>
-              <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-creo-accent/20 text-creo-accent flex items-center justify-center font-bold text-sm md:text-base">3</div>
-                <h2 className="text-lg md:text-xl font-bold text-white">{t('payment_method')}</h2>
-              </div>
-              
-              <div className="space-y-2.5 md:space-y-3">
-                {['Credit Card', 'PayPal', 'Crypto'].map((method) => (
-                  <button
-                    key={method}
-                    onClick={() => setSelectedPayment(method)}
-                    className={cn(
-                      "w-full flex items-center justify-between p-3 md:p-4 rounded-xl border transition-all duration-200",
-                      selectedPayment === method
-                        ? "bg-creo-accent/10 border-creo-accent"
-                        : "bg-creo-bg border-creo-border hover:border-creo-muted hover:bg-creo-bg-sec"
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5 md:gap-3">
-                      <CreditCard className={cn(
-                        "w-4 h-4 md:w-5 md:h-5",
-                        selectedPayment === method ? "text-creo-accent" : "text-creo-muted"
-                      )} />
-                      <span className={cn(
-                        "text-sm md:text-base font-medium",
-                        selectedPayment === method ? "text-white" : "text-creo-text-sec"
-                      )}>{method}</span>
-                    </div>
-                    <div className={cn(
-                      "w-4 h-4 md:w-5 md:h-5 rounded-full border-2 flex items-center justify-center",
-                      selectedPayment === method ? "border-creo-accent" : "border-creo-border"
-                    )}>
-                      {selectedPayment === method && <div className="w-2 h-2 md:w-2.5 md:h-2.5 bg-creo-accent rounded-full" />}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-          </div>
-
-          {/* Sidebar (Order Summary) */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-20 md:top-24 bg-creo-card border border-creo-border rounded-2xl p-5 md:p-6 shadow-xl">
-              <h3 className="text-base md:text-lg font-bold text-white mb-4 md:mb-6 pb-3 md:pb-4 border-b border-creo-border">{t('order_summary')}</h3>
-              
-              <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
-                <div className="flex justify-between text-xs md:text-sm">
-                  <span className="text-creo-muted">{language === 'en' ? 'Game' : 'اللعبة'}</span>
-                  <span className="text-white font-medium">{game.name}</span>
-                </div>
-                
-                <div className="flex justify-between text-xs md:text-sm">
-                  <span className="text-creo-muted">{t('player_id')}</span>
-                  <span className="text-white font-mono">{playerId || '-'}</span>
-                </div>
-
-                {validatedPlayerName && (
-                  <div className="flex justify-between text-xs md:text-sm">
-                    <span className="text-creo-muted">{t('player_name')}</span>
-                    <span className="text-creo-accent font-medium truncate max-w-[120px] md:max-w-[150px]">{validatedPlayerName}</span>
-                  </div>
-                )}
-                
-                <div className="flex justify-between text-xs md:text-sm">
-                  <span className="text-creo-muted">{t('item')}</span>
-                  <span className="text-white font-medium">
-                    {selectedPackage ? `${selectedPackage.amount} ${game.currency_name}` : '-'}
-                  </span>
-                </div>
-                
-                {selectedPackage?.bonus ? (
-                  <div className="flex justify-between text-xs md:text-sm">
-                    <span className="text-creo-muted">{t('bonus')}</span>
-                    <span className="text-creo-accent font-medium">+{selectedPackage.bonus}</span>
-                  </div>
-                ) : null}
-                
-                <div className="flex justify-between text-xs md:text-sm">
-                  <span className="text-creo-muted">{t('payment_method')}</span>
-                  <span className="text-white font-medium">{selectedPayment || '-'}</span>
+                <div className="text-lg md:text-xl font-bold text-creo-accent mb-6">
+                  {language === 'ar' 
+                    ? `${pkg.price.toFixed(2)} ${t('egp')}` 
+                    : `${t('egp')} ${pkg.price.toFixed(2)}`}
                 </div>
               </div>
 
-              <div className="pt-3 md:pt-4 border-t border-creo-border mb-6 md:mb-8">
-                <div className="flex justify-between items-end">
-                  <span className="text-xs md:text-sm text-creo-muted font-medium">{t('total_price')}</span>
-                  <span className="text-2xl md:text-3xl font-bold text-white">
-                    {language === 'ar'
-                      ? `${selectedPackage ? selectedPackage.price.toFixed(2) : '0.00'} ${t('egp')}`
-                      : `${t('egp')} ${selectedPackage ? selectedPackage.price.toFixed(2) : '0.00'}`}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
+              <div className="relative z-10 grid grid-cols-[1fr,auto] gap-3 mt-auto">
                 <button
-                  onClick={handleCheckout}
-                  disabled={!validatedPlayerName || !selectedPackage || !selectedPayment || isProcessing}
-                  className={cn(
-                    "w-full py-3 md:py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center gap-2 transition-all",
-                    isProcessing
-                      ? "bg-creo-accent/50 text-black cursor-wait"
-                      : validatedPlayerName && selectedPackage && selectedPayment
-                        ? "bg-creo-accent hover:bg-white text-black shadow-lg shadow-creo-accent/25"
-                        : "bg-creo-bg-sec text-creo-muted cursor-not-allowed"
-                  )}
+                  onClick={() => handleAddToCart(pkg)}
+                  disabled={addingToCartId === pkg.id}
+                  className="flex items-center justify-center gap-2 bg-creo-bg-sec hover:bg-creo-accent hover:text-black text-white py-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isProcessing ? (
-                    <>
-                      <div className="w-5 h-5 md:w-6 md:h-6 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                      <span>{t('processing')}</span>
-                    </>
+                  {addingToCartId === pkg.id ? (
+                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      {t('buy_now')}
-                      <ChevronRight className={cn("w-4 h-4 md:w-5 md:h-5", language === 'ar' && "rotate-180")} />
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={handleAddToCart}
-                  disabled={!validatedPlayerName || !selectedPackage || isProcessing || isAddingToCart}
-                  className={cn(
-                    "w-full py-3 md:py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center gap-2 transition-all border",
-                    isAddingToCart 
-                      ? "border-creo-accent/50 text-creo-accent bg-creo-accent/10 cursor-wait"
-                      : validatedPlayerName && selectedPackage && !isProcessing
-                        ? "border-creo-accent text-creo-accent hover:bg-creo-accent hover:text-black"
-                        : "border-creo-border text-creo-muted cursor-not-allowed"
-                  )}
-                >
-                  {isAddingToCart ? (
-                    <>
-                      <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-creo-accent/30 border-t-creo-accent rounded-full animate-spin" />
-                      <span>{t('processing')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
+                      <ShoppingCart className="w-5 h-5" />
                       {t('add_to_cart')}
                     </>
                   )}
                 </button>
+                
+                <button
+                  onClick={() => toggleWishlist(pkg)}
+                  className={cn(
+                    "p-3 rounded-xl border transition-all duration-300 flex items-center justify-center",
+                    isInWishlist(game.id, pkg.id)
+                      ? "bg-creo-accent/10 border-creo-accent text-creo-accent"
+                      : "bg-creo-bg-sec border-transparent text-creo-muted hover:text-white hover:bg-creo-border"
+                  )}
+                  title={isInWishlist(game.id, pkg.id) ? t('remove_from_wishlist') : t('add_to_wishlist')}
+                >
+                  <Heart className={cn("w-5 h-5", isInWishlist(game.id, pkg.id) && "fill-current")} />
+                </button>
               </div>
-              
-              <p className="text-[10px] md:text-xs text-center text-creo-muted mt-3 md:mt-4">
-                {t('terms_agree')}
-              </p>
-            </div>
-          </div>
-
+            </motion.div>
+          ))}
         </div>
       </div>
     </div>

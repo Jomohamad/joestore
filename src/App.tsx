@@ -11,8 +11,7 @@ import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import GameDetails from './pages/GameDetails';
-import Games from './pages/Games';
-import Apps from './pages/Apps';
+
 import Support from './pages/Support';
 import Contact from './pages/Contact';
 import FAQ from './pages/FAQ';
@@ -36,8 +35,7 @@ export default function App() {
             <main className="flex-1 flex flex-col">
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/games" element={<Games />} />
-                <Route path="/apps" element={<Apps />} />
+
                 <Route path="/game/:id" element={<GameDetails />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/contact" element={<Contact />} />

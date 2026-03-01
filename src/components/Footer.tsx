@@ -15,25 +15,25 @@ export default function Footer() {
       <div className="container mx-auto px-4 relative z-10">
         
         {/* Premium Newsletter Section */}
-        <div className="bg-creo-card border border-creo-border rounded-3xl p-8 md:p-12 mb-16 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-creo-accent/10 blur-[80px] rounded-full pointer-events-none"></div>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-            <div className="max-w-xl text-center md:text-left">
-              <h3 className="text-2xl md:text-4xl font-display font-bold text-white mb-3">{t('newsletter_title')}</h3>
-              <p className="text-sm md:text-base text-creo-text-sec">{t('newsletter_desc')}</p>
+        <div className="bg-creo-card border border-creo-border rounded-2xl p-6 md:p-8 mb-12 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-creo-accent/10 blur-[60px] rounded-full pointer-events-none"></div>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+            <div className="max-w-lg text-center md:text-left">
+              <h3 className="text-xl md:text-2xl font-display font-bold text-white mb-2">{t('newsletter_title')}</h3>
+              <p className="text-xs md:text-sm text-creo-text-sec">{t('newsletter_desc')}</p>
             </div>
-            <form className="w-full md:w-auto flex-1 max-w-md flex flex-col sm:flex-row gap-3">
+            <form className="w-full md:w-auto flex-1 max-w-sm flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
                 <input 
                   type="email" 
                   placeholder={t('email_placeholder')}
-                  className="w-full bg-creo-bg border border-creo-border rounded-xl px-4 py-4 text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all pl-12"
+                  className="w-full bg-creo-bg border border-creo-border rounded-lg px-3 py-3 text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all pl-10"
                 />
-                <Send className={`absolute ${language === 'en' ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 w-5 h-5 text-creo-muted`} />
+                <Send className={`absolute ${language === 'en' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-muted`} />
               </div>
               <button 
                 type="submit"
-                className="bg-gradient-to-r from-creo-accent to-creo-accent-sec hover:from-white hover:to-white text-black px-8 py-4 rounded-xl text-sm font-bold transition-all whitespace-nowrap shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:shadow-[0_0_25px_rgba(255,255,255,0.4)] hover:-translate-y-1"
+                className="bg-gradient-to-r from-creo-accent to-creo-accent-sec hover:from-white hover:to-white text-black px-6 py-3 rounded-lg text-sm font-bold transition-all whitespace-nowrap shadow-[0_0_10px_rgba(255,215,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:-translate-y-0.5"
               >
                 {t('subscribe')}
               </button>
@@ -78,13 +78,7 @@ export default function Footer() {
             </ul>
           </div>
           
-          <div className="sm:col-span-2 md:col-span-1">
-            <h3 className="text-white font-display font-semibold mb-4 md:mb-6 uppercase tracking-wider text-sm md:text-base">{t('quick_links')}</h3>
-            <ul className="space-y-3 md:space-y-4 text-sm text-creo-text-sec font-medium">
-              <li><Link to="/games" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('games')}</Link></li>
-              <li><Link to="/apps" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('apps')}</Link></li>
-            </ul>
-          </div>
+
         </div>
 
         <div className="border-t border-creo-border pt-6 md:pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
