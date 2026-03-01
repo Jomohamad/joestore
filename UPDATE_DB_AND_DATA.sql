@@ -11,6 +11,11 @@ BEGIN
         ALTER TABLE public.games ADD COLUMN reviews_count integer DEFAULT 0;
     END IF;
 
+    -- Add description column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'games' AND column_name = 'description') THEN
+        ALTER TABLE public.games ADD COLUMN description text;
+    END IF;
+
     -- Add release_date column if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'games' AND column_name = 'release_date') THEN
         ALTER TABLE public.games ADD COLUMN release_date date;
