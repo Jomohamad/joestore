@@ -163,6 +163,30 @@ export const translations = {
     
     // General
     egp: 'EGP',
+    
+    // Filters
+    filters: 'Filters',
+    all_genres: 'All Genres',
+    all_categories: 'All Categories',
+    any_price: 'Any Price',
+    under_5: 'Under $5',
+    price_5_10: '$5 - $10',
+    over_10: 'Over $10',
+    popularity: 'Popularity',
+    price_low_high: 'Price: Low to High',
+    price_high_low: 'Price: High to Low',
+    from_price: 'From ${price}',
+    
+    // Genres
+    Action: 'Action',
+    RPG: 'RPG',
+    Strategy: 'Strategy',
+    Sports: 'Sports',
+    Adventure: 'Adventure',
+    Social: 'Social',
+    Entertainment: 'Entertainment',
+    Productivity: 'Productivity',
+    Lifestyle: 'Lifestyle',
   },
   ar: {
     // Nav
@@ -328,5 +352,29 @@ export const translations = {
     
     // General
     egp: 'EGP',
+    
+    // Filters
+    filters: 'تصفية',
+    all_genres: 'كل الأنواع',
+    all_categories: 'كل الفئات',
+    any_price: 'أي سعر',
+    under_5: 'أقل من 5$',
+    price_5_10: '5$ - 10$',
+    over_10: 'أكثر من 10$',
+    popularity: 'الشعبية',
+    price_low_high: 'السعر: من الأقل للأعلى',
+    price_high_low: 'السعر: من الأعلى للأقل',
+    from_price: 'يبدأ من {price}$',
+    
+    // Genres
+    Action: 'أكشن',
+    RPG: 'أر بي جي',
+    Strategy: 'استراتيجية',
+    Sports: 'رياضة',
+    Adventure: 'مغامرة',
+    Social: 'اجتماعي',
+    Entertainment: 'ترفيه',
+    Productivity: 'إنتاجية',
+    Lifestyle: 'نمط حياة',
   }
 };

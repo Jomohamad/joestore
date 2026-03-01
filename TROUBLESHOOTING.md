@@ -28,3 +28,10 @@ Ensure these variables are set in Vercel:
 
 If the site loads but shows "No games found", your database might be empty.
 Run the content of `SUPABASE_SCHEMA.sql` in the SQL Editor to add initial data.
+
+## Enable Filtering & Sorting
+
+To use the new "Filter by Genre" and "Sort by Popularity" features, you must update your database schema.
+1.  Open the **SQL Editor** in Supabase.
+2.  Run the content of `ADD_FILTER_COLUMNS.sql`.
+3.  This will add `genre`, `popularity`, and `min_price` columns to your games table.

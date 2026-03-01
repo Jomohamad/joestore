@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
-import { Search } from 'lucide-react';
+import { Search, Filter, ArrowUpDown } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function Games() {
@@ -11,6 +11,9 @@ export default function Games() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState<string>('all');
+  const [priceRange, setPriceRange] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('popularity');
   const { t, language } = useStore();
 
   useEffect(() => {
@@ -28,11 +31,29 @@ export default function Games() {
     loadGames();
   }, []);
 
-  const filteredGames = games.filter(game => 
-    game.category === 'game' &&
-    (game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    game.publisher.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredGames = games.filter(game => {
+    const matchesCategory = game.category === 'game';
+    const matchesSearch = 
+      game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      game.publisher.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesGenre = selectedGenre === 'all' || (game.genre || 'Action') === selectedGenre;
+    
+    let matchesPrice = true;
+    const price = game.min_price || 0.99;
+    if (priceRange === 'low') matchesPrice = price < 5;
+    else if (priceRange === 'medium') matchesPrice = price >= 5 && price <= 10;
+    else if (priceRange === 'high') matchesPrice = price > 10;
+
+    return matchesCategory && matchesSearch && matchesGenre && matchesPrice;
+  }).sort((a, b) => {
+    if (sortBy === 'price_asc') return (a.min_price || 0) - (b.min_price || 0);
+    if (sortBy === 'price_desc') return (b.min_price || 0) - (a.min_price || 0);
+    // Default to popularity
+    return (b.popularity || 0) - (a.popularity || 0);
+  });
+
+  const genres = ['Action', 'RPG', 'Strategy', 'Sports', 'Adventure'];
 
   if (loading) {
     return (
@@ -81,11 +102,63 @@ export default function Games() {
           </div>
         </div>
 
+        {/* Filters Section */}
+        <div className="mb-8 flex flex-wrap gap-4 items-center bg-creo-bg-sec/30 p-4 rounded-2xl border border-creo-border/50">
+          <div className="flex items-center gap-2 text-creo-text-sec text-sm font-bold uppercase tracking-wider">
+            <Filter className="w-4 h-4" />
+            <span>{t('filters')}:</span>
+          </div>
+          
+          {/* Genre Filter */}
+          <select 
+            value={selectedGenre}
+            onChange={(e) => setSelectedGenre(e.target.value)}
+            className="bg-creo-bg border border-creo-border rounded-lg px-3 py-2 text-sm text-creo-text focus:outline-none focus:border-creo-accent"
+          >
+            <option value="all">{t('all_genres')}</option>
+            {genres.map(genre => (
+              <option key={genre} value={genre}>{t(genre) || genre}</option>
+            ))}
+          </select>
+
+          {/* Price Filter */}
+          <select 
+            value={priceRange}
+            onChange={(e) => setPriceRange(e.target.value)}
+            className="bg-creo-bg border border-creo-border rounded-lg px-3 py-2 text-sm text-creo-text focus:outline-none focus:border-creo-accent"
+          >
+            <option value="all">{t('any_price')}</option>
+            <option value="low">{t('under_5')}</option>
+            <option value="medium">{t('price_5_10')}</option>
+            <option value="high">{t('over_10')}</option>
+          </select>
+
+          <div className="flex-1"></div>
+
+          {/* Sort By */}
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="w-4 h-4 text-creo-text-sec" />
+            <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-creo-bg border border-creo-border rounded-lg px-3 py-2 text-sm text-creo-text focus:outline-none focus:border-creo-accent"
+            >
+              <option value="popularity">{t('popularity')}</option>
+              <option value="price_asc">{t('price_low_high')}</option>
+              <option value="price_desc">{t('price_high_low')}</option>
+            </select>
+          </div>
+        </div>
+
         {filteredGames.length === 0 ? (
           <div className="text-center py-20 bg-creo-bg-sec/50 rounded-2xl border border-creo-border border-dashed">
             <p className="text-creo-text-sec text-lg">{t('no_games_found')} "{searchQuery}"</p>
             <button 
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedGenre('all');
+                setPriceRange('all');
+              }}
               className="mt-4 text-creo-accent hover:text-white font-bold transition-colors"
             >
               {t('clear_search')}
@@ -112,6 +185,14 @@ export default function Games() {
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
+                    
+                    {/* Genre Badge */}
+                    {game.genre && (
+                      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white/80 border border-white/10">
+                        {game.genre}
+                      </div>
+                    )}
+
                     {/* Wavy/Jagged edge overlay */}
                     <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10">
                       <svg className="relative block w-full h-[10px] md:h-[15px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10" preserveAspectRatio="none">
@@ -123,6 +204,11 @@ export default function Games() {
                     <h3 className="text-xs md:text-sm font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-2">
                       {game.name}
                     </h3>
+                    {game.min_price && (
+                      <p className="text-[10px] text-creo-text-sec mt-1">
+                        From ${game.min_price}
+                      </p>
+                    )}
                   </div>
                 </Link>
               </motion.div>

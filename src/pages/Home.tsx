@@ -162,7 +162,11 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-            {games.filter(g => g.category === 'game').map((game, index) => (
+            {games
+              .filter(g => g.category === 'game')
+              .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+              .slice(0, 12) // Limit to top 12 popular games
+              .map((game, index) => (
               <motion.div
                 key={game.id}
                 initial={{ opacity: 0, y: 40 }}
@@ -238,7 +242,11 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-            {games.filter(g => g.category === 'app').map((app, index) => (
+            {games
+              .filter(g => g.category === 'app')
+              .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+              .slice(0, 12)
+              .map((app, index) => (
               <motion.div
                 key={app.id}
                 initial={{ opacity: 0, y: 40 }}

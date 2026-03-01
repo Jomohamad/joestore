@@ -7,6 +7,9 @@ export interface Game {
   currency_icon: string;
   color_theme: string;
   category: 'game' | 'app';
+  genre?: string;
+  popularity?: number;
+  min_price?: number;
 }
 
 export interface Package {
