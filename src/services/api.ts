@@ -1,5 +1,52 @@
-import { Game, Package } from '../types';
+import { Game, Package, Promotion } from '../types';
 import { supabase } from '../lib/supabase';
+
+const getFallbackPromotions = (): Promotion[] => [
+  {
+    id: 1,
+    subtitle_en: 'Get 20% extra Diamonds on Free Fire',
+    subtitle_ar: 'احصل على 20% جواهر إضافية في فري فاير',
+    image_url: 'https://picsum.photos/seed/gaming1/1200/600',
+    is_active: true,
+    sort_order: 1
+  },
+  {
+    id: 2,
+    subtitle_en: 'Exclusive skins available now',
+    subtitle_ar: 'سكنات حصرية متوفرة الآن',
+    image_url: 'https://picsum.photos/seed/gaming2/1200/600',
+    is_active: true,
+    sort_order: 2
+  },
+  {
+    id: 3,
+    subtitle_en: 'Save big on all App Subscriptions',
+    subtitle_ar: 'وفر الكثير على جميع اشتراكات التطبيقات',
+    image_url: 'https://picsum.photos/seed/gaming3/1200/600',
+    is_active: true,
+    sort_order: 3
+  }
+];
+
+export const fetchPromotions = async (): Promise<Promotion[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('promotions')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+      
+    if (error) {
+      console.warn('Supabase error fetching promotions (using fallback):', error.message);
+      return getFallbackPromotions();
+    }
+    
+    return data && data.length > 0 ? data : getFallbackPromotions();
+  } catch (error) {
+    console.warn('Error fetching promotions (using fallback):', error);
+    return getFallbackPromotions();
+  }
+};
 
 export const fetchGames = async (): Promise<Game[]> => {
   try {
@@ -57,25 +104,6 @@ export const fetchGamePackages = async (id: string): Promise<Package[]> => {
     console.error('Error fetching packages:', error);
     throw error;
   }
-};
-
-export const verifyPlayerId = async (gameId: string, playerId: string): Promise<{ valid: boolean; playerName?: string; error?: string }> => {
-  // Mock validation logic client-side to avoid server dependency
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const isValidLength = playerId.length >= 5 && playerId.length <= 15;
-      
-      if (isValidLength) {
-        const mockNames = ['Sniper', 'Ghost', 'Ninja', 'Pro', 'King', 'Shadow', 'Viper'];
-        const randomName = mockNames[Math.floor(Math.random() * mockNames.length)];
-        const playerName = `${randomName}_${playerId.substring(0, 4)}`;
-        
-        resolve({ valid: true, playerName });
-      } else {
-        resolve({ valid: false, error: 'Invalid Player ID format' });
-      }
-    }, 1500);
-  });
 };
 
 export const fetchWishlist = async (userId: string): Promise<{ game_id: string; package_id?: number }[]> => {
@@ -156,7 +184,6 @@ export const validateCoupon = async (code: string): Promise<{ valid: boolean; di
 export const createOrder = async (orderData: {
   gameId: string;
   packageId: number;
-  playerId: string;
   amount: number;
 }): Promise<{ success: boolean; orderId: string; status: string }> => {
   // Use server-side API for order creation to ensure security/logging

@@ -58,13 +58,6 @@ export default function Cart() {
   };
 
   const handleCheckout = async () => {
-    // Validate all items have Player ID
-    const missingPlayerId = cart.some(item => !item.playerId);
-    if (missingPlayerId) {
-      alert(language === 'ar' ? 'الرجاء إدخال معرف اللاعب لجميع المنتجات' : 'Please enter Player ID for all items');
-      return;
-    }
-
     if (!selectedPayment) {
       alert(language === 'ar' ? 'الرجاء اختيار طريقة الدفع' : 'Please select a payment method');
       return;
@@ -132,17 +125,6 @@ export default function Cart() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-white truncate">{item.gameName}</h3>
                     <p className="text-sm text-creo-accent font-medium mt-1">{item.amount} {item.currency}</p>
-                    
-                    <div className="mt-3 md:mt-4">
-                      <label className="block text-xs text-creo-muted mb-1.5">{t('player_id')}</label>
-                      <input 
-                        type="text" 
-                        value={item.playerId || ''}
-                        onChange={(e) => updateCartItem(item.id, { playerId: e.target.value })}
-                        placeholder={t('player_id_placeholder')}
-                        className="w-full max-w-xs bg-creo-bg border border-creo-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-creo-accent transition-colors font-mono"
-                      />
-                    </div>
                   </div>
                 </div>
                 

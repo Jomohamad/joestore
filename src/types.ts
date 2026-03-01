@@ -1,3 +1,13 @@
+export interface Promotion {
+  id: number;
+  subtitle_en: string;
+  subtitle_ar: string;
+  image_url: string;
+  link_url?: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
 export interface Game {
   id: string;
   name: string;
@@ -24,7 +34,6 @@ export interface Order {
   id: string;
   game_id: string;
   package_id: number;
-  player_id: string;
   amount: number;
   status: string;
   created_at: string;

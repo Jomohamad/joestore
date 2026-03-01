@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { fetchGames } from '../services/api';
-import { Game } from '../types';
-import { Zap, ShieldCheck, Clock, Trophy, ShoppingCart, Heart } from 'lucide-react';
+import { fetchGames, fetchPromotions } from '../services/api';
+import { Game, Promotion } from '../types';
+import { Zap, ShieldCheck, Clock, Trophy, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { cn } from '../lib/utils';
 
 export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { t, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+  const { language, t, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
 
   const toggleWishlist = (e: React.MouseEvent, game: Game) => {
     e.preventDefault();
@@ -24,19 +25,66 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const loadGames = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchGames();
-        setGames(data);
+        const [gamesData, promosData] = await Promise.all([
+          fetchGames(),
+          fetchPromotions()
+        ]);
+        setGames(gamesData);
+        setPromotions(promosData);
       } catch (err) {
-        setError('Failed to load games. Please try again later.');
+        setError('Failed to load data. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    loadGames();
+    loadData();
   }, []);
+
+  const [activePromo, setActivePromo] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const nextPromo = () => {
+    setActivePromo((prev) => (prev + 1) % promotions.length);
+  };
+
+  const prevPromo = () => {
+    setActivePromo((prev) => (prev - 1 + promotions.length) % promotions.length);
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    if (isLeftSwipe) {
+      nextPromo();
+    }
+    if (isRightSwipe) {
+      prevPromo();
+    }
+  };
+
+  useEffect(() => {
+    if (promotions.length === 0) return;
+    const timer = setInterval(() => {
+      nextPromo();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [promotions.length, activePromo]);
 
   if (loading) {
     return (
@@ -64,113 +112,133 @@ export default function Home() {
 
   return (
     <div className="flex-1">
-      {/* Hero Section */}
-      <section className="relative pt-20 pb-24 md:pt-32 md:pb-40 overflow-hidden bg-creo-bg">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[600px] bg-creo-accent/10 blur-[100px] rounded-[100%] opacity-80 pointer-events-none"></div>
-          {/* Gaming Grid Pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-        </div>
-        
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-5xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-              className="inline-block mb-6 px-4 py-1.5 rounded-full border border-creo-accent/30 bg-creo-accent/10 text-creo-accent text-xs md:text-sm font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+      {/* Promotions / Announcements Section */}
+      {promotions.length > 0 && (
+        <section className="relative pt-4 pb-8 md:pt-8 md:pb-12 overflow-hidden bg-creo-bg">
+          <div className="container mx-auto px-4">
+            <div 
+              className="relative h-[250px] md:h-[400px] rounded-2xl md:rounded-3xl overflow-hidden border border-creo-border group"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
             >
-              {t('hero_badge')}
-            </motion.div>
-            <motion.h1 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-              className="text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tighter text-white mb-6 leading-[0.9]"
-            >
-              {t('hero_title_1')} <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-creo-accent to-creo-accent-sec drop-shadow-sm">{t('hero_title_2')}</span>
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-              className="text-lg md:text-2xl text-creo-text-sec mb-10 leading-relaxed max-w-3xl mx-auto font-light"
-            >
-              {t('hero_desc')}
-            </motion.p>
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
-            >
-              <button 
-                onClick={() => {
-                  document.getElementById('games')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-creo-accent to-creo-accent-sec hover:from-white hover:to-white text-black rounded-full font-bold transition-all duration-300 text-center text-lg hover:scale-105 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]"
-              >
-                {t('browse_games')}
-              </button>
-              <button 
-                onClick={() => {
-                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="w-full sm:w-auto px-10 py-5 bg-transparent border border-creo-border hover:border-creo-accent text-white rounded-full font-bold transition-all duration-300 text-center text-lg hover:bg-creo-accent/5"
-              >
-                {t('learn_more')}
-              </button>
-            </motion.div>
-          </div>
-        </div>
+              {promotions.map((promo, index) => (
+                <motion.div
+                  key={promo.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ 
+                    opacity: activePromo === index ? 1 : 0,
+                    zIndex: activePromo === index ? 10 : 0
+                  }}
+                  transition={{ duration: 0.8 }}
+                  className="absolute inset-0 bg-black"
+                >
+                  <img 
+                    src={promo.image_url} 
+                    alt={language === 'en' ? promo.subtitle_en : promo.subtitle_ar}
+                    className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+                  
+                  <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12">
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ 
+                        y: activePromo === index ? 0 : 20,
+                        opacity: activePromo === index ? 1 : 0 
+                      }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                    >
+                      <h2 className="text-2xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-2 md:mb-4 leading-tight max-w-2xl">
+                        {language === 'en' ? promo.subtitle_en : promo.subtitle_ar}
+                      </h2>
+                      {promo.link_url && (
+                        <Link to={promo.link_url} className="inline-block px-6 py-2.5 md:px-8 md:py-3 bg-white text-black rounded-full font-bold text-xs md:text-sm hover:bg-creo-accent transition-all transform hover:scale-105 shadow-lg">
+                          {language === 'en' ? 'Claim Now' : 'احصل عليه الآن'}
+                        </Link>
+                      )}
+                    </motion.div>
+                  </div>
+                </motion.div>
+              ))}
 
-        {/* Marquee */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden border-y border-creo-border bg-creo-bg-sec/50 backdrop-blur-sm py-3">
-          <div className="flex whitespace-nowrap animate-marquee-slow">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="flex items-center gap-8 px-4">
-                <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-creo-accent" /> {t('feat_instant')}
-                </span>
-                <span className="text-creo-border text-xl">•</span>
-                <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-creo-accent" /> {t('feat_secure')}
-                </span>
-                <span className="text-creo-border text-xl">•</span>
-                <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-creo-accent" /> {t('feat_prices')}
-                </span>
-                <span className="text-creo-border text-xl">•</span>
-                <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-creo-accent" /> {t('feat_support')}
-                </span>
-                <span className="text-creo-border text-xl">•</span>
+              {/* Navigation Arrows */}
+              {promotions.length > 1 && (
+                <>
+                  <button 
+                    onClick={(e) => { e.preventDefault(); prevPromo(); }}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 group-hover:opacity-100 opacity-0 md:opacity-100"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button 
+                    onClick={(e) => { e.preventDefault(); nextPromo(); }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 group-hover:opacity-100 opacity-0 md:opacity-100"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+
+              {/* Slider Indicators */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {promotions.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActivePromo(i)}
+                    className={cn(
+                      "w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-300",
+                      activePromo === i ? "bg-creo-accent w-6 md:w-8" : "bg-white/30 hover:bg-white/50"
+                    )}
+                  />
+                ))}
               </div>
-            ))}
+            </div>
           </div>
+        </section>
+      )}
+
+      {/* Marquee */}
+      <div className="w-full overflow-hidden border-y border-creo-border bg-creo-bg-sec/50 backdrop-blur-sm py-3">
+        <div className="flex whitespace-nowrap animate-marquee-slow">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-8 px-4">
+              <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
+                <Zap className="w-4 h-4 text-creo-accent" /> {t('feat_instant')}
+              </span>
+              <span className="text-creo-border text-xl">•</span>
+              <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-creo-accent" /> {t('feat_secure')}
+              </span>
+              <span className="text-creo-border text-xl">•</span>
+              <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-creo-accent" /> {t('feat_prices')}
+              </span>
+              <span className="text-creo-border text-xl">•</span>
+              <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
+                <Clock className="w-4 h-4 text-creo-accent" /> {t('feat_support')}
+              </span>
+              <span className="text-creo-border text-xl">•</span>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
 
       {/* Games Grid Section */}
-      <section id="games" className="py-16 md:py-20 bg-creo-bg-sec relative">
+      <section id="games" className="py-12 md:py-16 bg-creo-bg-sec relative">
         <div className="container mx-auto px-4">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="flex items-end justify-between mb-8 md:mb-12"
+            className="mb-8 md:mb-10"
           >
-            <div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">{t('popular_games')}</h2>
-              <p className="text-sm md:text-base text-creo-text-sec">{t('popular_games_desc')}</p>
-            </div>
-
+            <h2 className="text-2xl md:text-3xl font-display font-bold text-white">{t('popular_games')}</h2>
           </motion.div>
 
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
             {games
               .filter(g => g.category === 'game')
               .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
@@ -216,23 +284,19 @@ export default function Home() {
       </section>
 
       {/* Apps Grid Section */}
-      <section id="apps" className="py-16 md:py-20 bg-creo-bg relative border-t border-creo-border">
+      <section id="apps" className="py-12 md:py-16 bg-creo-bg relative border-t border-creo-border">
         <div className="container mx-auto px-4">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="flex items-end justify-between mb-8 md:mb-12"
+            className="mb-8 md:mb-10"
           >
-            <div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">{t('popular_apps')}</h2>
-              <p className="text-sm md:text-base text-creo-text-sec">{t('popular_apps_desc')}</p>
-            </div>
-
+            <h2 className="text-2xl md:text-3xl font-display font-bold text-white">{t('popular_apps')}</h2>
           </motion.div>
 
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
             {games
               .filter(g => g.category === 'app')
               .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
@@ -271,47 +335,6 @@ export default function Home() {
                     </h3>
                   </div>
                 </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-16 md:py-24 bg-creo-bg-sec border-y border-creo-border relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-creo-accent/5 blur-[100px] rounded-full pointer-events-none"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="text-center max-w-2xl mx-auto mb-12 md:mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-3 md:mb-4">{t('features_title')}</h2>
-            <p className="text-sm md:text-base text-creo-text-sec">{t('features_desc')}</p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-            {[
-              { icon: Zap, title: t('feat_instant'), desc: t('feat_instant_desc') },
-              { icon: ShieldCheck, title: t('feat_secure'), desc: t('feat_secure_desc') },
-              { icon: Trophy, title: t('feat_prices'), desc: t('feat_prices_desc') },
-              { icon: Clock, title: t('feat_support'), desc: t('feat_support_desc') },
-            ].map((feature, i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
-                className="bg-creo-card p-5 md:p-6 rounded-2xl border border-creo-border hover:border-creo-accent/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_30px_rgba(255,215,0,0.1)]"
-              >
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-creo-accent/10 text-creo-accent rounded-xl flex items-center justify-center mb-4 md:mb-6 shadow-[inset_0_0_10px_rgba(255,215,0,0.2)]">
-                  <feature.icon className="w-5 h-5 md:w-6 md:h-6" />
-                </div>
-                <h3 className="text-base md:text-lg font-bold text-white mb-2">{feature.title}</h3>
-                <p className="text-xs md:text-sm text-creo-text-sec leading-relaxed">{feature.desc}</p>
               </motion.div>
             ))}
           </div>

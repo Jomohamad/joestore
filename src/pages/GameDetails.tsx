@@ -68,7 +68,6 @@ export default function GameDetails() {
       amount: pkg.amount,
       currency: game.currency_name,
       price: pkg.price,
-      playerId: '', // Will be filled in Cart
     });
     
     setAddingToCartId(null);
@@ -214,63 +213,70 @@ export default function GameDetails() {
       <div className="container mx-auto px-4 mt-8 md:mt-12">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">{t('select_package')}</h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
           {packages.map((pkg) => (
             <motion.div
               key={pkg.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-creo-card border border-creo-border rounded-2xl p-5 md:p-6 hover:border-creo-accent/50 transition-all duration-300 group relative overflow-hidden flex flex-col"
+              className="bg-creo-card border border-creo-border rounded-xl overflow-hidden hover:border-creo-accent transition-all duration-300 group relative flex flex-col h-full hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)]"
             >
-              {/* Background Glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-creo-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Wishlist Heart Icon - Top Right */}
-              <button
-                onClick={() => toggleWishlist(pkg)}
-                className={cn(
-                  "absolute top-2 right-2 z-20 p-2 rounded-full backdrop-blur-md transition-all duration-300",
-                  isInWishlist(game.id, pkg.id)
-                    ? "bg-creo-accent/20 text-creo-accent"
-                    : "bg-black/20 text-creo-muted hover:text-white hover:bg-black/40"
+              <div className="aspect-video relative overflow-hidden bg-creo-bg-sec/30 flex items-center justify-center group-hover:bg-creo-bg-sec/50 transition-colors">
+                {/* Background Accent - Large faded amount */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] select-none pointer-events-none group-hover:opacity-[0.05] transition-opacity">
+                  <span className="text-7xl font-bold text-white transform -rotate-12">{pkg.amount}</span>
+                </div>
+
+                {/* Main Display in Aspect Area */}
+                <div className="relative z-10 flex flex-col items-center">
+                  <span className="text-2xl md:text-3xl font-bold text-white group-hover:text-creo-accent transition-colors">{pkg.amount}</span>
+                  <span className="text-[10px] uppercase tracking-widest text-creo-muted font-bold">{game.currency_name}</span>
+                </div>
+
+                {/* Wishlist Heart Icon - Top Right */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleWishlist(pkg);
+                  }}
+                  className={cn(
+                    "absolute top-1.5 right-1.5 z-30 p-1.5 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110",
+                    isInWishlist(game.id, pkg.id)
+                      ? "bg-creo-accent/20 text-creo-accent"
+                      : "bg-black/40 text-creo-muted hover:text-white"
+                  )}
+                  title={isInWishlist(game.id, pkg.id) ? t('remove_from_wishlist') : t('add_to_wishlist')}
+                >
+                  <Heart className={cn("w-3 h-3", isInWishlist(game.id, pkg.id) && "fill-current")} />
+                </button>
+
+                {pkg.bonus > 0 && (
+                  <div className="absolute top-1.5 left-1.5 bg-creo-accent text-black text-[8px] font-bold px-1.5 py-0.5 rounded uppercase border border-white/10 z-10">
+                    +{pkg.bonus} {t('bonus')}
+                  </div>
                 )}
-                title={isInWishlist(game.id, pkg.id) ? t('remove_from_wishlist') : t('add_to_wishlist')}
-              >
-                <Heart className={cn("w-4 h-4", isInWishlist(game.id, pkg.id) && "fill-current")} />
-              </button>
 
-              {pkg.bonus > 0 && (
-                <div className="absolute top-0 left-0 bg-creo-accent text-black text-[10px] font-bold px-2 py-0.5 rounded-br-lg z-10">
-                  +{pkg.bonus} {t('bonus')}
-                </div>
-              )}
-
-              <div className="relative z-10 flex-1">
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-2xl md:text-3xl font-bold text-white">{pkg.amount}</span>
-                  <span className="text-sm md:text-base font-medium text-creo-text-sec">{game.currency_name}</span>
-                </div>
-                
-                <div className="text-lg md:text-xl font-bold text-creo-accent mb-6">
-                  {formatPrice(pkg.price)}
-                </div>
-              </div>
-
-              <div className="relative z-10 mt-auto">
+                {/* Hover Overlay with Action */}
                 <button
                   onClick={() => handleAddToCart(pkg)}
                   disabled={addingToCartId === pkg.id}
-                  className="w-full flex items-center justify-center gap-2 bg-creo-bg-sec hover:bg-creo-accent hover:text-black text-white py-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10"
                 >
-                  {addingToCartId === pkg.id ? (
-                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-5 h-5" />
-                      {t('add_to_cart')}
-                    </>
-                  )}
+                  <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                    {addingToCartId === pkg.id ? (
+                      <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    ) : (
+                      <ShoppingCart className="w-4 h-4 text-black" />
+                    )}
+                  </div>
                 </button>
+              </div>
+
+              <div className="p-2 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-0.5 border-t border-creo-border/50">
+                <p className="text-[11px] font-bold text-creo-accent">
+                  {formatPrice(pkg.price)}
+                </p>
               </div>
             </motion.div>
           ))}

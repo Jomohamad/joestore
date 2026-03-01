@@ -74,6 +74,18 @@ create table if not exists coupons (
   created_at timestamptz default now()
 );
 
+-- 6.5 PROMOTIONS TABLE
+create table if not exists promotions (
+  id serial primary key,
+  subtitle_en text not null,
+  subtitle_ar text not null,
+  image_url text not null,
+  link_url text,
+  is_active boolean default true,
+  sort_order integer default 0,
+  created_at timestamptz default now()
+);
+
 -- 7. RLS POLICIES
 
 -- Enable RLS
@@ -82,6 +94,7 @@ alter table packages enable row level security;
 alter table orders enable row level security;
 alter table wishlist enable row level security;
 alter table coupons enable row level security;
+alter table promotions enable row level security;
 
 -- Games & Packages: Public Read
 drop policy if exists "Public games are viewable by everyone" on games;
@@ -115,6 +128,10 @@ create policy "Users can delete from their own wishlist" on wishlist for delete 
 drop policy if exists "Coupons are viewable by everyone" on coupons;
 create policy "Coupons are viewable by everyone" on coupons for select using (true);
 
+-- Promotions: Public Read
+drop policy if exists "Promotions are viewable by everyone" on promotions;
+create policy "Promotions are viewable by everyone" on promotions for select using (true);
+
 -- 8. SEED DATA
 
 -- Games
@@ -143,3 +160,10 @@ insert into coupons (code, discount_type, value) values
 ('WELCOME10', 'percent', 10),
 ('SAVE5', 'fixed', 5)
 on conflict (code) do nothing;
+
+-- Promotions
+insert into promotions (id, subtitle_en, subtitle_ar, image_url, sort_order) values
+(1, 'Get 20% extra Diamonds on Free Fire', 'احصل على 20% جواهر إضافية في فري فاير', 'https://picsum.photos/seed/gaming1/1200/600', 1),
+(2, 'Exclusive skins available now', 'سكنات حصرية متوفرة الآن', 'https://picsum.photos/seed/gaming2/1200/600', 2),
+(3, 'Save big on all App Subscriptions', 'وفر الكثير على جميع اشتراكات التطبيقات', 'https://picsum.photos/seed/gaming3/1200/600', 3)
+on conflict (id) do nothing;

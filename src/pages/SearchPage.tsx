@@ -69,7 +69,7 @@ export default function SearchPage() {
             <p className="text-creo-text-sec text-lg">{t('no_results').replace('{query}', query)}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
             {results.map((item, index) => (
               <motion.div
                 key={item.id}

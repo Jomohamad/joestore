@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, Globe, History, LogOut, User, ShoppingCart, Headset, DollarSign, LogIn } from 'lucide-react';
+import { X, Heart, Globe, History, LogOut, User, ShoppingCart, Headset, DollarSign, LogIn, Search, Clock, ShieldCheck } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
@@ -14,8 +14,54 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { t, language, toggleLanguage, currency, toggleCurrency, wishlist, cart } = useStore();
   const { user, signOut } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('recentSearches');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const navigate = useNavigate();
   
   const totalCartItems = cart.reduce((sum, item) => sum + item.amount, 0);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'recentSearches' && e.newValue) {
+        try {
+          setRecentSearches(JSON.parse(e.newValue));
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const handleSearch = (query: string) => {
+    if (!query.trim()) return;
+    
+    const newRecent = [query, ...recentSearches.filter(s => s !== query)].slice(0, 5);
+    setRecentSearches(newRecent);
+    localStorage.setItem('recentSearches', JSON.stringify(newRecent));
+    
+    onClose();
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch(searchQuery);
+    }
+  };
+
+  const removeRecent = (e: React.MouseEvent, term: string) => {
+    e.stopPropagation();
+    const newRecent = recentSearches.filter(s => s !== term);
+    setRecentSearches(newRecent);
+    localStorage.setItem('recentSearches', JSON.stringify(newRecent));
+  };
 
   return (
     <AnimatePresence>
@@ -71,23 +117,93 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              <Link 
-                to="/cart" 
-                onClick={onClose}
-                className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
-              >
-                <ShoppingCart className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                <span className="font-medium">{t('shopping_cart')}</span>
-                {totalCartItems > 0 && (
-                  <span className="ml-auto bg-creo-accent text-black text-xs font-bold px-2 py-0.5 rounded-full">
-                    {totalCartItems}
-                  </span>
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {/* Search Section */}
+              <div className="px-2">
+                <div className="relative">
+                  <Search className={`absolute ${language === 'en' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-muted pointer-events-none`} />
+                  <input 
+                    type="text" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={t('search')}
+                    className={`w-full bg-creo-bg-sec border border-creo-border rounded-xl py-2.5 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
+                  />
+                </div>
+                
+                {recentSearches.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    <p className="px-2 text-[10px] font-bold text-creo-muted uppercase tracking-widest mb-1">
+                      {language === 'en' ? 'Recent Searches' : 'عمليات البحث الأخيرة'}
+                    </p>
+                    {recentSearches.map((term, i) => (
+                      <div 
+                        key={i}
+                        onClick={() => {
+                          setSearchQuery(term);
+                          handleSearch(term);
+                        }}
+                        className="flex items-center justify-between px-3 py-2 hover:bg-creo-bg-sec rounded-lg cursor-pointer group transition-colors"
+                      >
+                        <div className="flex items-center gap-2 text-xs text-creo-text group-hover:text-white transition-colors">
+                          <Clock className="w-3 h-3 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                          {term}
+                        </div>
+                        <button 
+                          onClick={(e) => removeRecent(e, term)}
+                          className="text-creo-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-1"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </Link>
+              </div>
 
+              {/* Main Menu Section */}
+              <div className="space-y-1">
+                <p className="px-4 text-[10px] font-bold text-creo-muted uppercase tracking-widest mb-2">
+                  {t('main_menu')}
+                </p>
+                <Link 
+                  to="/" 
+                  onClick={onClose}
+                  className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                >
+                  <Globe className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                  <span className="font-medium">{t('home')}</span>
+                </Link>
+                <Link 
+                  to="/cart" 
+                  onClick={onClose}
+                  className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                >
+                  <ShoppingCart className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                  <span className="font-medium">{t('shopping_cart')}</span>
+                  {totalCartItems > 0 && (
+                    <span className="ml-auto bg-creo-accent text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {totalCartItems}
+                    </span>
+                  )}
+                </Link>
+                <Link 
+                  to="/why-choose-us" 
+                  onClick={onClose}
+                  className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                >
+                  <ShieldCheck className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                  <span className="font-medium">{t('features_title')}</span>
+                </Link>
+              </div>
+
+              {/* My Account Section (Only if logged in) */}
               {user && (
-                <>
+                <div className="space-y-1">
+                  <p className="px-4 text-[10px] font-bold text-creo-muted uppercase tracking-widest mb-2">
+                    {t('my_account')}
+                  </p>
                   <Link 
                     to="/wishlist" 
                     onClick={onClose}
@@ -96,7 +212,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <Heart className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
                     <span className="font-medium">{t('wishlist')}</span>
                     {wishlist.length > 0 && (
-                      <span className="ml-auto bg-creo-accent text-black text-xs font-bold px-2 py-0.5 rounded-full">
+                      <span className="ml-auto bg-creo-accent text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
                         {wishlist.length}
                       </span>
                     )}
@@ -110,41 +226,36 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <History className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
                     <span className="font-medium">{t('order_history')}</span>
                   </Link>
-                </>
+                </div>
               )}
 
-              <Link 
-                to="/support" 
-                onClick={onClose}
-                className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
-              >
-                <Headset className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                <span className="font-medium">{t('support')}</span>
-              </Link>
+              {/* Settings Section */}
+              <div className="space-y-1">
+                <p className="px-4 text-[10px] font-bold text-creo-muted uppercase tracking-widest mb-2">
+                  {t('settings')}
+                </p>
+                <button 
+                  onClick={toggleLanguage}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group text-left"
+                >
+                  <Globe className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                  <span className="font-medium">{t('language')}</span>
+                  <span className="ml-auto text-[10px] font-bold text-creo-accent bg-creo-accent/10 px-2 py-1 rounded">
+                    {language === 'en' ? 'English' : 'العربية'}
+                  </span>
+                </button>
 
-              <div className="h-px bg-creo-border my-2 mx-4"></div>
-
-              <button 
-                onClick={toggleLanguage}
-                className="w-full flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group text-left"
-              >
-                <Globe className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                <span className="font-medium">{t('language')}</span>
-                <span className="ml-auto text-xs font-bold text-creo-accent bg-creo-accent/10 px-2 py-1 rounded">
-                  {language === 'en' ? 'English' : 'العربية'}
-                </span>
-              </button>
-
-              <button 
-                onClick={toggleCurrency}
-                className="w-full flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group text-left"
-              >
-                <DollarSign className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                <span className="font-medium">{t('currency')}</span>
-                <span className="ml-auto text-xs font-bold text-creo-accent bg-creo-accent/10 px-2 py-1 rounded">
-                  {currency === 'USD' ? 'USD' : 'EGP'}
-                </span>
-              </button>
+                <button 
+                  onClick={toggleCurrency}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group text-left"
+                >
+                  <DollarSign className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                  <span className="font-medium">{t('currency')}</span>
+                  <span className="ml-auto text-[10px] font-bold text-creo-accent bg-creo-accent/10 px-2 py-1 rounded">
+                    {currency === 'USD' ? 'USD' : 'EGP'}
+                  </span>
+                </button>
+              </div>
             </div>
 
             <div className="p-4 border-t border-creo-border">

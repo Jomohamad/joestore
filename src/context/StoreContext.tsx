@@ -18,8 +18,6 @@ export interface CartItem {
   amount: number;
   currency: string;
   price: number;
-  playerId?: string;
-  playerName?: string;
 }
 
 export interface WishlistItem {
