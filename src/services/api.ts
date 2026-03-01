@@ -78,6 +78,49 @@ export const verifyPlayerId = async (gameId: string, playerId: string): Promise<
   });
 };
 
+export const fetchWishlist = async (userId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('wishlist')
+      .select('game_id')
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return data.map(item => item.game_id);
+  } catch (error) {
+    console.error('Error fetching wishlist:', error);
+    return [];
+  }
+};
+
+export const addToWishlistApi = async (userId: string, gameId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('wishlist')
+      .insert([{ user_id: userId, game_id: gameId }]);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error adding to wishlist:', error);
+    throw error;
+  }
+};
+
+export const removeFromWishlistApi = async (userId: string, gameId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('wishlist')
+      .delete()
+      .eq('user_id', userId)
+      .eq('game_id', gameId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error removing from wishlist:', error);
+    throw error;
+  }
+};
+
 export const createOrder = async (orderData: {
   gameId: string;
   packageId: number;
