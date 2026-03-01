@@ -37,13 +37,16 @@ BEGIN
     END IF;
 END $$;
 
--- Now insert the new apps
-INSERT INTO public.games (name, category, image_url, publisher, rating, reviews_count, description, release_date, genre, popularity, min_price)
+-- Now insert the new apps with explicit IDs and Storage URLs
+-- IMPORTANT: You must replace 'zcyyrvyltnpmdflupftn' with your actual Supabase project ID
+-- You can find it in your Supabase dashboard URL: https://supabase.com/dashboard/project/<project_id>
+INSERT INTO public.games (id, name, category, image_url, publisher, rating, reviews_count, description, release_date, genre, popularity, min_price, currency_name, currency_icon, color_theme)
 VALUES
   (
+    'tiktok',
     'TikTok',
     'app',
-    'https://images.unsplash.com/photo-1611605698323-b1e99cfd37ea?w=800&auto=format&fit=crop&q=60',
+    'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/tiktok.jpg',
     'ByteDance',
     4.7,
     15000000,
@@ -51,12 +54,16 @@ VALUES
     '2016-09-01',
     'Social',
     99,
-    5.00
+    5.00,
+    'Coins',
+    'coin-icon',
+    '#000000'
   ),
   (
+    'steam',
     'Steam',
     'app',
-    'https://images.unsplash.com/photo-1612287230217-9698623d97ce?w=800&auto=format&fit=crop&q=60',
+    'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/steam.jpg',
     'Valve',
     4.8,
     5000000,
@@ -64,12 +71,16 @@ VALUES
     '2003-09-12',
     'Entertainment',
     95,
-    10.00
+    10.00,
+    'Wallet',
+    'wallet-icon',
+    '#171a21'
   ),
   (
+    'xbox',
     'Xbox',
     'app',
-    'https://images.unsplash.com/photo-1605901309584-818e25960b8f?w=800&auto=format&fit=crop&q=60',
+    'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/xbox.jpg',
     'Microsoft',
     4.6,
     8000000,
@@ -77,5 +88,17 @@ VALUES
     '2001-11-15',
     'Entertainment',
     92,
-    10.00
-  );
+    10.00,
+    'Gift Card',
+    'card-icon',
+    '#107C10'
+  )
+ON CONFLICT (id) DO UPDATE SET
+  image_url = EXCLUDED.image_url,
+  description = EXCLUDED.description,
+  rating = EXCLUDED.rating,
+  reviews_count = EXCLUDED.reviews_count,
+  release_date = EXCLUDED.release_date,
+  genre = EXCLUDED.genre,
+  popularity = EXCLUDED.popularity,
+  min_price = EXCLUDED.min_price;
