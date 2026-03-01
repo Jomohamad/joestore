@@ -6,10 +6,12 @@ import { Game, Package } from '../types';
 import { ShieldCheck, ShoppingCart, Heart, CheckCircle2, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function GameDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { addToCart, t, language, isInWishlist, addToWishlist, removeFromWishlist, formatPrice } = useStore();
   
   const [game, setGame] = useState<Game | null>(null);
@@ -18,6 +20,7 @@ export default function GameDetails() {
   const [error, setError] = useState<string | null>(null);
   const [addingToCartId, setAddingToCartId] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showLoginError, setShowLoginError] = useState(false);
   const [lastAddedPkg, setLastAddedPkg] = useState<Package | null>(null);
 
   useEffect(() => {
@@ -43,6 +46,12 @@ export default function GameDetails() {
 
   const handleAddToCart = async (pkg: Package) => {
     if (!game) return;
+    
+    if (!user) {
+      setShowLoginError(true);
+      setTimeout(() => setShowLoginError(false), 4000);
+      return;
+    }
     
     setAddingToCartId(pkg.id);
     
@@ -137,6 +146,40 @@ export default function GameDetails() {
         )}
       </AnimatePresence>
 
+      {/* Login Error Toast */}
+      <AnimatePresence>
+        {showLoginError && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%' }}
+            className="fixed bottom-8 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md"
+          >
+            <div className="bg-creo-card border border-red-500/50 rounded-2xl p-4 shadow-2xl shadow-red-500/10 flex items-center gap-4 backdrop-blur-xl">
+              <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-white font-bold text-sm">
+                  {language === 'ar' ? 'تسجيل الدخول مطلوب' : 'Login Required'}
+                </h4>
+                <p className="text-creo-text-sec text-xs">
+                  {language === 'ar' 
+                    ? 'يجب عليك تسجيل الدخول أولاً لتتمكن من إضافة منتجات إلى السلة.' 
+                    : 'You must log in first to be able to add items to your cart.'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowLoginError(false)}
+                className="p-1 text-creo-muted hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Game Header */}
       <div className="relative h-48 md:h-64 lg:h-80 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-creo-bg-sec/50 via-creo-bg/80 to-creo-bg z-10"></div>
@@ -182,8 +225,22 @@ export default function GameDetails() {
               {/* Background Glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-creo-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
+              {/* Wishlist Heart Icon - Top Right */}
+              <button
+                onClick={() => toggleWishlist(pkg)}
+                className={cn(
+                  "absolute top-2 right-2 z-20 p-2 rounded-full backdrop-blur-md transition-all duration-300",
+                  isInWishlist(game.id, pkg.id)
+                    ? "bg-creo-accent/20 text-creo-accent"
+                    : "bg-black/20 text-creo-muted hover:text-white hover:bg-black/40"
+                )}
+                title={isInWishlist(game.id, pkg.id) ? t('remove_from_wishlist') : t('add_to_wishlist')}
+              >
+                <Heart className={cn("w-4 h-4", isInWishlist(game.id, pkg.id) && "fill-current")} />
+              </button>
+
               {pkg.bonus > 0 && (
-                <div className="absolute top-0 right-0 bg-creo-accent text-black text-xs font-bold px-3 py-1 rounded-bl-xl z-10">
+                <div className="absolute top-0 left-0 bg-creo-accent text-black text-[10px] font-bold px-2 py-0.5 rounded-br-lg z-10">
                   +{pkg.bonus} {t('bonus')}
                 </div>
               )}
@@ -199,11 +256,11 @@ export default function GameDetails() {
                 </div>
               </div>
 
-              <div className="relative z-10 grid grid-cols-[1fr,auto] gap-3 mt-auto">
+              <div className="relative z-10 mt-auto">
                 <button
                   onClick={() => handleAddToCart(pkg)}
                   disabled={addingToCartId === pkg.id}
-                  className="flex items-center justify-center gap-2 bg-creo-bg-sec hover:bg-creo-accent hover:text-black text-white py-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-creo-bg-sec hover:bg-creo-accent hover:text-black text-white py-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {addingToCartId === pkg.id ? (
                     <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -213,19 +270,6 @@ export default function GameDetails() {
                       {t('add_to_cart')}
                     </>
                   )}
-                </button>
-                
-                <button
-                  onClick={() => toggleWishlist(pkg)}
-                  className={cn(
-                    "p-3 rounded-xl border transition-all duration-300 flex items-center justify-center",
-                    isInWishlist(game.id, pkg.id)
-                      ? "bg-creo-accent/10 border-creo-accent text-creo-accent"
-                      : "bg-creo-bg-sec border-transparent text-creo-muted hover:text-white hover:bg-creo-border"
-                  )}
-                  title={isInWishlist(game.id, pkg.id) ? t('remove_from_wishlist') : t('add_to_wishlist')}
-                >
-                  <Heart className={cn("w-5 h-5", isInWishlist(game.id, pkg.id) && "fill-current")} />
                 </button>
               </div>
             </motion.div>

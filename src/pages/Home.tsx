@@ -196,19 +196,6 @@ export default function Home() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
                     
-                    {/* Heart Icon on side */}
-                    <button 
-                      onClick={(e) => toggleWishlist(e, game)}
-                      className="absolute top-1.5 right-1.5 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-sm transition-all duration-300 hover:scale-110"
-                    >
-                      <Heart 
-                        className={cn(
-                          "w-3 h-3 transition-colors",
-                          isInWishlist(game.id) ? "text-creo-accent fill-creo-accent" : "text-creo-muted group-hover:text-creo-accent"
-                        )} 
-                      />
-                    </button>
-
                     {/* Hover Overlay with Action */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">
                       <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
@@ -271,19 +258,6 @@ export default function Home() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
                     
-                    {/* Heart Icon on side */}
-                    <button 
-                      onClick={(e) => toggleWishlist(e, app)}
-                      className="absolute top-1.5 right-1.5 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-sm transition-all duration-300 hover:scale-110"
-                    >
-                      <Heart 
-                        className={cn(
-                          "w-3 h-3 transition-colors",
-                          isInWishlist(app.id) ? "text-creo-accent fill-creo-accent" : "text-creo-muted group-hover:text-creo-accent"
-                        )} 
-                      />
-                    </button>
-
                     {/* Hover Overlay with Action */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">
                       <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
