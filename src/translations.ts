@@ -163,6 +163,12 @@ export const translations = {
     
     // General
     egp: 'EGP',
+    usd: 'USD',
+    currency: 'Currency',
+    language: 'Language',
+    order_history: 'Order History',
+    welcome_back: 'Welcome back',
+    guest: 'Guest',
     
     // Filters
     filters: 'Filters',
@@ -375,6 +381,12 @@ export const translations = {
     
     // General
     egp: 'EGP',
+    usd: 'USD',
+    currency: 'العملة',
+    language: 'اللغة',
+    order_history: 'سجل الطلبات',
+    welcome_back: 'مرحباً بعودتك',
+    guest: 'زائر',
     
     // Filters
     filters: 'تصفية',

@@ -7,9 +7,15 @@ const FALLBACK_KEY = 'INSERT_YOUR_SUPABASE_ANON_KEY_HERE';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || FALLBACK_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_KEY;
 
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  console.warn('Supabase keys are missing from environment variables. Using fallbacks.');
-  console.warn('Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.');
+if (!supabaseUrl || supabaseUrl === 'https://your-project-id.supabase.co') {
+  console.error('Supabase URL is missing or invalid. Please set VITE_SUPABASE_URL in your environment.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseAnonKey || supabaseAnonKey === 'INSERT_YOUR_SUPABASE_ANON_KEY_HERE') {
+  console.warn('Supabase Anon Key is missing or using placeholder. Authentication features may not work.');
+}
+
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'placeholder'
+);

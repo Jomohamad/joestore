@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
-import { Zap, ShieldCheck, Clock, Trophy, ShoppingCart } from 'lucide-react';
+import { Zap, ShieldCheck, Clock, Trophy, ShoppingCart, Heart } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function Home() {
@@ -159,11 +159,11 @@ export default function Home() {
 
           </motion.div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3">
             {games
               .filter(g => g.category === 'game')
               .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
-              .slice(0, 12) // Limit to top 12 popular games
+              .slice(0, 16) // Limit to top 16 popular games
               .map((game, index) => (
               <motion.div
                 key={game.id}
@@ -174,38 +174,35 @@ export default function Home() {
               >
                 <Link 
                   to={`/game/${game.id}`}
-                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] flex flex-col h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] flex flex-col h-full"
                 >
-                  <div className="aspect-[3/4] relative overflow-hidden bg-creo-bg">
+                  <div className="aspect-video relative overflow-hidden bg-creo-bg">
                     <img 
                       src={game.image_url} 
                       alt={game.name}
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/40 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
                     
-                    {/* Hover Overlay with Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
-                        <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-black" />
+                    {/* Heart Icon on side */}
+                    <div className="absolute top-1.5 right-1.5 z-30">
+                      <div className="p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-creo-muted group-hover:text-creo-accent transition-colors">
+                        <Heart className="w-3 h-3" />
                       </div>
                     </div>
 
-                    {/* Wavy/Jagged edge overlay */}
-                    <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-20 pointer-events-none">
-                      <svg className="relative block w-full h-[10px] md:h-[15px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10" preserveAspectRatio="none">
-                        <polygon points="0,10 0,0 5,10 10,0 15,10 20,0 25,10 30,0 35,10 40,0 45,10 50,0 55,10 60,0 65,10 70,0 75,10 80,0 85,10 90,0 95,10 100,0 100,10" className="fill-creo-card" />
-                      </svg>
+                    {/* Hover Overlay with Action */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">
+                      <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                        <ShoppingCart className="w-4 h-4 text-black" />
+                      </div>
                     </div>
                   </div>
-                  <div className="p-3 md:p-4 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-1 border-t border-creo-border/50">
-                    <h3 className="text-sm md:text-base font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1 mb-1">
+                  <div className="p-2 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-0.5 border-t border-creo-border/50">
+                    <h3 className="text-[10px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
                       {game.name}
                     </h3>
-                    <p className="text-xs text-creo-text-sec group-hover:text-white/80 transition-colors">
-                      {game.currency_name}
-                    </p>
                   </div>
                 </Link>
               </motion.div>
@@ -231,11 +228,11 @@ export default function Home() {
 
           </motion.div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3">
             {games
               .filter(g => g.category === 'app')
               .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
-              .slice(0, 12)
+              .slice(0, 16)
               .map((app, index) => (
               <motion.div
                 key={app.id}
@@ -246,38 +243,35 @@ export default function Home() {
               >
                 <Link 
                   to={`/game/${app.id}`}
-                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] flex flex-col h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] flex flex-col h-full"
                 >
-                  <div className="aspect-[3/4] relative overflow-hidden bg-creo-bg">
+                  <div className="aspect-video relative overflow-hidden bg-creo-bg">
                     <img 
                       src={app.image_url} 
                       alt={app.name}
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/40 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
                     
-                    {/* Hover Overlay with Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
-                        <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-black" />
+                    {/* Heart Icon on side */}
+                    <div className="absolute top-1.5 right-1.5 z-30">
+                      <div className="p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-creo-muted group-hover:text-creo-accent transition-colors">
+                        <Heart className="w-3 h-3" />
                       </div>
                     </div>
 
-                    {/* Wavy/Jagged edge overlay */}
-                    <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-20 pointer-events-none">
-                      <svg className="relative block w-full h-[10px] md:h-[15px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10" preserveAspectRatio="none">
-                        <polygon points="0,10 0,0 5,10 10,0 15,10 20,0 25,10 30,0 35,10 40,0 45,10 50,0 55,10 60,0 65,10 70,0 75,10 80,0 85,10 90,0 95,10 100,0 100,10" className="fill-creo-card" />
-                      </svg>
+                    {/* Hover Overlay with Action */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">
+                      <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                        <ShoppingCart className="w-4 h-4 text-black" />
+                      </div>
                     </div>
                   </div>
-                  <div className="p-3 md:p-4 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-1 border-t border-creo-border/50">
-                    <h3 className="text-sm md:text-base font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1 mb-1">
+                  <div className="p-2 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-0.5 border-t border-creo-border/50">
+                    <h3 className="text-[10px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
                       {app.name}
                     </h3>
-                    <p className="text-xs text-creo-text-sec group-hover:text-white/80 transition-colors">
-                      {app.currency_name}
-                    </p>
                   </div>
                 </Link>
               </motion.div>

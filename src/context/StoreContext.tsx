@@ -6,6 +6,7 @@ import { fetchWishlist, addToWishlistApi, removeFromWishlistApi, fetchGames, fet
 import { useNavigate } from 'react-router-dom';
 
 type Language = 'en' | 'ar';
+type Currency = 'USD' | 'EGP';
 
 export interface CartItem {
   id: string;
@@ -29,6 +30,9 @@ export interface WishlistItem {
 interface StoreContextType {
   language: Language;
   toggleLanguage: () => void;
+  currency: Currency;
+  toggleCurrency: () => void;
+  formatPrice: (priceInUSD: number) => string;
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
@@ -46,6 +50,8 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [language, setLanguage] = useState<Language>('en');
+  const [currency, setCurrency] = useState<Currency>('USD');
+  const [egpRate, setEgpRate] = useState<number>(50); // Default fallback
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [allGames, setAllGames] = useState<Game[]>([]);
@@ -57,15 +63,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       try {
         const games = await fetchGames();
         setAllGames(games);
-        
-        // In a real app, fetching all packages might be heavy. 
-        // For now, we'll fetch them on demand or assume we have them if needed.
-        // Or better, fetch packages for games in wishlist.
       } catch (error) {
         console.error('Failed to load games for wishlist context', error);
       }
     };
+    
+    const fetchExchangeRate = async () => {
+      try {
+        const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const data = await response.json();
+        if (data.rates && data.rates.EGP) {
+          setEgpRate(data.rates.EGP);
+          console.log(`Exchange rate updated: 1 USD = ${data.rates.EGP} EGP`);
+        }
+      } catch (error) {
+        console.error('Failed to fetch exchange rate, using fallback', error);
+      }
+    };
+
     loadData();
+    fetchExchangeRate();
   }, []);
 
   // Sync wishlist with Supabase when user changes
@@ -123,6 +140,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'ar' : 'en');
+  };
+
+  const toggleCurrency = () => {
+    setCurrency(prev => prev === 'USD' ? 'EGP' : 'USD');
+  };
+
+  const formatPrice = (priceInUSD: number) => {
+    if (currency === 'EGP') {
+      return `EGP ${(priceInUSD * egpRate).toFixed(2)}`;
+    }
+    return `$${priceInUSD.toFixed(2)}`;
   };
 
   const addToCart = (item: CartItem) => {
@@ -194,6 +222,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     <StoreContext.Provider value={{ 
       language, 
       toggleLanguage, 
+      currency,
+      toggleCurrency,
+      formatPrice,
       cart, 
       addToCart, 
       removeFromCart, 

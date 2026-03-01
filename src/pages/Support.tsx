@@ -26,9 +26,8 @@ export default function Support() {
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-12 md:mb-16 max-w-3xl mx-auto">
           {[
-            { icon: MessageSquare, title: t('live_chat'), desc: t('live_chat_desc'), action: t('start_chat') },
             { icon: Mail, title: t('email_support'), desc: t('email_support_desc'), action: 'support@gamecurrency.com' },
             { icon: Phone, title: t('phone_support'), desc: t('phone_support_desc'), action: '+1 (800) 123-4567' },
           ].map((item, i) => (

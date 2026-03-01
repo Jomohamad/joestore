@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 import { validateCoupon } from '../services/api';
 
 export default function Cart() {
-  const { cart, removeFromCart, updateCartItem, clearCart, t, language } = useStore();
+  const { cart, removeFromCart, updateCartItem, clearCart, t, language, formatPrice } = useStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
@@ -148,9 +148,7 @@ export default function Cart() {
                 
                 <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start gap-4 pt-4 md:pt-0 border-t md:border-t-0 border-creo-border">
                   <span className="text-xl font-bold text-white">
-                    {language === 'ar' 
-                      ? `${item.price.toFixed(2)} ${t('egp')}` 
-                      : `${t('egp')} ${item.price.toFixed(2)}`}
+                    {formatPrice(item.price)}
                   </span>
                   <button 
                     onClick={() => removeFromCart(item.id)}
@@ -255,9 +253,7 @@ export default function Cart() {
                   <div className="flex justify-between text-creo-text-sec text-sm">
                     <span>{t('subtotal')}</span>
                     <span className="text-white">
-                      {language === 'ar' 
-                        ? `${subtotal.toFixed(2)} ${t('egp')}` 
-                        : `${t('egp')} ${subtotal.toFixed(2)}`}
+                      {formatPrice(subtotal)}
                     </span>
                   </div>
                   
@@ -265,9 +261,7 @@ export default function Cart() {
                     <div className="flex justify-between text-creo-accent text-sm">
                       <span>{language === 'ar' ? 'خصم' : 'Discount'} ({appliedCoupon.code})</span>
                       <span>
-                        - {language === 'ar' 
-                          ? `${discount.toFixed(2)} ${t('egp')}` 
-                          : `${t('egp')} ${discount.toFixed(2)}`}
+                        - {formatPrice(discount)}
                       </span>
                     </div>
                   )}
@@ -275,9 +269,7 @@ export default function Cart() {
                   <div className="flex justify-between text-creo-text-sec text-sm">
                     <span>{t('processing_fee')}</span>
                     <span className="text-white">
-                      {language === 'ar' 
-                        ? `0.00 ${t('egp')}` 
-                        : `${t('egp')} 0.00`}
+                      {formatPrice(0)}
                     </span>
                   </div>
                 </div>
@@ -286,9 +278,7 @@ export default function Cart() {
                   <div className="flex justify-between items-end">
                     <span className="text-creo-text-sec font-medium">{t('total')}</span>
                     <span className="text-3xl font-bold text-creo-accent">
-                      {language === 'ar' 
-                        ? `${total.toFixed(2)} ${t('egp')}` 
-                        : `${t('egp')} ${total.toFixed(2)}`}
+                      {formatPrice(total)}
                     </span>
                   </div>
                 </div>

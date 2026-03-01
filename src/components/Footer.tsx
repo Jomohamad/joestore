@@ -10,85 +10,80 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-creo-bg border-t border-creo-border pt-16 md:pt-24 pb-8 mt-auto relative overflow-hidden">
+    <footer className="bg-creo-bg border-t border-creo-border pt-6 md:pt-8 pb-4 mt-auto relative overflow-hidden">
       <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-creo-accent/5 to-transparent pointer-events-none"></div>
       <div className="container mx-auto px-4 relative z-10">
         
-        {/* Premium Newsletter Section */}
-        <div className="bg-creo-card border border-creo-border rounded-2xl p-6 md:p-8 mb-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-creo-accent/10 blur-[60px] rounded-full pointer-events-none"></div>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-            <div className="max-w-lg text-center md:text-left">
-              <h3 className="text-xl md:text-2xl font-display font-bold text-white mb-2">{t('newsletter_title')}</h3>
-              <p className="text-xs md:text-sm text-creo-text-sec">{t('newsletter_desc')}</p>
-            </div>
-            <form className="w-full md:w-auto flex-1 max-w-sm flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1">
-                <input 
-                  type="email" 
-                  placeholder={t('email_placeholder')}
-                  className="w-full bg-creo-bg border border-creo-border rounded-lg px-3 py-3 text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all pl-10"
-                />
-                <Send className={`absolute ${language === 'en' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-muted`} />
-              </div>
-              <button 
-                type="submit"
-                className="bg-gradient-to-r from-creo-accent to-creo-accent-sec hover:from-white hover:to-white text-black px-6 py-3 rounded-lg text-sm font-bold transition-all whitespace-nowrap shadow-[0_0_10px_rgba(255,215,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:-translate-y-0.5"
-              >
-                {t('subscribe')}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-12">
-          <div className="col-span-1 sm:col-span-2 md:col-span-1">
-            <Link to="/" onClick={handleScrollToTop} className="flex items-center gap-2 text-creo-accent mb-4 md:mb-6">
-              <Gamepad2 className="w-6 h-6 md:w-8 md:h-8" />
-              <span className="text-xl md:text-2xl font-display font-bold tracking-tight text-white">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-6 mb-6">
+          <div className="col-span-1 sm:col-span-2 lg:col-span-4">
+            <Link to="/" onClick={handleScrollToTop} className="flex items-center gap-2 text-creo-accent mb-3 md:mb-4">
+              <Gamepad2 className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="text-lg md:text-xl font-display font-bold tracking-tight text-white">
                 GameCurrency
               </span>
             </Link>
-            <p className="text-sm text-creo-text-sec leading-relaxed mb-6">
+            <p className="text-xs text-creo-text-sec leading-relaxed mb-4">
               {t('hero_desc')}
             </p>
-            <div className="flex items-center gap-4 text-creo-text-sec">
-              <a href="#" className="w-10 h-10 rounded-full bg-creo-card border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black hover:border-creo-accent transition-all"><Twitter className="w-4 h-4" /></a>
-              <a href="#" className="w-10 h-10 rounded-full bg-creo-card border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black hover:border-creo-accent transition-all"><Facebook className="w-4 h-4" /></a>
-              <a href="#" className="w-10 h-10 rounded-full bg-creo-card border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black hover:border-creo-accent transition-all"><Instagram className="w-4 h-4" /></a>
-              <a href="#" className="w-10 h-10 rounded-full bg-creo-card border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black hover:border-creo-accent transition-all"><Youtube className="w-4 h-4" /></a>
+            <div className="flex items-center gap-3 text-creo-text-sec">
+              <a href="#" className="w-8 h-8 rounded-full bg-creo-card border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black hover:border-creo-accent transition-all"><Twitter className="w-3.5 h-3.5" /></a>
+              <a href="#" className="w-8 h-8 rounded-full bg-creo-card border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black hover:border-creo-accent transition-all"><Facebook className="w-3.5 h-3.5" /></a>
+              <a href="#" className="w-8 h-8 rounded-full bg-creo-card border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black hover:border-creo-accent transition-all"><Instagram className="w-3.5 h-3.5" /></a>
+              <a href="#" className="w-8 h-8 rounded-full bg-creo-card border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black hover:border-creo-accent transition-all"><Youtube className="w-3.5 h-3.5" /></a>
             </div>
           </div>
 
-          <div>
-            <h3 className="text-white font-display font-semibold mb-4 md:mb-6 uppercase tracking-wider text-sm md:text-base">{t('support')}</h3>
-            <ul className="space-y-3 md:space-y-4 text-sm text-creo-text-sec font-medium">
+          <div className="col-span-1 lg:col-span-2">
+            <h3 className="text-white font-display font-semibold mb-3 md:mb-4 uppercase tracking-wider text-xs md:text-sm">{t('support')}</h3>
+            <ul className="space-y-2 md:space-y-3 text-xs text-creo-text-sec font-medium">
               <li><Link to="/contact" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('contact_us')}</Link></li>
               <li><Link to="/faq" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('faq')}</Link></li>
               <li><Link to="/payment-methods" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('payment_methods')}</Link></li>
             </ul>
           </div>
 
-          <div>
-            <h3 className="text-white font-display font-semibold mb-4 md:mb-6 uppercase tracking-wider text-sm md:text-base">{t('legal')}</h3>
-            <ul className="space-y-3 md:space-y-4 text-sm text-creo-text-sec font-medium">
+          <div className="col-span-1 lg:col-span-2">
+            <h3 className="text-white font-display font-semibold mb-3 md:mb-4 uppercase tracking-wider text-xs md:text-sm">{t('legal')}</h3>
+            <ul className="space-y-2 md:space-y-3 text-xs text-creo-text-sec font-medium">
               <li><Link to="/terms" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('terms')}</Link></li>
               <li><Link to="/privacy" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('privacy')}</Link></li>
               <li><Link to="/refund" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('refund')}</Link></li>
             </ul>
           </div>
           
+          {/* Premium Newsletter Section */}
+          <div className="col-span-1 sm:col-span-2 lg:col-span-4">
+            <div className="bg-creo-card border border-creo-border rounded-xl p-4 md:p-5 relative overflow-hidden h-full flex flex-col justify-center">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-creo-accent/10 blur-[40px] rounded-full pointer-events-none"></div>
+              <div className="relative z-10">
+                <h3 className="text-sm md:text-base font-display font-bold text-white mb-1">{t('newsletter_title')}</h3>
+                <p className="text-[10px] md:text-xs text-creo-text-sec mb-3">{t('newsletter_desc')}</p>
+                <form className="flex flex-col gap-2">
+                  <div className="relative">
+                    <input 
+                      type="email" 
+                      placeholder={t('email_placeholder')}
+                      className="w-full bg-creo-bg border border-creo-border rounded-lg px-3 py-2 text-xs text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all pl-9"
+                    />
+                    <Send className={`absolute ${language === 'en' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-creo-muted`} />
+                  </div>
+                  <button 
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-creo-accent to-creo-accent-sec hover:from-white hover:to-white text-black px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-[0_0_10px_rgba(255,215,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.4)]"
+                  >
+                    {t('subscribe')}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
 
         </div>
 
-        <div className="border-t border-creo-border pt-6 md:pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs md:text-sm text-creo-muted text-center sm:text-left font-medium">
+        <div className="border-t border-creo-border pt-4 flex items-center justify-center">
+          <p className="text-[10px] md:text-xs text-creo-muted text-center font-medium">
             &copy; {new Date().getFullYear()} GameCurrency. {t('rights_reserved')}
           </p>
-          <div className="flex items-center gap-4 text-xs md:text-sm text-creo-muted font-medium">
-            <span>{language === 'en' ? 'English' : 'العربية'}</span>
-            <span>{t('egp')}</span>
-          </div>
         </div>
       </div>
     </footer>

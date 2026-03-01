@@ -10,7 +10,7 @@ import { useStore } from '../context/StoreContext';
 export default function GameDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart, t, language, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+  const { addToCart, t, language, isInWishlist, addToWishlist, removeFromWishlist, formatPrice } = useStore();
   
   const [game, setGame] = useState<Game | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -61,7 +61,7 @@ export default function GameDetails() {
     });
     
     setAddingToCartId(null);
-    navigate('/cart');
+    // Removed navigate('/cart') to keep user on the same page
   };
 
   const toggleWishlist = (pkg: Package) => {
@@ -157,9 +157,7 @@ export default function GameDetails() {
                 </div>
                 
                 <div className="text-lg md:text-xl font-bold text-creo-accent mb-6">
-                  {language === 'ar' 
-                    ? `${pkg.price.toFixed(2)} ${t('egp')}` 
-                    : `${t('egp')} ${pkg.price.toFixed(2)}`}
+                  {formatPrice(pkg.price)}
                 </div>
               </div>
 

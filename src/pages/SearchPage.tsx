@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
-import { Search } from 'lucide-react';
+import { Search, Heart } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function SearchPage() {
@@ -58,7 +58,7 @@ export default function SearchPage() {
             <p className="text-creo-text-sec text-lg">{t('no_results').replace('{query}', query)}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3">
             {results.map((item, index) => (
               <motion.div
                 key={item.id}
@@ -68,9 +68,9 @@ export default function SearchPage() {
               >
                 <Link 
                   to={`/game/${item.id}`}
-                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
                 >
-                  <div className="aspect-[3/4] relative overflow-hidden bg-creo-bg">
+                  <div className="aspect-video relative overflow-hidden bg-creo-bg">
                     <img 
                       src={item.image_url} 
                       alt={item.name}
@@ -79,20 +79,20 @@ export default function SearchPage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
                     
-                    {/* Category Badge */}
-                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white/80 border border-white/10">
-                      {item.category === 'game' ? t('games') : t('apps')}
+                    {/* Heart Icon on side */}
+                    <div className="absolute top-1.5 right-1.5 z-30">
+                      <div className="p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-creo-muted group-hover:text-creo-accent transition-colors">
+                        <Heart className="w-3 h-3" />
+                      </div>
                     </div>
 
-                    {/* Wavy/Jagged edge overlay */}
-                    <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10">
-                      <svg className="relative block w-full h-[10px] md:h-[15px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10" preserveAspectRatio="none">
-                        <polygon points="0,10 0,0 5,10 10,0 15,10 20,0 25,10 30,0 35,10 40,0 45,10 50,0 55,10 60,0 65,10 70,0 75,10 80,0 85,10 90,0 95,10 100,0 100,10" className="fill-creo-card" />
-                      </svg>
+                    {/* Category Badge */}
+                    <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] uppercase font-bold text-white/80 border border-white/10">
+                      {item.category === 'game' ? t('games') : t('apps')}
                     </div>
                   </div>
-                  <div className="p-2 md:p-3 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-1">
-                    <h3 className="text-xs md:text-sm font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-2">
+                  <div className="p-2 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-0.5">
+                    <h3 className="text-[10px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
                       {item.name}
                     </h3>
                   </div>

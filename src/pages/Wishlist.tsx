@@ -1,11 +1,28 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Game } from '../types';
-import { Heart, Trash2 } from 'lucide-react';
+import { Heart, Trash2, AlertCircle, X, Check } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import React, { useState } from 'react';
 
 export default function Wishlist() {
   const { wishlist, removeFromWishlist, t } = useStore();
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+
+  const handleRemove = (e: React.MouseEvent, gameId: string, pkgId?: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const uniqueId = `${gameId}-${pkgId || 'base'}`;
+    
+    if (confirmRemoveId === uniqueId) {
+      removeFromWishlist(gameId, pkgId);
+      setConfirmRemoveId(null);
+    } else {
+      setConfirmRemoveId(uniqueId);
+      // Auto-reset confirmation after 3 seconds
+      setTimeout(() => setConfirmRemoveId(prev => prev === uniqueId ? null : prev), 3000);
+    }
+  };
 
   return (
     <div className="flex-1 bg-creo-bg py-12 md:py-16">
@@ -77,32 +94,36 @@ export default function Wishlist() {
 
                       {/* Remove Button */}
                       <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          removeFromWishlist(game.id, pkg?.id);
-                        }}
-                        className="absolute top-2 left-2 p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-red-500/20 text-white hover:text-red-500 transition-colors group/btn z-20"
-                        title="Remove from wishlist"
+                        onClick={(e) => handleRemove(e, game.id, pkg?.id)}
+                        className={`absolute top-2 left-2 p-2 rounded-xl backdrop-blur-md transition-all duration-300 z-30 flex items-center gap-2 ${
+                          confirmRemoveId === uniqueKey 
+                            ? "bg-red-500 text-white px-3 shadow-lg shadow-red-500/20" 
+                            : "bg-black/40 text-white hover:bg-red-500/20 hover:text-red-500"
+                        }`}
+                        title={confirmRemoveId === uniqueKey ? "Confirm removal" : "Remove from wishlist"}
                       >
-                        <Trash2 className="w-5 h-5" />
+                        {confirmRemoveId === uniqueKey ? (
+                          <>
+                            <AlertCircle className="w-4 h-4 animate-pulse" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Confirm?</span>
+                          </>
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
-                    <div className="p-4 flex flex-col items-start justify-center bg-creo-card flex-1 relative z-20 -mt-2">
-                      <h3 className="text-lg font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
+                    <div className="p-3 flex flex-col items-start justify-center bg-creo-card flex-1 relative z-20 -mt-1">
+                      <h3 className="text-sm font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
                         {game.name}
                       </h3>
                       <div className="flex items-center justify-between w-full mt-1">
-                        <p className="text-xs text-creo-text-sec">
-                          {game.publisher}
-                        </p>
                         {pkg ? (
-                          <p className="text-sm font-bold text-creo-accent">
+                          <p className="text-xs font-bold text-creo-accent">
                             {pkg.price.toFixed(2)}
                           </p>
                         ) : (
                           game.min_price && (
-                            <p className="text-xs font-bold text-creo-accent">
+                            <p className="text-[10px] font-bold text-creo-accent">
                               From ${game.min_price}
                             </p>
                           )

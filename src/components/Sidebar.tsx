@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, Globe, History, LogOut, User } from 'lucide-react';
+import { X, Heart, Globe, History, LogOut, User, ShoppingCart, Headset, DollarSign, LogIn } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
@@ -12,10 +12,10 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { t, language, toggleLanguage, wishlist } = useStore();
+  const { t, language, toggleLanguage, currency, toggleCurrency, wishlist, cart } = useStore();
   const { user, signOut } = useAuth();
-
-  if (!user) return null;
+  
+  const totalCartItems = cart.reduce((sum, item) => sum + item.amount, 0);
 
   return (
     <AnimatePresence>
@@ -43,12 +43,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           >
             <div className="p-6 border-b border-creo-border flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-creo-accent/10 flex items-center justify-center text-creo-accent">
-                  <User className="w-5 h-5" />
-                </div>
+                {user?.user_metadata?.avatar_url ? (
+                  <img 
+                    src={user.user_metadata.avatar_url} 
+                    alt="Avatar" 
+                    className="w-10 h-10 rounded-full object-cover border border-creo-border"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-creo-accent/10 flex items-center justify-center text-creo-accent">
+                    <User className="w-5 h-5" />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">{user.email}</p>
-                  <p className="text-xs text-creo-text-sec">{t('welcome_back')}</p>
+                  <p className="text-sm font-bold text-white truncate">
+                    {user ? (user.user_metadata?.full_name || user.email) : t('guest')}
+                  </p>
+                  <p className="text-xs text-creo-text-sec">
+                    {user ? t('welcome_back') : t('login_desc')}
+                  </p>
                 </div>
               </div>
               <button 
@@ -61,27 +73,56 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               <Link 
-                to="/wishlist" 
+                to="/cart" 
                 onClick={onClose}
                 className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
               >
-                <Heart className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                <span className="font-medium">{t('wishlist')}</span>
-                {wishlist.length > 0 && (
+                <ShoppingCart className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                <span className="font-medium">{t('shopping_cart')}</span>
+                {totalCartItems > 0 && (
                   <span className="ml-auto bg-creo-accent text-black text-xs font-bold px-2 py-0.5 rounded-full">
-                    {wishlist.length}
+                    {totalCartItems}
                   </span>
                 )}
               </Link>
 
+              {user && (
+                <>
+                  <Link 
+                    to="/wishlist" 
+                    onClick={onClose}
+                    className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                  >
+                    <Heart className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                    <span className="font-medium">{t('wishlist')}</span>
+                    {wishlist.length > 0 && (
+                      <span className="ml-auto bg-creo-accent text-black text-xs font-bold px-2 py-0.5 rounded-full">
+                        {wishlist.length}
+                      </span>
+                    )}
+                  </Link>
+
+                  <Link 
+                    to="/orders" 
+                    onClick={onClose}
+                    className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                  >
+                    <History className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                    <span className="font-medium">{t('order_history')}</span>
+                  </Link>
+                </>
+              )}
+
               <Link 
-                to="/orders" 
+                to="/support" 
                 onClick={onClose}
                 className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
               >
-                <History className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                <span className="font-medium">{t('order_history')}</span>
+                <Headset className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                <span className="font-medium">{t('support')}</span>
               </Link>
+
+              <div className="h-px bg-creo-border my-2 mx-4"></div>
 
               <button 
                 onClick={toggleLanguage}
@@ -93,19 +134,41 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {language === 'en' ? 'English' : 'العربية'}
                 </span>
               </button>
+
+              <button 
+                onClick={toggleCurrency}
+                className="w-full flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group text-left"
+              >
+                <DollarSign className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                <span className="font-medium">{t('currency')}</span>
+                <span className="ml-auto text-xs font-bold text-creo-accent bg-creo-accent/10 px-2 py-1 rounded">
+                  {currency === 'USD' ? 'USD' : 'EGP'}
+                </span>
+              </button>
             </div>
 
             <div className="p-4 border-t border-creo-border">
-              <button 
-                onClick={() => {
-                  signOut();
-                  onClose();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-xl transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium">{t('logout')}</span>
-              </button>
+              {user ? (
+                <button 
+                  onClick={() => {
+                    signOut();
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-xl transition-colors"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">{t('logout')}</span>
+                </button>
+              ) : (
+                <Link 
+                  to="/login"
+                  onClick={onClose}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-creo-accent hover:text-black hover:bg-creo-accent rounded-xl transition-colors"
+                >
+                  <LogIn className="w-5 h-5" />
+                  <span className="font-medium">{t('login')}</span>
+                </Link>
+              )}
             </div>
           </motion.div>
         </>
