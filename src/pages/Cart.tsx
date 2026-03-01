@@ -132,6 +132,13 @@ export default function Cart() {
                 </div>
               </div>
               
+              <div className="mb-4 text-xs text-creo-text-sec text-center">
+                {t('agree_terms')}
+                <Link to="/terms" className="text-creo-accent hover:underline">{t('terms')}</Link>
+                {t('and')}
+                <Link to="/privacy" className="text-creo-accent hover:underline">{t('privacy')}</Link>
+              </div>
+
               <button 
                 onClick={handleCheckout}
                 disabled={isCheckingOut}

@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Gamepad2, Search, ShoppingCart, Menu, Clock, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Gamepad2, Search, ShoppingCart, Menu, Clock, X, User, LogOut } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
   const { language, toggleLanguage, cart, t } = useStore();
+  const { user, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showRecent, setShowRecent] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const stored = localStorage.getItem('recentSearches');
@@ -26,6 +31,9 @@ export default function Header() {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setShowRecent(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -42,8 +50,7 @@ export default function Header() {
     localStorage.setItem('recentSearches', JSON.stringify(newRecent));
     setShowRecent(false);
     
-    // In a real app, you would navigate to search results here
-    console.log('Searching for:', query);
+    navigate(`/search?q=${encodeURIComponent(query)}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -138,6 +145,43 @@ export default function Header() {
               AR
             </button>
           </div>
+
+          {/* User Menu */}
+          {user ? (
+            <div className="relative" ref={userMenuRef}>
+              <button 
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors rounded-full hover:bg-creo-bg-sec"
+              >
+                <User className="w-5 h-5" />
+              </button>
+              
+              {showUserMenu && (
+                <div className={`absolute top-full ${language === 'en' ? 'right-0' : 'left-0'} mt-2 w-48 bg-creo-card border border-creo-border rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200`}>
+                  <div className="px-4 py-3 border-b border-creo-border/50 bg-creo-bg-sec/30">
+                    <p className="text-sm font-bold text-white truncate">{user.email}</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      signOut();
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-creo-bg-sec hover:text-red-300 transition-colors text-left"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    {t('logout')}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link 
+              to="/login"
+              className="hidden sm:block px-4 py-2 bg-creo-bg-sec hover:bg-creo-border text-white text-sm font-bold rounded-lg transition-colors"
+            >
+              {t('login')}
+            </Link>
+          )}
           
           <Link to="/cart" className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors relative">
             <ShoppingCart className="w-5 h-5" />

@@ -187,6 +187,24 @@ export const translations = {
     Entertainment: 'Entertainment',
     Productivity: 'Productivity',
     Lifestyle: 'Lifestyle',
+    
+    // Auth
+    login: 'Login',
+    signup: 'Sign Up',
+    password: 'Password',
+    login_with_google: 'Login with Google',
+    dont_have_account: "Don't have an account?",
+    already_have_account: 'Already have an account?',
+    login_success: 'Logged in successfully!',
+    signup_success: 'Account created! Please check your email to confirm.',
+    logout: 'Logout',
+    profile: 'Profile',
+    search_results: 'Search Results for "{query}"',
+    no_results: 'No results found for "{query}"',
+    
+    // Terms & Privacy
+    agree_terms: 'By continuing, you agree to our ',
+    and: ' and ',
   },
   ar: {
     // Nav
@@ -376,5 +394,23 @@ export const translations = {
     Entertainment: 'ترفيه',
     Productivity: 'إنتاجية',
     Lifestyle: 'نمط حياة',
+    
+    // Auth
+    login: 'تسجيل الدخول',
+    signup: 'إنشاء حساب',
+    password: 'كلمة المرور',
+    login_with_google: 'تسجيل الدخول باستخدام جوجل',
+    dont_have_account: 'ليس لديك حساب؟',
+    already_have_account: 'لديك حساب بالفعل؟',
+    login_success: 'تم تسجيل الدخول بنجاح!',
+    signup_success: 'تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني للتأكيد.',
+    logout: 'تسجيل الخروج',
+    profile: 'الملف الشخصي',
+    search_results: 'نتائج البحث عن "{query}"',
+    no_results: 'لا توجد نتائج لـ "{query}"',
+    
+    // Terms & Privacy
+    agree_terms: 'بالمتابعة، فإنك توافق على ',
+    and: ' و ',
   }
 };
