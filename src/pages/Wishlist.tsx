@@ -28,7 +28,7 @@ export default function Wishlist() {
               {t('wishlist_empty') || 'Your wishlist is empty.'}
             </p>
             <Link 
-              to="/games"
+              to="/"
               className="px-6 py-3 bg-creo-accent hover:bg-creo-accent-hover text-black font-bold rounded-xl transition-colors inline-block"
             >
               {t('browse_games') || 'Browse Games'}
@@ -36,64 +36,83 @@ export default function Wishlist() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {wishlist.map((game, index) => (
-              <motion.div
-                key={game.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-              >
-                <Link 
-                  to={`/game/${game.id}`}
-                  className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
-                >
-                  <div className="aspect-video relative overflow-hidden bg-creo-bg">
-                    <img 
-                      src={game.image_url} 
-                      alt={game.name}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
-                    
-                    {/* Genre Badge */}
-                    {game.genre && (
-                      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white/80 border border-white/10">
-                        {game.genre}
-                      </div>
-                    )}
+            {wishlist.map((item, index) => {
+              const game = item.game;
+              const pkg = item.package;
+              const uniqueKey = `${game.id}-${pkg?.id || 'base'}`;
 
-                    {/* Remove Button */}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        removeFromWishlist(game.id);
-                      }}
-                      className="absolute top-2 left-2 p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-red-500/20 text-white hover:text-red-500 transition-colors group/btn z-20"
-                      title="Remove from wishlist"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="p-4 flex flex-col items-start justify-center bg-creo-card flex-1 relative z-20 -mt-2">
-                    <h3 className="text-lg font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
-                      {game.name}
-                    </h3>
-                    <div className="flex items-center justify-between w-full mt-1">
-                      <p className="text-xs text-creo-text-sec">
-                        {game.publisher}
-                      </p>
-                      {game.min_price && (
-                        <p className="text-xs font-bold text-creo-accent">
-                          From ${game.min_price}
-                        </p>
+              return (
+                <motion.div
+                  key={uniqueKey}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                >
+                  <Link 
+                    to={`/game/${game.id}`}
+                    className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
+                  >
+                    <div className="aspect-video relative overflow-hidden bg-creo-bg">
+                      <img 
+                        src={game.image_url} 
+                        alt={game.name}
+                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
+                      
+                      {/* Genre Badge */}
+                      {game.genre && (
+                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white/80 border border-white/10">
+                          {game.genre}
+                        </div>
                       )}
+
+                      {/* Package Badge */}
+                      {pkg && (
+                        <div className="absolute bottom-2 right-2 bg-creo-accent text-black px-2 py-1 rounded text-xs font-bold shadow-lg">
+                          {pkg.amount} {game.currency_name}
+                        </div>
+                      )}
+
+                      {/* Remove Button */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeFromWishlist(game.id, pkg?.id);
+                        }}
+                        className="absolute top-2 left-2 p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-red-500/20 text-white hover:text-red-500 transition-colors group/btn z-20"
+                        title="Remove from wishlist"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+                    <div className="p-4 flex flex-col items-start justify-center bg-creo-card flex-1 relative z-20 -mt-2">
+                      <h3 className="text-lg font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
+                        {game.name}
+                      </h3>
+                      <div className="flex items-center justify-between w-full mt-1">
+                        <p className="text-xs text-creo-text-sec">
+                          {game.publisher}
+                        </p>
+                        {pkg ? (
+                          <p className="text-sm font-bold text-creo-accent">
+                            {pkg.price.toFixed(2)}
+                          </p>
+                        ) : (
+                          game.min_price && (
+                            <p className="text-xs font-bold text-creo-accent">
+                              From ${game.min_price}
+                            </p>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>

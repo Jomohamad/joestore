@@ -6,12 +6,12 @@
 create extension if not exists "uuid-ossp";
 
 -- 1. CLEANUP (Be careful in production, this resets tables)
--- drop table if exists order_items; -- If you have this
--- drop table if exists orders;
--- drop table if exists wishlist;
--- drop table if exists packages;
--- drop table if exists games;
--- drop table if exists coupons;
+drop table if exists order_items;
+drop table if exists orders;
+drop table if exists wishlist;
+drop table if exists packages;
+drop table if exists games;
+drop table if exists coupons;
 
 -- 2. GAMES TABLE
 create table if not exists games (
