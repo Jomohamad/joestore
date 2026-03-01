@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
-import { Search } from 'lucide-react';
+import { Search, Heart } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export default function Games() {
@@ -11,7 +11,7 @@ export default function Games() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { t, language } = useStore();
+  const { t, language, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
 
   useEffect(() => {
     const loadGames = async () => {
@@ -39,6 +39,16 @@ export default function Games() {
     // Default to popularity
     return (b.popularity || 0) - (a.popularity || 0);
   });
+
+  const toggleWishlist = (e: React.MouseEvent, game: Game) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation();
+    if (isInWishlist(game.id)) {
+      removeFromWishlist(game.id);
+    } else {
+      addToWishlist(game);
+    }
+  };
 
   if (loading) {
     return (
@@ -127,6 +137,16 @@ export default function Games() {
                         {game.genre}
                       </div>
                     )}
+
+                    {/* Wishlist Button */}
+                    <button
+                      onClick={(e) => toggleWishlist(e, game)}
+                      className="absolute top-2 left-2 p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-creo-accent/20 transition-colors group/btn z-20"
+                    >
+                      <Heart 
+                        className={`w-5 h-5 transition-colors ${isInWishlist(game.id) ? 'fill-creo-accent text-creo-accent' : 'text-white group-hover/btn:text-creo-accent'}`} 
+                      />
+                    </button>
                   </div>
                   <div className="p-4 flex flex-col items-start justify-center bg-creo-card flex-1 relative z-20 -mt-2">
                     <h3 className="text-lg font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">

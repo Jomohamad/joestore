@@ -3,14 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages, createOrder, verifyPlayerId } from '../services/api';
 import { Game, Package } from '../types';
-import { ShieldCheck, CreditCard, ChevronRight, CheckCircle2, UserCheck, AlertCircle, ShoppingCart } from 'lucide-react';
+import { ShieldCheck, CreditCard, ChevronRight, CheckCircle2, UserCheck, AlertCircle, ShoppingCart, Heart } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
 
 export default function GameDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart, t, language } = useStore();
+  const { addToCart, t, language, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
   
   const [game, setGame] = useState<Game | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -125,6 +125,15 @@ export default function GameDetails() {
     navigate('/cart');
   };
 
+  const toggleWishlist = () => {
+    if (!game) return;
+    if (isInWishlist(game.id)) {
+      removeFromWishlist(game.id);
+    } else {
+      addToWishlist(game);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -214,8 +223,22 @@ export default function GameDetails() {
                 referrerPolicy="no-referrer"
               />
             </div>
-            <div className="mb-1 md:mb-2">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
+            <div className="mb-1 md:mb-2 flex-1">
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
+                <button 
+                  onClick={toggleWishlist}
+                  className="p-2 rounded-full bg-creo-bg-sec/50 hover:bg-creo-accent/20 transition-colors group mb-1"
+                  title={isInWishlist(game.id) ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                  <Heart 
+                    className={cn(
+                      "w-6 h-6 transition-colors",
+                      isInWishlist(game.id) ? "fill-creo-accent text-creo-accent" : "text-creo-muted group-hover:text-creo-accent"
+                    )} 
+                  />
+                </button>
+              </div>
               <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-creo-text-sec">
                 <span className="px-2 py-1 bg-creo-bg-sec rounded-md">{game.publisher}</span>
                 <span className="flex items-center gap-1">

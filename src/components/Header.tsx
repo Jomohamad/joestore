@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Gamepad2, Search, ShoppingCart, Menu, Clock, X, User, LogOut } from 'lucide-react';
+import { Gamepad2, Search, ShoppingCart, Menu, Clock, X, User, LogOut, Heart } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
-  const { language, toggleLanguage, cart, t } = useStore();
+  const { language, toggleLanguage, cart, wishlist, t } = useStore();
   const { user, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -183,6 +183,15 @@ export default function Header() {
             </Link>
           )}
           
+          <Link to="/wishlist" className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors relative">
+            <Heart className="w-5 h-5" />
+            {wishlist.length > 0 && (
+              <span className="absolute top-0 right-0 w-4 h-4 bg-creo-accent text-black text-[10px] font-bold flex items-center justify-center rounded-full">
+                {wishlist.length}
+              </span>
+            )}
+          </Link>
+
           <Link to="/cart" className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors relative">
             <ShoppingCart className="w-5 h-5" />
             {cart.length > 0 && (

@@ -200,6 +200,13 @@ export const translations = {
     search_results: 'Search Results for "{query}"',
     no_results: 'No results found for "{query}"',
     
+    // Wishlist
+    wishlist: 'Wishlist',
+    wishlist_desc: 'Your collection of favorite games and apps.',
+    wishlist_empty: 'Your wishlist is empty.',
+    add_to_wishlist: 'Add to Wishlist',
+    remove_from_wishlist: 'Remove from Wishlist',
+    
     // Terms & Privacy
     agree_terms: 'By continuing, you agree to our ',
     and: ' and ',
@@ -404,6 +411,13 @@ export const translations = {
     profile: 'الملف الشخصي',
     search_results: 'نتائج البحث عن "{query}"',
     no_results: 'لا توجد نتائج لـ "{query}"',
+    
+    // Wishlist
+    wishlist: 'قائمة الرغبات',
+    wishlist_desc: 'مجموعتك من الألعاب والتطبيقات المفضلة.',
+    wishlist_empty: 'قائمة رغباتك فارغة.',
+    add_to_wishlist: 'أضف إلى قائمة الرغبات',
+    remove_from_wishlist: 'إزالة من قائمة الرغبات',
     
     // Terms & Privacy
     agree_terms: 'بالمتابعة، فإنك توافق على ',
