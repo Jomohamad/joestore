@@ -84,7 +84,10 @@ alter table wishlist enable row level security;
 alter table coupons enable row level security;
 
 -- Games & Packages: Public Read
+drop policy if exists "Public games are viewable by everyone" on games;
 create policy "Public games are viewable by everyone" on games for select using (true);
+
+drop policy if exists "Public packages are viewable by everyone" on packages;
 create policy "Public packages are viewable by everyone" on packages for select using (true);
 
 -- Orders: Users see their own, Anon can insert (if we allow guest checkout, but user asked to restrict)
@@ -92,15 +95,24 @@ create policy "Public packages are viewable by everyone" on packages for select 
 -- User said: "Anyone logged in keep info cloud, anyone not logged in keep local".
 -- But also: "If not logged in, cannot add products to cart".
 -- So orders will likely always have a user_id if we enforce login.
+drop policy if exists "Users can view their own orders" on orders;
 create policy "Users can view their own orders" on orders for select using (auth.uid() = user_id);
+
+drop policy if exists "Users can create orders" on orders;
 create policy "Users can create orders" on orders for insert with check (auth.uid() = user_id);
 
 -- Wishlist: Users only
+drop policy if exists "Users can view their own wishlist" on wishlist;
 create policy "Users can view their own wishlist" on wishlist for select using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert into their own wishlist" on wishlist;
 create policy "Users can insert into their own wishlist" on wishlist for insert with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete from their own wishlist" on wishlist;
 create policy "Users can delete from their own wishlist" on wishlist for delete using (auth.uid() = user_id);
 
 -- Coupons: Public Read (to validate)
+drop policy if exists "Coupons are viewable by everyone" on coupons;
 create policy "Coupons are viewable by everyone" on coupons for select using (true);
 
 -- 8. SEED DATA
