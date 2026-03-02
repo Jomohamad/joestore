@@ -154,7 +154,7 @@ export default function Home() {
                       }}
                       transition={{ delay: 0.3, duration: 0.5 }}
                     >
-                      <h2 className="text-2xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-2 md:mb-4 leading-tight max-w-2xl">
+                      <h2 className={`${promo.font_size_class || 'text-2xl md:text-5xl lg:text-6xl'} font-display font-bold text-white mb-2 md:mb-4 leading-tight max-w-2xl`}>
                         {language === 'en' ? promo.subtitle_en : promo.subtitle_ar}
                       </h2>
                       {promo.link_url && (

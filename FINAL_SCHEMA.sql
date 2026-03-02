@@ -84,6 +84,7 @@ create table if not exists promotions (
   link_url text,
   is_active boolean default true,
   sort_order integer default 0,
+  font_size_class text default 'text-2xl md:text-5xl lg:text-6xl',
   created_at timestamptz default now()
 );
 

@@ -36,9 +36,9 @@ export default function Header() {
       <header className="sticky top-0 z-40 w-full border-b border-creo-border bg-creo-bg/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between relative">
           <div className="flex items-center gap-3 md:gap-6">
-            <Link to="/" className="text-creo-accent hover:text-creo-accent-sec transition-colors flex-shrink-0 flex items-center gap-3">
-              <img src="/logo.png" alt="GameCurrency logo" className="w-6 h-6 md:w-8 md:h-8 object-contain" />
-              <span className="hidden md:inline text-lg md:text-xl font-display font-bold tracking-tight text-white">GameCurrency</span>
+            <Link to="/" className="flex-shrink-0 flex items-center gap-3 hover:opacity-80 transition-all duration-300 group">
+              <img src="/logo.png" alt="GameCurrency logo" className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full bg-creo-accent/10 p-1 border border-creo-border shadow-sm group-hover:shadow-lg group-hover:border-creo-accent transition-all duration-300" />
+              <span className="hidden md:inline text-lg md:text-xl font-display font-bold tracking-tight text-white group-hover:text-creo-accent transition-colors duration-300">GameCurrency</span>
             </Link>
             
             <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-creo-text-sec uppercase tracking-wider">

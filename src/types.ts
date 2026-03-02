@@ -6,6 +6,7 @@ export interface Promotion {
   link_url?: string;
   is_active: boolean;
   sort_order: number;
+  font_size_class?: string;
 }
 
 export interface Game {
