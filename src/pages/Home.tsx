@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGames, fetchPromotions } from '../services/api';
 import { Game, Promotion } from '../types';
-import { Zap, ShieldCheck, Clock, Trophy, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Zap, ShieldCheck, Clock, Trophy, ShoppingCart, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
-import { cn } from '../lib/utils';
+import { cn, imgSrc } from '../lib/utils';
 
 export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
@@ -138,7 +138,7 @@ export default function Home() {
                   className="absolute inset-0 bg-black"
                 >
                   <img 
-                    src={promo.image_url} 
+                    src={imgSrc(promo.image_url)} 
                     alt={language === 'en' ? promo.subtitle_en : promo.subtitle_ar}
                     className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
                     referrerPolicy="no-referrer"
@@ -209,7 +209,7 @@ export default function Home() {
       )}
 
       {/* Games Grid Section */}
-      <section id="games" className="py-8 md:py-12 bg-creo-bg-sec relative group/section">
+      <section id="games" className="py-6 md:py-8 bg-creo-bg-sec relative group/section">
         <div className="container mx-auto px-4 relative">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -267,7 +267,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
-                className="w-36 sm:w-48 md:w-56 lg:w-64 snap-start shrink-0 flex-none"
+                className="min-w-[12rem] sm:min-w-[16rem] md:min-w-[18rem] lg:min-w-[20rem] snap-start shrink-0 flex-none"
               >
                 <Link 
                   to={`/game/${game.id}`}
@@ -276,13 +276,20 @@ export default function Home() {
                 >
                   <div className="aspect-video relative overflow-hidden bg-creo-bg h-full">
                     <img 
-                      src={game.image_url} 
+                      src={imgSrc(game.image_url)} 
                       alt={game.name}
                       className="w-full h-full object-cover transform group-hover:scale-120 transition-transform duration-500 ease-out"
                       referrerPolicy="no-referrer"
                       draggable={false}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    {/* wishlist button for game */}
+                    <button
+                      onClick={(e) => toggleWishlist(e, game)}
+                      className="absolute top-2 right-2 z-20 p-2 rounded-full bg-black/40 text-white hover:bg-creo-accent transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Heart className={isInWishlist(game.id) ? "w-5 h-5 fill-creo-accent" : "w-5 h-5"} />
+                    </button>
                     
                     {/* Hover Overlay with Action */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-sm z-10 pb-4">
@@ -298,6 +305,10 @@ export default function Home() {
                       </h3>
                     </div>
                   </div>
+
+                  <div className="p-3 flex flex-col items-center justify-center bg-creo-card text-center">
+                    <h3 className="text-sm font-bold text-white truncate">{game.name}</h3>
+                  </div>
                 </Link>
               </motion.div>
             ))}
@@ -306,7 +317,7 @@ export default function Home() {
       </section>
 
       {/* Apps Grid Section */}
-      <section id="apps" className="py-8 md:py-12 bg-creo-bg relative border-t border-creo-border group/section">
+      <section id="apps" className="py-6 md:py-8 bg-creo-bg relative border-t border-creo-border group/section">
         <div className="container mx-auto px-4 relative">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -364,7 +375,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
-                className="w-36 sm:w-48 md:w-56 lg:w-64 snap-start shrink-0 flex-none"
+                className="min-w-[12rem] sm:min-w-[16rem] md:min-w-[18rem] lg:min-w-[20rem] snap-start shrink-0 flex-none"
               >
                 <Link 
                   to={`/game/${app.id}`}
@@ -373,13 +384,20 @@ export default function Home() {
                 >
                   <div className="aspect-video relative overflow-hidden bg-creo-bg h-full">
                     <img 
-                      src={app.image_url} 
+                      src={imgSrc(app.image_url)} 
                       alt={app.name}
                       className="w-full h-full object-cover transform group-hover:scale-120 transition-transform duration-500 ease-out"
                       referrerPolicy="no-referrer"
                       draggable={false}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    {/* wishlist button for app */}
+                    <button
+                      onClick={(e) => toggleWishlist(e, app)}
+                      className="absolute top-2 right-2 z-20 p-2 rounded-full bg-black/40 text-white hover:bg-creo-accent transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Heart className={isInWishlist(app.id) ? "w-5 h-5 fill-creo-accent" : "w-5 h-5"} />
+                    </button>
                     
                     {/* Hover Overlay with Action */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-sm z-10 pb-4">

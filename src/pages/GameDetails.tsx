@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages } from '../services/api';
 import { Game, Package } from '../types';
 import { ShieldCheck, ShoppingCart, Heart, CheckCircle2, X } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, imgSrc } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -183,7 +183,7 @@ export default function GameDetails() {
       <div className="relative h-48 md:h-64 lg:h-80 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-creo-bg-sec/50 via-creo-bg/80 to-creo-bg z-10"></div>
         <img 
-          src={game.image_url} 
+          src={imgSrc(game.image_url)} 
           alt={game.name} 
           className="w-full h-full object-cover opacity-40 blur-sm"
           referrerPolicy="no-referrer"
@@ -192,7 +192,7 @@ export default function GameDetails() {
           <div className="container mx-auto px-4 flex items-end gap-4 md:gap-6">
             <div className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-xl md:rounded-2xl overflow-hidden border-2 md:border-4 border-creo-bg shadow-2xl shrink-0 bg-creo-bg-sec">
               <img 
-                src={game.image_url} 
+                src={imgSrc(game.image_url)} 
                 alt={game.name} 
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
@@ -203,7 +203,7 @@ export default function GameDetails() {
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
               </div>
               <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-creo-text-sec">
-                {/* Publisher name removed */}
+                <span className="italic">{game.publisher}</span>
               </div>
             </div>
           </div>
@@ -213,13 +213,13 @@ export default function GameDetails() {
       <div className="container mx-auto px-4 mt-8 md:mt-12">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">{t('select_package')}</h2>
         
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
           {packages.map((pkg) => (
             <motion.div
               key={pkg.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-creo-card border border-creo-border rounded-xl overflow-hidden hover:border-creo-accent transition-all duration-300 group relative flex flex-col h-full hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)]"
+              className="w-44 sm:w-52 md:w-56 lg:w-60 bg-creo-card border border-creo-border rounded-xl overflow-hidden hover:border-creo-accent transition-all duration-300 group relative flex flex-col h-full hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] mx-auto"
             >
               <div className="aspect-video relative overflow-hidden bg-creo-bg-sec/30 flex items-center justify-center group-hover:bg-creo-bg-sec/50 transition-colors">
                 {/* Background Accent - Large faded amount */}
@@ -233,23 +233,7 @@ export default function GameDetails() {
                   <span className="text-[10px] uppercase tracking-widest text-creo-muted font-bold">{game.currency_name}</span>
                 </div>
 
-                {/* Wishlist Heart Icon - Top Right */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleWishlist(pkg);
-                  }}
-                  className={cn(
-                    "absolute top-1.5 right-1.5 z-30 p-1.5 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110",
-                    isInWishlist(game.id, pkg.id)
-                      ? "bg-creo-accent/20 text-creo-accent"
-                      : "bg-black/40 text-creo-muted hover:text-white"
-                  )}
-                  title={isInWishlist(game.id, pkg.id) ? t('remove_from_wishlist') : t('add_to_wishlist')}
-                >
-                  <Heart className={cn("w-3 h-3", isInWishlist(game.id, pkg.id) && "fill-current")} />
-                </button>
+
 
                 {pkg.bonus > 0 && (
                   <div className="absolute top-1.5 left-1.5 bg-creo-accent text-black text-[8px] font-bold px-1.5 py-0.5 rounded uppercase border border-white/10 z-10">

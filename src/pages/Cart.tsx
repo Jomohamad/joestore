@@ -4,10 +4,10 @@ import { motion } from 'motion/react';
 import { Trash2, ShoppingCart, ArrowRight, CreditCard, Tag, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { cn } from '../lib/utils';
-import { validateCoupon } from '../services/api';
+import { validateCoupon, createOrder } from '../services/api';
 
 export default function Cart() {
-  const { cart, removeFromCart, updateCartItem, clearCart, t, language, formatPrice } = useStore();
+  const { cart, removeFromCart, updateCartItem, clearCart, t, language, formatPrice, notifyOrder } = useStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
@@ -72,6 +72,7 @@ export default function Cart() {
     setAppliedCoupon(null);
   };
 
+
   const handleCheckout = async () => {
     if (!selectedPayment) {
       alert(language === 'ar' ? 'الرجاء اختيار طريقة الدفع' : 'Please select a payment method');
@@ -79,11 +80,25 @@ export default function Cart() {
     }
 
     setIsCheckingOut(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsCheckingOut(false);
-    alert(language === 'en' ? 'Checkout functionality would go here!' : 'سيتم إضافة وظيفة إتمام الطلب هنا!');
-    clearCart();
+    try {
+      // in a real app we'd send all cart items at once; server currently handles one item per order
+      for (const item of cart) {
+        const res = await createOrder({
+          gameId: item.gameId,
+          packageId: parseInt(item.packageId, 10),
+          amount: item.amount
+        });
+        if (res && res.orderId) {
+          notifyOrder({ orderId: res.orderId });
+        }
+      }
+      clearCart();
+    } catch (error) {
+      console.error('Checkout failed', error);
+      alert(language === 'ar' ? 'حدث خطأ أثناء إتمام الطلب' : 'Error during checkout');
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   if (cart.length === 0) {

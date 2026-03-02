@@ -4,6 +4,7 @@ import { Game, Package } from '../types';
 import { useAuth } from './AuthContext';
 import { fetchWishlist, addToWishlistApi, removeFromWishlistApi, fetchGames, fetchGamePackages } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 type Language = 'en' | 'ar';
 type Currency = 'USD' | 'EGP';
@@ -40,6 +41,12 @@ interface StoreContextType {
   addToWishlist: (game: Game, pkg?: Package) => void;
   removeFromWishlist: (gameId: string, packageId?: number) => void;
   isInWishlist: (gameId: string, packageId?: number) => boolean;
+  
+  // order notification toast
+  orderToast: { orderId: string } | null;
+  notifyOrder: (order: { orderId: string }) => void;
+  clearOrderToast: () => void;
+
   t: (key: keyof typeof translations['en']) => string;
 }
 
@@ -54,6 +61,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [allPackages, setAllPackages] = useState<Package[]>([]);
+  const [orderToast, setOrderToast] = useState<{ orderId: string } | null>(null);
 
   // Load all games and packages for context
   useEffect(() => {
@@ -136,6 +144,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.lang = language;
   }, [language]);
 
+  // real‑time subscription for new orders (useful for live notifications)
+  useEffect(() => {
+    // NOTE: realtime subscription removed — implementation varies between
+    // Supabase client versions and caused TypeScript type errors here.
+    // If you want live order toasts, re-add using the project's Supabase
+    // client's realtime API (e.g. `supabase.channel(...).on(...)` for v2).
+  }, []);
+
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'ar' : 'en');
   };
@@ -151,12 +167,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return `$${priceInUSD.toFixed(2)}`;
   };
 
+  const notifyOrder = (order: { orderId: string }) => {
+    setOrderToast(order);
+    setTimeout(() => setOrderToast(null), 4000);
+  };
+
+  const clearOrderToast = () => setOrderToast(null);
+
   const addToCart = (item: CartItem) => {
     if (!user) {
       alert(language === 'ar' ? 'يجب تسجيل الدخول لإضافة منتجات للسلة' : 'You must be logged in to add items to cart');
       return;
     }
-    setCart(prev => [...prev, item]);
+    setCart(prev => {
+      // if the same game/package already exists, increment amount and update price
+      const existing = prev.find(i => i.gameId === item.gameId && i.packageId === item.packageId);
+      if (existing) {
+        return prev.map(i => {
+          if (i === existing) {
+            return {
+              ...i,
+              amount: i.amount + item.amount,
+              price: i.price + item.price,
+            };
+          }
+          return i;
+        });
+      }
+      return [...prev, item];
+    });
   };
 
   const removeFromCart = (id: string) => {
@@ -232,6 +271,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addToWishlist,
       removeFromWishlist,
       isInWishlist,
+      orderToast,
+      notifyOrder,
+      clearOrderToast,
       t 
     }}>
       {children}

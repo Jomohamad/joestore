@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Game } from '../types';
 import { Heart, Trash2, AlertCircle, X, Check } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { imgSrc } from '../lib/utils';
 import React, { useState } from 'react';
 
 export default function Wishlist() {
@@ -67,11 +68,11 @@ export default function Wishlist() {
                 >
                   <Link 
                     to={`/game/${game.id}`}
-                    className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.4),inset_0_0_30px_rgba(255,215,0,0.1)] flex flex-col h-full w-36 sm:w-48 md:w-56 lg:w-64 mx-auto flex-none"
+                    className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.4),inset_0_0_30px_rgba(255,215,0,0.1)] flex flex-col h-full w-52 sm:w-64 md:w-72 lg:w-80 mx-auto flex-none"
                   >
                     <div className="aspect-video relative overflow-hidden bg-creo-bg">
                       <img 
-                        src={game.image_url} 
+                        src={imgSrc(game.image_url)} 
                         alt={game.name}
                         className="w-full h-full object-cover transform group-hover:scale-120 transition-transform duration-700 ease-out"
                         referrerPolicy="no-referrer"

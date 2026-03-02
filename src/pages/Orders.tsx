@@ -6,7 +6,7 @@ import { useStore } from '../context/StoreContext';
 import { fetchOrders } from '../services/api';
 import { Order } from '../types';
 import { Link } from 'react-router-dom';
-import { cn } from '../lib/utils';
+import { cn, imgSrc } from '../lib/utils';
 
 export default function Orders() {
   const { t, language, allGames } = useStore();
@@ -136,7 +136,7 @@ export default function Orders() {
                   <div className="flex items-center gap-4">
                     {game ? (
                       <img 
-                        src={game.image_url} 
+                        src={imgSrc(game.image_url)} 
                         alt={game.name}
                         className="w-16 h-16 rounded-xl object-cover border border-creo-border"
                       />

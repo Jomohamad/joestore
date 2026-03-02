@@ -7,7 +7,11 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { StoreProvider } from './context/StoreContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
+import ErrorBoundary from './components/ErrorBoundary';
+import OrderToast from './components/OrderToast';
 import Footer from './components/Footer';
+// footer removed per design
+// import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import GameDetails from './pages/GameDetails';
@@ -33,8 +37,11 @@ export default function App() {
         <Router>
           <ScrollToTop />
           <div className="min-h-screen flex flex-col bg-creo-bg text-creo-text font-sans selection:bg-creo-accent/30">
-            <Header />
-            <main className="flex-1 flex flex-col">
+            <OrderToast />
+            {/* wrap header/main in error boundary to surface runtime errors */}
+            <ErrorBoundary>
+              <Header />
+              <main className="flex-1 flex flex-col">
               <Routes>
                 <Route path="/" element={<Home />} />
 
@@ -55,7 +62,8 @@ export default function App() {
                 <Route path="/why-choose-us" element={<WhyChooseUs />} />
                 <Route path="/orders" element={<Orders />} />
               </Routes>
-            </main>
+              </main>
+            </ErrorBoundary>
             <Footer />
           </div>
         </Router>

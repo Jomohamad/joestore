@@ -154,6 +154,8 @@ export const translations = {
     privacy: 'Privacy Policy',
     refund: 'Refund Policy',
     rights_reserved: 'All rights reserved.',
+    follow_us: 'Follow Us',
+    order_placed: 'Order {id} placed successfully!',
     
     // General
     egp: 'EGP',
@@ -366,6 +368,8 @@ export const translations = {
     privacy: 'سياسة الخصوصية',
     refund: 'سياسة الاسترجاع',
     rights_reserved: 'جميع الحقوق محفوظة.',
+    follow_us: 'تابعنا',
+    order_placed: 'تم إرسال الطلب {id} بنجاح!',
     
     // General
     egp: 'EGP',

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, Globe, History, LogOut, User, ShoppingCart, Headset, DollarSign, LogIn, Clock, ShieldCheck, Edit, Trash2 } from 'lucide-react';
+import { X, Heart, Globe, History, LogOut, User, ShoppingCart, Headset, DollarSign, LogIn, Clock, ShieldCheck, Edit, Trash2, Twitter, Facebook, Instagram, Youtube } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
@@ -153,6 +153,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </span>
                 </button>
               </div>
+
+              {/* Social links moved to footer */}
               
               {/* More - Why Choose Us & Support */}
               <div className="space-y-1">
