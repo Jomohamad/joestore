@@ -71,6 +71,7 @@ create table if not exists coupons (
   discount_type text not null check (discount_type in ('percent', 'fixed')),
   value decimal(10, 2) not null,
   active boolean default true,
+  expires_at timestamptz,
   created_at timestamptz default now()
 );
 

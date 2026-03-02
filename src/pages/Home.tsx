@@ -203,32 +203,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Marquee */}
-      <div className="w-full overflow-hidden border-y border-creo-border bg-creo-bg-sec/50 backdrop-blur-sm py-3">
-        <div className="flex whitespace-nowrap animate-marquee-slow">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex items-center gap-8 px-4">
-              <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
-                <Zap className="w-4 h-4 text-creo-accent" /> {t('feat_instant')}
-              </span>
-              <span className="text-creo-border text-xl">•</span>
-              <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-creo-accent" /> {t('feat_secure')}
-              </span>
-              <span className="text-creo-border text-xl">•</span>
-              <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-creo-accent" /> {t('feat_prices')}
-              </span>
-              <span className="text-creo-border text-xl">•</span>
-              <span className="text-creo-text-sec font-display font-bold tracking-widest uppercase text-sm flex items-center gap-2">
-                <Clock className="w-4 h-4 text-creo-accent" /> {t('feat_support')}
-              </span>
-              <span className="text-creo-border text-xl">•</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Games Grid Section */}
       <section id="games" className="py-8 md:py-12 bg-creo-bg-sec relative group/section">
         <div className="container mx-auto px-4 relative">
@@ -292,10 +266,10 @@ export default function Home() {
               >
                 <Link 
                   to={`/game/${game.id}`}
-                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(255,215,0,0.15)] h-full"
                   draggable={false}
                 >
-                  <div className="aspect-video relative overflow-hidden bg-creo-bg">
+                  <div className="aspect-video relative overflow-hidden bg-creo-bg h-full">
                     <img 
                       src={game.image_url} 
                       alt={game.name}
@@ -303,18 +277,18 @@ export default function Home() {
                       referrerPolicy="no-referrer"
                       draggable={false}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-90"></div>
                     
                     {/* Hover Overlay with Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px] z-10">
-                      <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
-                        <ShoppingCart className="w-4 h-4 text-black" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px] z-10 pb-4">
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                        <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 text-black" />
                       </div>
                     </div>
 
                     {/* Text Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 z-20 flex flex-col items-center justify-end text-center">
-                      <h3 className="text-[10px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
+                    <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center">
+                      <h3 className="text-[11px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
                         {game.name}
                       </h3>
                     </div>
@@ -389,10 +363,10 @@ export default function Home() {
               >
                 <Link 
                   to={`/game/${app.id}`}
-                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(255,215,0,0.15)] h-full"
                   draggable={false}
                 >
-                  <div className="aspect-video relative overflow-hidden bg-creo-bg">
+                  <div className="aspect-video relative overflow-hidden bg-creo-bg h-full">
                     <img 
                       src={app.image_url} 
                       alt={app.name}
@@ -400,18 +374,18 @@ export default function Home() {
                       referrerPolicy="no-referrer"
                       draggable={false}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-90"></div>
                     
                     {/* Hover Overlay with Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px] z-10">
-                      <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
-                        <ShoppingCart className="w-4 h-4 text-black" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px] z-10 pb-4">
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                        <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 text-black" />
                       </div>
                     </div>
 
                     {/* Text Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 z-20 flex flex-col items-center justify-end text-center">
-                      <h3 className="text-[10px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
+                    <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center">
+                      <h3 className="text-[11px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
                         {app.name}
                       </h3>
                     </div>

@@ -216,11 +216,18 @@ export const validateCoupon = async (code: string): Promise<{ valid: boolean; di
       .from('coupons')
       .select('*')
       .eq('code', code)
-      .eq('active', true)
       .single();
 
     if (error || !data) {
       return { valid: false, error: 'Invalid coupon code' };
+    }
+
+    if (!data.active) {
+      return { valid: false, error: 'Coupon is expired or inactive' };
+    }
+
+    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      return { valid: false, error: 'Coupon is expired' };
     }
 
     return { 

@@ -31,6 +31,11 @@ export default function Cart() {
   const handleApplyCoupon = async () => {
     if (!couponCode) return;
     
+    if (!/^[A-Z0-9]+$/.test(couponCode)) {
+      setCouponError(language === 'ar' ? 'كود الخصم يجب أن يحتوي على حروف وأرقام فقط' : 'Coupon code must contain only letters and numbers');
+      return;
+    }
+    
     setIsValidatingCoupon(true);
     setCouponError(null);
     
@@ -44,10 +49,20 @@ export default function Cart() {
         });
         setCouponCode('');
       } else {
-        setCouponError(result.error || 'Invalid coupon');
+        let errorMsg = result.error || 'Invalid coupon';
+        if (language === 'ar') {
+          if (errorMsg === 'Coupon is expired or inactive' || errorMsg === 'Coupon is expired') {
+            errorMsg = 'كود الخصم منتهي الصلاحية أو غير فعال';
+          } else if (errorMsg === 'Invalid coupon code') {
+            errorMsg = 'كود الخصم غير صحيح';
+          } else {
+            errorMsg = 'كود الخصم غير صالح';
+          }
+        }
+        setCouponError(errorMsg);
       }
     } catch (err) {
-      setCouponError('Error validating coupon');
+      setCouponError(language === 'ar' ? 'حدث خطأ أثناء التحقق من الكود' : 'Error validating coupon');
     } finally {
       setIsValidatingCoupon(false);
     }
@@ -167,7 +182,13 @@ export default function Cart() {
                       <input 
                         type="text" 
                         value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase();
+                          if (/^[A-Z0-9]*$/.test(val)) {
+                            setCouponCode(val);
+                            setCouponError(null);
+                          }
+                        }}
                         placeholder={language === 'ar' ? 'أدخل الكود' : 'Enter code'}
                         className={cn(
                           "flex-1 bg-creo-bg border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50 transition-all font-mono uppercase",
