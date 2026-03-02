@@ -154,7 +154,12 @@ export default function Home() {
                       }}
                       transition={{ delay: 0.3, duration: 0.5 }}
                     >
-                      <h2 className={`${promo.font_size_class || 'text-2xl md:text-5xl lg:text-6xl'} font-display font-bold text-white mb-2 md:mb-4 leading-tight max-w-2xl`}>
+                      <h2 
+                        style={{ 
+                          fontSize: `calc(1.5rem + ${(promo.font_size_scale || 5) * 0.15}rem)`,
+                        }}
+                        className="md:text-5xl lg:text-6xl font-display font-bold text-white mb-2 md:mb-4 leading-tight max-w-2xl transition-all duration-300"
+                      >
                         {language === 'en' ? promo.subtitle_en : promo.subtitle_ar}
                       </h2>
                       {promo.link_url && (
@@ -266,28 +271,28 @@ export default function Home() {
               >
                 <Link 
                   to={`/game/${game.id}`}
-                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(255,215,0,0.15)] h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 h-full shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.4),inset_0_0_30px_rgba(255,215,0,0.1)]"
                   draggable={false}
                 >
                   <div className="aspect-video relative overflow-hidden bg-creo-bg h-full">
                     <img 
                       src={game.image_url} 
                       alt={game.name}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
+                      className="w-full h-full object-cover transform group-hover:scale-120 transition-transform duration-500 ease-out"
                       referrerPolicy="no-referrer"
                       draggable={false}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-90"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
                     {/* Hover Overlay with Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px] z-10 pb-4">
-                      <div className="w-8 h-8 md:w-10 md:h-10 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-sm z-10 pb-4">
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-creo-accent rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.6)] transform scale-50 group-hover:scale-100 transition-transform duration-300">
                         <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 text-black" />
                       </div>
                     </div>
 
                     {/* Text Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center">
+                    <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <h3 className="text-[11px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
                         {game.name}
                       </h3>
@@ -363,28 +368,28 @@ export default function Home() {
               >
                 <Link 
                   to={`/game/${app.id}`}
-                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(255,215,0,0.15)] h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 h-full shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.4),inset_0_0_30px_rgba(255,215,0,0.1)]"
                   draggable={false}
                 >
                   <div className="aspect-video relative overflow-hidden bg-creo-bg h-full">
                     <img 
                       src={app.image_url} 
                       alt={app.name}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
+                      className="w-full h-full object-cover transform group-hover:scale-120 transition-transform duration-500 ease-out"
                       referrerPolicy="no-referrer"
                       draggable={false}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-90"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
                     {/* Hover Overlay with Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px] z-10 pb-4">
-                      <div className="w-8 h-8 md:w-10 md:h-10 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-sm z-10 pb-4">
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-creo-accent rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.6)] transform scale-50 group-hover:scale-100 transition-transform duration-300">
                         <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 text-black" />
                       </div>
                     </div>
 
                     {/* Text Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center">
+                    <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <h3 className="text-[11px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
                         {app.name}
                       </h3>

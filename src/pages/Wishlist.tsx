@@ -67,27 +67,27 @@ export default function Wishlist() {
                 >
                   <Link 
                     to={`/game/${game.id}`}
-                    className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full w-36 sm:w-48 md:w-56 lg:w-64 mx-auto flex-none"
+                    className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.4),inset_0_0_30px_rgba(255,215,0,0.1)] flex flex-col h-full w-36 sm:w-48 md:w-56 lg:w-64 mx-auto flex-none"
                   >
                     <div className="aspect-video relative overflow-hidden bg-creo-bg">
                       <img 
                         src={game.image_url} 
                         alt={game.name}
-                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
+                        className="w-full h-full object-cover transform group-hover:scale-120 transition-transform duration-700 ease-out"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-100 group-hover:opacity-80 transition-opacity duration-300"></div>
                       
                       {/* Genre Badge */}
                       {game.genre && (
-                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white/80 border border-white/10">
+                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white/80 border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           {game.genre}
                         </div>
                       )}
 
                       {/* Package Badge */}
                       {pkg && (
-                        <div className="absolute bottom-2 right-2 bg-creo-accent text-black px-2 py-1 rounded text-xs font-bold shadow-lg">
+                        <div className="absolute bottom-2 right-2 bg-creo-accent text-black px-2 py-1 rounded text-xs font-bold shadow-[0_0_20px_rgba(255,215,0,0.6)] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           {pkg.amount} {game.currency_name}
                         </div>
                       )}
@@ -95,7 +95,7 @@ export default function Wishlist() {
                       {/* Remove Button (Heart) */}
                       <button
                         onClick={(e) => handleRemove(e, game.id, pkg?.id)}
-                        className={`absolute top-1.5 right-1.5 p-1.5 rounded-full backdrop-blur-md transition-all duration-300 z-30 flex items-center gap-1.5 ${
+                        className={`absolute top-1.5 right-1.5 p-1.5 rounded-full backdrop-blur-md transition-all duration-300 z-30 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 ${
                           confirmRemoveId === uniqueKey 
                             ? "bg-red-500 text-white px-2.5 shadow-lg shadow-red-500/20" 
                             : "bg-black/40 text-creo-accent hover:bg-red-500/20"

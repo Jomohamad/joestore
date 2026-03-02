@@ -80,19 +80,19 @@ export default function SearchPage() {
               >
                 <Link 
                   to={`/game/${item.id}`}
-                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.4),inset_0_0_30px_rgba(255,215,0,0.1)] flex flex-col h-full"
                 >
                   <div className="aspect-video relative overflow-hidden bg-creo-bg">
                     <img 
                       src={item.image_url} 
                       alt={item.name}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
+                      className="w-full h-full object-cover transform group-hover:scale-120 transition-transform duration-700 ease-out"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-100 group-hover:opacity-80 transition-opacity duration-300"></div>
                     
                     {/* Category Badge */}
-                    <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] uppercase font-bold text-white/80 border border-white/10">
+                    <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] uppercase font-bold text-white/80 border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       {item.category === 'game' ? t('games') : t('apps')}
                     </div>
                   </div>
