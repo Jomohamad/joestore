@@ -15,36 +15,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { t, language, toggleLanguage, currency, toggleCurrency, wishlist, cart } = useStore();
   const { user, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem('recentSearches');
-      return stored ? JSON.parse(stored) : [];
-    } catch (e) {
-      return [];
-    }
-  });
   const navigate = useNavigate();
   
   const totalCartItems = cart.reduce((sum, item) => sum + item.amount, 0);
 
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'recentSearches' && e.newValue) {
-        try {
-          setRecentSearches(JSON.parse(e.newValue));
-        } catch (err) {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
   const handleSearch = (query: string) => {
     if (!query.trim()) return;
-    
-    const newRecent = [query, ...recentSearches.filter(s => s !== query)].slice(0, 5);
-    setRecentSearches(newRecent);
-    localStorage.setItem('recentSearches', JSON.stringify(newRecent));
     
     onClose();
     navigate(`/search?q=${encodeURIComponent(query)}`);
@@ -54,13 +30,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (e.key === 'Enter') {
       handleSearch(searchQuery);
     }
-  };
-
-  const removeRecent = (e: React.MouseEvent, term: string) => {
-    e.stopPropagation();
-    const newRecent = recentSearches.filter(s => s !== term);
-    setRecentSearches(newRecent);
-    localStorage.setItem('recentSearches', JSON.stringify(newRecent));
   };
 
   return (
@@ -131,35 +100,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     className={`w-full bg-creo-bg-sec border border-creo-border rounded-xl py-2.5 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
                   />
                 </div>
-                
-                {recentSearches.length > 0 && (
-                  <div className="mt-3 space-y-1">
-                    <p className="px-2 text-[10px] font-bold text-creo-muted uppercase tracking-widest mb-1">
-                      {language === 'en' ? 'Recent Searches' : 'عمليات البحث الأخيرة'}
-                    </p>
-                    {recentSearches.map((term, i) => (
-                      <div 
-                        key={i}
-                        onClick={() => {
-                          setSearchQuery(term);
-                          handleSearch(term);
-                        }}
-                        className="flex items-center justify-between px-3 py-2 hover:bg-creo-bg-sec rounded-lg cursor-pointer group transition-colors"
-                      >
-                        <div className="flex items-center gap-2 text-xs text-creo-text group-hover:text-white transition-colors">
-                          <Clock className="w-3 h-3 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                          {term}
-                        </div>
-                        <button 
-                          onClick={(e) => removeRecent(e, term)}
-                          className="text-creo-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-1"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Main Menu Section */}

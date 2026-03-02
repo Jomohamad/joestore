@@ -231,14 +231,14 @@ export default function Home() {
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
+            viewport={{ once: false, margin: "-50px" }}
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="mb-8 md:mb-10"
           >
             <h2 className="text-2xl md:text-3xl font-display font-bold text-white">{t('popular_games')}</h2>
           </motion.div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 md:gap-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {games
               .filter(g => g.category === 'game')
               .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
@@ -248,8 +248,9 @@ export default function Home() {
                 key={game.id}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
+                viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
+                className="min-w-[140px] sm:min-w-[160px] md:min-w-[180px] snap-start shrink-0"
               >
                 <Link 
                   to={`/game/${game.id}`}
@@ -289,14 +290,14 @@ export default function Home() {
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
+            viewport={{ once: false, margin: "-50px" }}
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="mb-8 md:mb-10"
           >
             <h2 className="text-2xl md:text-3xl font-display font-bold text-white">{t('popular_apps')}</h2>
           </motion.div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 md:gap-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {games
               .filter(g => g.category === 'app')
               .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
@@ -306,8 +307,9 @@ export default function Home() {
                 key={app.id}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
+                viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
+                className="min-w-[140px] sm:min-w-[160px] md:min-w-[180px] snap-start shrink-0"
               >
                 <Link 
                   to={`/game/${app.id}`}
