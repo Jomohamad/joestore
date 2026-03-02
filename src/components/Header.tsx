@@ -10,6 +10,7 @@ export default function Header() {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const navigate = useNavigate();
 
   const handleSearch = (query: string) => {
@@ -27,9 +28,13 @@ export default function Header() {
     <>
       <header className="sticky top-0 z-40 w-full border-b border-creo-border bg-creo-bg/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between relative">
-          <div className="flex items-center gap-4 md:gap-8">
-            <Link to="/" className="text-creo-accent hover:text-creo-accent-sec transition-colors">
+          <div className="flex items-center gap-3 md:gap-6">
+            <Link to="/" className="text-creo-accent hover:text-creo-accent-sec transition-colors flex-shrink-0">
               <Gamepad2 className="w-6 h-6 md:w-8 md:h-8" />
+            </Link>
+            
+            <Link to="/" className="hidden md:block text-lg md:text-xl font-display font-bold tracking-tight text-white hover:text-creo-accent transition-colors flex-shrink-0">
+              GameCurrency
             </Link>
             
             <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-creo-text-sec uppercase tracking-wider">
@@ -37,28 +42,34 @@ export default function Header() {
             </nav>
           </div>
 
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <Link to="/" className="text-xl md:text-2xl font-display font-bold tracking-tight text-white hover:text-creo-accent transition-colors">
-              GameCurrency
-            </Link>
-          </div>
-
           <div className="flex items-center gap-2 md:gap-5">
-            {/* search input/button styled similar to provided images */}
+            {/* Mobile: Search Icon, Desktop: Search Field */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors flex-shrink-0"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Desktop Search Field / Mobile Expanded Search */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSearch(searchQuery);
               }}
-              className="relative flex items-center flex-1 min-w-0 max-w-none md:max-w-md"
+              className={`relative flex items-center ${isSearchExpanded ? 'absolute left-14 right-20 top-1/2 -translate-y-1/2 md:static md:translate-y-0' : 'hidden'} md:flex flex-1 min-w-0 max-w-none md:max-w-md`}
             >
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onBlur={() => !searchQuery && setIsSearchExpanded(false)}
                 placeholder={t('search_games')}
-                className={`flex-1 w-full sm:w-64 bg-creo-bg-sec border border-creo-border rounded-full py-2 px-4 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
+                className={`flex-1 w-full bg-creo-bg-sec border border-creo-border rounded-full py-2 px-4 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
+                autoFocus={isSearchExpanded}
               />
               <Search className={`absolute ${language === 'en' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-text-sec`} />
             </form>
