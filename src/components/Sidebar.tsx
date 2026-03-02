@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, Globe, History, LogOut, User, ShoppingCart, Headset, DollarSign, LogIn, Search, Clock, ShieldCheck } from 'lucide-react';
+import { X, Heart, Globe, History, LogOut, User, ShoppingCart, Headset, DollarSign, LogIn, Clock, ShieldCheck } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
@@ -14,23 +14,11 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { t, language, toggleLanguage, currency, toggleCurrency, wishlist, cart } = useStore();
   const { user, signOut } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
+  // searchQuery no longer needed here, search moved to header
   
   const totalCartItems = cart.reduce((sum, item) => sum + item.amount, 0);
 
-  const handleSearch = (query: string) => {
-    if (!query.trim()) return;
-    
-    onClose();
-    navigate(`/search?q=${encodeURIComponent(query)}`);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch(searchQuery);
-    }
-  };
+  // search handlers removed since the search UI was relocated to the header
 
   return (
     <AnimatePresence>
@@ -87,20 +75,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
-              {/* Search Section */}
-              <div className="px-2">
-                <div className="relative">
-                  <Search className={`absolute ${language === 'en' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-muted pointer-events-none`} />
-                  <input 
-                    type="text" 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={t('search')}
-                    className={`w-full bg-creo-bg-sec border border-creo-border rounded-xl py-2.5 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
-                  />
-                </div>
-              </div>
+              {/* search removed per design; moved to header */}
 
               {/* Main Menu Section */}
               <div className="space-y-1">
@@ -115,19 +90,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <Globe className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
                   <span className="font-medium">{t('home')}</span>
                 </Link>
-                <Link 
-                  to="/cart" 
-                  onClick={onClose}
-                  className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
-                >
-                  <ShoppingCart className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                  <span className="font-medium">{t('shopping_cart')}</span>
-                  {totalCartItems > 0 && (
-                    <span className="ml-auto bg-creo-accent text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      {totalCartItems}
-                    </span>
-                  )}
-                </Link>
+                {/* shopping cart link removed from sidebar */}
                 <Link 
                   to="/why-choose-us" 
                   onClick={onClose}

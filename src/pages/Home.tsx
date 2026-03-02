@@ -262,7 +262,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
-                className="w-[calc(35%-8px)] sm:w-[calc(25%-8px)] md:w-[calc(20%-12px)] lg:w-[calc(15%-12px)] snap-start shrink-0"
+                className="w-40 sm:w-44 md:w-48 lg:w-52 snap-start shrink-0 flex-none"
               >
                 <Link 
                   to={`/game/${game.id}`}
@@ -359,7 +359,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
-                className="w-[calc(35%-8px)] sm:w-[calc(25%-8px)] md:w-[calc(20%-12px)] lg:w-[calc(15%-12px)] snap-start shrink-0"
+                className="w-40 sm:w-44 md:w-48 lg:w-52 snap-start shrink-0 flex-none"
               >
                 <Link 
                   to={`/game/${app.id}`}

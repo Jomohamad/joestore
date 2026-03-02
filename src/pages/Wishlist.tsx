@@ -52,7 +52,7 @@ export default function Wishlist() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6 justify-center">
             {wishlist.map((item, index) => {
               const game = item.game;
               const pkg = item.package;
@@ -67,7 +67,7 @@ export default function Wishlist() {
                 >
                   <Link 
                     to={`/game/${game.id}`}
-                    className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
+                    className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full w-40 sm:w-44 md:w-48 lg:w-52 mx-auto flex-none"
                   >
                     <div className="aspect-video relative overflow-hidden bg-creo-bg">
                       <img 

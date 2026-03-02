@@ -69,13 +69,14 @@ export default function SearchPage() {
             <p className="text-creo-text-sec text-lg">{t('no_results').replace('{query}', query)}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4 justify-center">
             {results.map((item, index) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
+                className="w-40 sm:w-44 md:w-48 lg:w-52 mx-auto flex-none"
               >
                 <Link 
                   to={`/game/${item.id}`}

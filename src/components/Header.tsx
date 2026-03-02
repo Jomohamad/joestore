@@ -9,7 +9,19 @@ export default function Header() {
   const { language, toggleLanguage, cart, wishlist, t } = useStore();
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+
+  const handleSearch = (query: string) => {
+    if (!query.trim()) return;
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch(searchQuery);
+    }
+  };
 
   return (
     <>
@@ -33,6 +45,31 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-5">
+            {/* search input/button styled similar to provided images */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSearch(searchQuery);
+              }}
+              className="relative flex items-center flex-1 max-w-xs sm:max-w-md"
+            >
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={t('search_games')}
+                className={`w-full sm:w-64 bg-creo-bg-sec border border-creo-border rounded-full py-2 px-4 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
+              />
+              <Search className={`absolute ${language === 'en' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-text-sec`} />
+              <button
+                type="submit"
+                className={`${language === 'en' ? 'ml-2' : 'mr-2'} p-2 bg-creo-accent rounded-full text-black hover:bg-creo-accent/90 transition-colors`}
+              >
+                <Search className="w-4 h-4" />
+              </button>
+            </form>
+
             <Link to="/cart" className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors relative">
               <ShoppingCart className="w-5 h-5" />
               {cart.length > 0 && (
