@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Gamepad2, ShoppingCart, User } from 'lucide-react';
+import { Gamepad2, ShoppingCart, User, Search } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
