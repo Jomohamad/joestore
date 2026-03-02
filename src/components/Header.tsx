@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Gamepad2, ShoppingCart, User, Search, X } from 'lucide-react';
+import { ShoppingCart, User, Search, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
@@ -36,12 +36,9 @@ export default function Header() {
       <header className="sticky top-0 z-40 w-full border-b border-creo-border bg-creo-bg/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between relative">
           <div className="flex items-center gap-3 md:gap-6">
-            <Link to="/" className="text-creo-accent hover:text-creo-accent-sec transition-colors flex-shrink-0">
-              <Gamepad2 className="w-6 h-6 md:w-8 md:h-8" />
-            </Link>
-            
-            <Link to="/" className="hidden md:block text-lg md:text-xl font-display font-bold tracking-tight text-white hover:text-creo-accent transition-colors flex-shrink-0">
-              GameCurrency
+            <Link to="/" className="text-creo-accent hover:text-creo-accent-sec transition-colors flex-shrink-0 flex items-center gap-3">
+              <img src="/logo.png" alt="GameCurrency logo" className="w-6 h-6 md:w-8 md:h-8 object-contain" />
+              <span className="hidden md:inline text-lg md:text-xl font-display font-bold tracking-tight text-white">GameCurrency</span>
             </Link>
             
             <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-creo-text-sec uppercase tracking-wider">
@@ -110,41 +107,41 @@ export default function Header() {
 
           {/* Mobile centered search overlay */}
           {isSearchExpanded && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-              onClick={() => setIsSearchExpanded(false)}
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/40 backdrop-blur-sm"
+          onClick={() => setIsSearchExpanded(false)}
+        >
+          <div className="w-full px-4" onClick={(e) => e.stopPropagation()}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSearch(searchQuery);
+                setIsSearchExpanded(false);
+              }}
+              className="mx-auto max-w-md relative"
             >
-              <div className="w-full px-4" onClick={(e) => e.stopPropagation()}>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSearch(searchQuery);
-                    setIsSearchExpanded(false);
-                  }}
-                  className="mx-auto max-w-md relative"
-                >
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={t('search_games')}
-                    className={`w-full bg-creo-bg-sec border border-creo-border rounded-full py-3 px-4 ${language === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
-                    autoFocus
-                  />
-                  <Search className={`absolute ${language === 'en' ? 'left-6' : 'right-6'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-text-sec`} />
-                  <button
-                    type="button"
-                    onClick={() => setIsSearchExpanded(false)}
-                    className="absolute top-2 right-2 p-2 text-creo-text-sec hover:text-white"
-                    aria-label="Close search"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={t('search_games')}
+                className={`w-full bg-creo-bg-sec border border-creo-border rounded-full py-3 px-4 ${language === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
+                autoFocus
+              />
+              <Search className={`absolute ${language === 'en' ? 'left-6' : 'right-6'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-text-sec`} />
+              <button
+                type="button"
+                onClick={() => setIsSearchExpanded(false)}
+                className="absolute top-2 right-2 p-2 text-creo-text-sec hover:text-white"
+                aria-label="Close search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
           <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </>
