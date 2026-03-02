@@ -24,6 +24,7 @@ import Login from './pages/Login';
 import SearchPage from './pages/SearchPage';
 import Wishlist from './pages/Wishlist';
 import WhyChooseUs from './pages/WhyChooseUs';
+import Orders from './pages/Orders';
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/why-choose-us" element={<WhyChooseUs />} />
+                <Route path="/orders" element={<Orders />} />
               </Routes>
             </main>
             <Footer />

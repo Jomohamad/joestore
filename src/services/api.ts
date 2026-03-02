@@ -1,4 +1,4 @@
-import { Game, Package, Promotion } from '../types';
+import { Game, Package, Promotion, Order } from '../types';
 import { supabase } from '../lib/supabase';
 
 const getFallbackPromotions = (): Promotion[] => [
@@ -48,6 +48,55 @@ export const fetchPromotions = async (): Promise<Promotion[]> => {
   }
 };
 
+const getFallbackGames = (): Game[] => [
+  {
+    id: 'freefire',
+    name: 'Free Fire',
+    publisher: 'Garena',
+    image_url: 'https://picsum.photos/seed/ff/800/600',
+    currency_name: 'Diamonds',
+    currency_icon: '💎',
+    color_theme: 'from-orange-500 to-red-500',
+    category: 'game',
+    genre: 'Battle Royale',
+    popularity: 100,
+    min_price: 0.99
+  },
+  {
+    id: 'pubg',
+    name: 'PUBG Mobile',
+    publisher: 'Tencent',
+    image_url: 'https://picsum.photos/seed/pubg/800/600',
+    currency_name: 'UC',
+    currency_icon: '🪙',
+    color_theme: 'from-yellow-500 to-orange-500',
+    category: 'game',
+    genre: 'Battle Royale',
+    popularity: 95,
+    min_price: 0.99
+  },
+  {
+    id: 'netflix',
+    name: 'Netflix',
+    publisher: 'Netflix Inc.',
+    image_url: 'https://picsum.photos/seed/netflix/800/600',
+    currency_name: 'Subscription',
+    currency_icon: '📺',
+    color_theme: 'from-red-600 to-red-900',
+    category: 'app',
+    genre: 'Entertainment',
+    popularity: 90,
+    min_price: 9.99
+  }
+];
+
+const getFallbackPackages = (gameId: string): Package[] => [
+  { id: 1, game_id: gameId, amount: 100, bonus: 10, price: 0.99 },
+  { id: 2, game_id: gameId, amount: 310, bonus: 31, price: 2.99 },
+  { id: 3, game_id: gameId, amount: 520, bonus: 52, price: 4.99 },
+  { id: 4, game_id: gameId, amount: 1060, bonus: 106, price: 9.99 },
+];
+
 export const fetchGames = async (): Promise<Game[]> => {
   try {
     const { data, error } = await supabase
@@ -55,14 +104,14 @@ export const fetchGames = async (): Promise<Game[]> => {
       .select('*');
       
     if (error) {
-      console.error('Supabase error fetching games:', error);
-      throw new Error(error.message);
+      console.warn('Supabase error fetching games (using fallback):', error.message);
+      return getFallbackGames();
     }
     
-    return data || [];
+    return data && data.length > 0 ? data : getFallbackGames();
   } catch (error) {
-    console.error('Error fetching games:', error);
-    throw error;
+    console.warn('Error fetching games (using fallback):', error);
+    return getFallbackGames();
   }
 };
 
@@ -75,13 +124,17 @@ export const fetchGameDetails = async (id: string): Promise<Game> => {
       .single();
       
     if (error) {
-      console.error('Supabase error fetching game details:', error);
+      console.warn('Supabase error fetching game details (using fallback):', error.message);
+      const game = getFallbackGames().find(g => g.id === id);
+      if (game) return game;
       throw new Error(error.message);
     }
     
     return data;
   } catch (error) {
-    console.error('Error fetching game details:', error);
+    console.warn('Error fetching game details (using fallback):', error);
+    const game = getFallbackGames().find(g => g.id === id);
+    if (game) return game;
     throw error;
   }
 };
@@ -95,14 +148,14 @@ export const fetchGamePackages = async (id: string): Promise<Package[]> => {
       .order('price', { ascending: true });
       
     if (error) {
-      console.error('Supabase error fetching packages:', error);
-      throw new Error(error.message);
+      console.warn('Supabase error fetching packages (using fallback):', error.message);
+      return getFallbackPackages(id);
     }
     
-    return data || [];
+    return data && data.length > 0 ? data : getFallbackPackages(id);
   } catch (error) {
-    console.error('Error fetching packages:', error);
-    throw error;
+    console.warn('Error fetching packages (using fallback):', error);
+    return getFallbackPackages(id);
   }
 };
 
@@ -197,4 +250,24 @@ export const createOrder = async (orderData: {
   
   if (!response.ok) throw new Error('Failed to create order');
   return response.json();
+};
+
+export const fetchOrders = async (userId: string): Promise<Order[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error fetching orders:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    return [];
+  }
 };

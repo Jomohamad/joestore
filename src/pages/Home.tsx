@@ -5,6 +5,7 @@ import { fetchGames, fetchPromotions } from '../services/api';
 import { Game, Promotion } from '../types';
 import { Zap, ShieldCheck, Clock, Trophy, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 import { cn } from '../lib/utils';
 
 export default function Home() {
@@ -13,6 +14,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { language, t, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+
+  const gamesScroll = useHorizontalScroll<HTMLDivElement>(language);
+  const appsScroll = useHorizontalScroll<HTMLDivElement>(language);
 
   const toggleWishlist = (e: React.MouseEvent, game: Game) => {
     e.preventDefault();
@@ -226,19 +230,53 @@ export default function Home() {
       </div>
 
       {/* Games Grid Section */}
-      <section id="games" className="py-12 md:py-16 bg-creo-bg-sec relative">
-        <div className="container mx-auto px-4">
+      <section id="games" className="py-8 md:py-12 bg-creo-bg-sec relative group/section">
+        <div className="container mx-auto px-4 relative">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, margin: "-50px" }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="mb-8 md:mb-10"
+            className="mb-6 md:mb-8"
           >
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-white">{t('popular_games')}</h2>
+            <h2 className="text-xl md:text-2xl font-display font-bold text-white">{t('popular_games')}</h2>
           </motion.div>
 
-          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 md:gap-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {/* Hover Arrows */}
+          {gamesScroll.scrollState.canScrollLeft && (
+            <button 
+              onClick={() => gamesScroll.scroll(language === 'ar' ? 'right' : 'left')} 
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-0 group-hover/section:opacity-100 disabled:opacity-0",
+                language === 'ar' ? "right-2 md:-right-4" : "left-2 md:-left-4"
+              )}
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
+            </button>
+          )}
+          
+          {gamesScroll.scrollState.canScrollRight && (
+            <button 
+              onClick={() => gamesScroll.scroll(language === 'ar' ? 'left' : 'right')} 
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-0 group-hover/section:opacity-100 disabled:opacity-0",
+                language === 'ar' ? "left-2 md:-left-4" : "right-2 md:-right-4"
+              )}
+              aria-label="Scroll right"
+            >
+              <ChevronRight className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
+            </button>
+          )}
+
+          <div 
+            ref={gamesScroll.ref}
+            {...gamesScroll.events}
+            className={cn(
+              "flex overflow-x-auto snap-x snap-mandatory gap-2 md:gap-3 pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth",
+              gamesScroll.isDragging ? "cursor-grabbing snap-none scroll-auto" : "cursor-grab"
+            )}
+          >
             {games
               .filter(g => g.category === 'game')
               .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
@@ -250,11 +288,12 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
-                className="min-w-[140px] sm:min-w-[160px] md:min-w-[180px] snap-start shrink-0"
+                className="w-[calc(35%-8px)] sm:w-[calc(25%-8px)] md:w-[calc(20%-12px)] lg:w-[calc(15%-12px)] snap-start shrink-0"
               >
                 <Link 
                   to={`/game/${game.id}`}
-                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] flex flex-col h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] h-full"
+                  draggable={false}
                 >
                   <div className="aspect-video relative overflow-hidden bg-creo-bg">
                     <img 
@@ -262,20 +301,23 @@ export default function Home() {
                       alt={game.name}
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
                       referrerPolicy="no-referrer"
+                      draggable={false}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80"></div>
                     
                     {/* Hover Overlay with Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px] z-10">
                       <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
                         <ShoppingCart className="w-4 h-4 text-black" />
                       </div>
                     </div>
-                  </div>
-                  <div className="p-2 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-0.5 border-t border-creo-border/50">
-                    <h3 className="text-[10px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
-                      {game.name}
-                    </h3>
+
+                    {/* Text Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 z-20 flex flex-col items-center justify-end text-center">
+                      <h3 className="text-[10px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
+                        {game.name}
+                      </h3>
+                    </div>
                   </div>
                 </Link>
               </motion.div>
@@ -285,19 +327,53 @@ export default function Home() {
       </section>
 
       {/* Apps Grid Section */}
-      <section id="apps" className="py-12 md:py-16 bg-creo-bg relative border-t border-creo-border">
-        <div className="container mx-auto px-4">
+      <section id="apps" className="py-8 md:py-12 bg-creo-bg relative border-t border-creo-border group/section">
+        <div className="container mx-auto px-4 relative">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, margin: "-50px" }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="mb-8 md:mb-10"
+            className="mb-6 md:mb-8"
           >
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-white">{t('popular_apps')}</h2>
+            <h2 className="text-xl md:text-2xl font-display font-bold text-white">{t('popular_apps')}</h2>
           </motion.div>
 
-          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 md:gap-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {/* Hover Arrows */}
+          {appsScroll.scrollState.canScrollLeft && (
+            <button 
+              onClick={() => appsScroll.scroll(language === 'ar' ? 'right' : 'left')} 
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-0 group-hover/section:opacity-100 disabled:opacity-0",
+                language === 'ar' ? "right-2 md:-right-4" : "left-2 md:-left-4"
+              )}
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
+            </button>
+          )}
+          
+          {appsScroll.scrollState.canScrollRight && (
+            <button 
+              onClick={() => appsScroll.scroll(language === 'ar' ? 'left' : 'right')} 
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-0 group-hover/section:opacity-100 disabled:opacity-0",
+                language === 'ar' ? "left-2 md:-left-4" : "right-2 md:-right-4"
+              )}
+              aria-label="Scroll right"
+            >
+              <ChevronRight className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
+            </button>
+          )}
+
+          <div 
+            ref={appsScroll.ref}
+            {...appsScroll.events}
+            className={cn(
+              "flex overflow-x-auto snap-x snap-mandatory gap-2 md:gap-3 pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth",
+              appsScroll.isDragging ? "cursor-grabbing snap-none scroll-auto" : "cursor-grab"
+            )}
+          >
             {games
               .filter(g => g.category === 'app')
               .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
@@ -309,11 +385,12 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05, ease: "easeOut" }}
-                className="min-w-[140px] sm:min-w-[160px] md:min-w-[180px] snap-start shrink-0"
+                className="w-[calc(35%-8px)] sm:w-[calc(25%-8px)] md:w-[calc(20%-12px)] lg:w-[calc(15%-12px)] snap-start shrink-0"
               >
                 <Link 
                   to={`/game/${app.id}`}
-                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] flex flex-col h-full"
+                  className="group block relative rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] h-full"
+                  draggable={false}
                 >
                   <div className="aspect-video relative overflow-hidden bg-creo-bg">
                     <img 
@@ -321,20 +398,23 @@ export default function Home() {
                       alt={app.name}
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
                       referrerPolicy="no-referrer"
+                      draggable={false}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80"></div>
                     
                     {/* Hover Overlay with Action */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px] z-10">
                       <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
                         <ShoppingCart className="w-4 h-4 text-black" />
                       </div>
                     </div>
-                  </div>
-                  <div className="p-2 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-0.5 border-t border-creo-border/50">
-                    <h3 className="text-[10px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
-                      {app.name}
-                    </h3>
+
+                    {/* Text Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 z-20 flex flex-col items-center justify-end text-center">
+                      <h3 className="text-[10px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
+                        {app.name}
+                      </h3>
+                    </div>
                   </div>
                 </Link>
               </motion.div>
