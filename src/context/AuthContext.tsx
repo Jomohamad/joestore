@@ -7,6 +7,12 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  updateProfile: (data: {
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    avatar_url?: string;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,11 +46,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const updateProfile = async (data: {
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    avatar_url?: string;
+  }) => {
+    if (!user) throw new Error('No user logged in');
+
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        username: data.username,
+        avatar_url: data.avatar_url,
+        last_username_change: data.username ? new Date().toISOString() : undefined,
+      },
+    });
+
+    if (error) throw error;
+
+    // Refresh user data
+    const { data: { user: updatedUser } } = await supabase.auth.getUser();
+    if (updatedUser) setUser(updatedUser);
+  };
+
   const value = {
     session,
     user,
     loading,
     signOut,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

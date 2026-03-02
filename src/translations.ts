@@ -9,6 +9,7 @@ export const translations = {
     main_menu: 'Main Menu',
     my_account: 'My Account',
     settings: 'Settings',
+    more: 'More',
     
     // Hero
     hero_badge: 'The Ultimate Gaming Hub',
@@ -220,6 +221,7 @@ export const translations = {
     main_menu: 'القائمة الرئيسية',
     my_account: 'حسابي',
     settings: 'الإعدادات',
+    more: 'المزيد',
     
     // Hero
     hero_badge: 'المركز الأول للاعبين',

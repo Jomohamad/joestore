@@ -137,12 +137,12 @@ create policy "Promotions are viewable by everyone" on promotions for select usi
 
 -- Games
 insert into games (id, name, publisher, image_url, currency_name, currency_icon, color_theme, category, genre, popularity, min_price) values
-('pubg-mobile', 'PUBG Mobile', 'Level Infinite', '/pics/pubg.svg', 'UC', 'uc-icon', '#F59E0B', 'game', 'Action', 98, 0.99),
-('free-fire', 'Free Fire', 'Garena', '/pics/freefire.svg', 'Diamonds', 'diamond-icon', '#EF4444', 'game', 'Action', 95, 0.99),
-('mobile-legends', 'Mobile Legends', 'Moonton', '/pics/mlbb.svg', 'Diamonds', 'diamond-icon', '#3B82F6', 'game', 'Strategy', 92, 1.50),
-('tiktok', 'TikTok', 'ByteDance', '/pics/tiktok.jpg', 'Coins', 'coin-icon', '#000000', 'app', 'Social', 99, 5.00),
-('steam', 'Steam', 'Valve', '/pics/steam.svg', 'Wallet', 'wallet-icon', '#171a21', 'app', 'Entertainment', 95, 10.00),
-('xbox', 'Xbox', 'Microsoft', '/pics/xbox.jpg', 'Gift Card', 'card-icon', '#107C10', 'app', 'Entertainment', 92, 10.00)
+('pubg-mobile', 'PUBG Mobile', 'Level Infinite', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/pubg.jpeg', 'UC', 'uc-icon', '#F59E0B', 'game', 'Action', 98, 0.99),
+('free-fire', 'Free Fire', 'Garena', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/freefire.jpeg', 'Diamonds', 'diamond-icon', '#EF4444', 'game', 'Action', 95, 0.99),
+('mobile-legends', 'Mobile Legends', 'Moonton', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/mobile-legends2.jpeg', 'Diamonds', 'diamond-icon', '#3B82F6', 'game', 'Strategy', 92, 1.50),
+('tiktok', 'TikTok', 'ByteDance', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/tiktok.png', 'Coins', 'coin-icon', '#000000', 'app', 'Social', 99, 5.00),
+('steam', 'Steam', 'Valve', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/steam.jpeg', 'Wallet', 'wallet-icon', '#171a21', 'app', 'Entertainment', 95, 10.00),
+('xbox', 'Xbox', 'Microsoft', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/xbox.jpeg', 'Gift Card', 'card-icon', '#107C10', 'app', 'Entertainment', 92, 10.00)
 on conflict (id) do nothing;
 
 -- Packages

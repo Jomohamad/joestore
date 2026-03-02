@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, Globe, History, LogOut, User, ShoppingCart, Headset, DollarSign, LogIn, Clock, ShieldCheck } from 'lucide-react';
+import { X, Heart, Globe, History, LogOut, User, ShoppingCart, Headset, DollarSign, LogIn, Clock, ShieldCheck, Edit, Trash2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
@@ -82,23 +82,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <p className="px-4 text-[10px] font-bold text-creo-muted uppercase tracking-widest mb-2">
                   {t('main_menu')}
                 </p>
-                <Link 
-                  to="/" 
-                  onClick={onClose}
-                  className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
-                >
-                  <Globe className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                  <span className="font-medium">{t('home')}</span>
-                </Link>
+                {/* home removed per request */}
                 {/* shopping cart link removed from sidebar */}
-                <Link 
-                  to="/why-choose-us" 
-                  onClick={onClose}
-                  className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
-                >
-                  <ShieldCheck className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
-                  <span className="font-medium">{t('features_title')}</span>
-                </Link>
               </div>
 
               {/* My Account Section (Only if logged in) */}
@@ -129,6 +114,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <History className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
                     <span className="font-medium">{t('order_history')}</span>
                   </Link>
+                  
+                  <Link 
+                    to="/edit-profile" 
+                    onClick={onClose}
+                    className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                  >
+                    <Edit className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                    <span className="font-medium">Edit Profile</span>
+                  </Link>
+                  
+                  <Link 
+                    to="/payment-methods" 
+                    onClick={onClose}
+                    className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                  >
+                    <DollarSign className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                    <span className="font-medium">{t('payment_methods')}</span>
+                  </Link>
                 </div>
               )}
 
@@ -158,6 +161,38 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {currency === 'USD' ? 'USD' : 'EGP'}
                   </span>
                 </button>
+              </div>
+              
+              {/* Why Choose Us & Support - Moved to end */}
+              <div className="space-y-1">
+                <p className="px-4 text-[10px] font-bold text-creo-muted uppercase tracking-widest mb-2">
+                  {t('more')}
+                </p>
+                <Link 
+                  to="/why-choose-us" 
+                  onClick={onClose}
+                  className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                >
+                  <ShieldCheck className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                  <span className="font-medium">{t('features_title')}</span>
+                </Link>
+                <Link 
+                  to="/support" 
+                  onClick={onClose}
+                  className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                >
+                  <Headset className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                  <span className="font-medium">{t('support')}</span>
+                </Link>
+                {user && (
+                  <button
+                    onClick={onClose}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-xl transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    <span className="font-medium">Delete Account</span>
+                  </button>
+                )}
               </div>
             </div>
 

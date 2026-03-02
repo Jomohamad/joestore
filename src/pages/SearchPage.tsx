@@ -76,7 +76,7 @@ export default function SearchPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="w-40 sm:w-44 md:w-48 lg:w-52 mx-auto flex-none"
+                className="w-36 sm:w-48 md:w-56 lg:w-64 mx-auto flex-none"
               >
                 <Link 
                   to={`/game/${item.id}`}

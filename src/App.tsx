@@ -3,16 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { StoreProvider } from './context/StoreContext';
 import { AuthProvider } from './context/AuthContext';
-import { MessageCircle } from 'lucide-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import GameDetails from './pages/GameDetails';
-
+import EditProfile from './pages/EditProfile';
+import CompleteProfile from './pages/CompleteProfile';
 import Support from './pages/Support';
 import FAQ from './pages/FAQ';
 import PaymentMethods from './pages/PaymentMethods';
@@ -39,6 +39,8 @@ export default function App() {
                 <Route path="/" element={<Home />} />
 
                 <Route path="/game/:id" element={<GameDetails />} />
+                <Route path="/edit-profile" element={<EditProfile />} />
+                <Route path="/complete-profile" element={<CompleteProfile />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/contact" element={<Support />} />
                 <Route path="/faq" element={<FAQ />} />
@@ -55,15 +57,6 @@ export default function App() {
               </Routes>
             </main>
             <Footer />
-            
-            {/* Floating Contact Us Button */}
-            <Link 
-              to="/support"
-              className="fixed bottom-6 right-6 w-14 h-14 bg-creo-accent text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] hover:-translate-y-1 transition-all z-50 group"
-              aria-label="Contact Us"
-            >
-              <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            </Link>
           </div>
         </Router>
       </StoreProvider>

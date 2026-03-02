@@ -33,23 +33,8 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="col-span-1 lg:col-span-4 grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-white font-display font-semibold mb-3 md:mb-4 uppercase tracking-wider text-xs md:text-sm">{t('support')}</h3>
-              <ul className="space-y-2 md:space-y-3 text-xs text-creo-text-sec font-medium">
-                <li><Link to="/faq" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('faq')}</Link></li>
-                <li><Link to="/payment-methods" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('payment_methods')}</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-white font-display font-semibold mb-3 md:mb-4 uppercase tracking-wider text-xs md:text-sm">{t('legal')}</h3>
-              <ul className="space-y-2 md:space-y-3 text-xs text-creo-text-sec font-medium">
-                <li><Link to="/terms" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('terms')}</Link></li>
-                <li><Link to="/privacy" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('privacy')}</Link></li>
-                <li><Link to="/refund" onClick={handleScrollToTop} className="hover:text-creo-accent transition-colors">{t('refund')}</Link></li>
-              </ul>
-            </div>
+          <div className="col-span-1 lg:col-span-4">
+            {/* support section removed per design */}
           </div>
           
           {/* Premium Newsletter Section */}

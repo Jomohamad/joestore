@@ -33,8 +33,7 @@ export default function Header() {
             </Link>
             
             <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-creo-text-sec uppercase tracking-wider">
-              <Link to="/" className="hover:text-creo-accent transition-colors">{t('home')}</Link>
-              <Link to="/support" className="hover:text-creo-accent transition-colors">{t('support')}</Link>
+              {/* nav items removed per design */}
             </nav>
           </div>
 
@@ -51,7 +50,7 @@ export default function Header() {
                 e.preventDefault();
                 handleSearch(searchQuery);
               }}
-              className="relative flex items-center flex-1 max-w-xs sm:max-w-md"
+              className="relative flex items-center flex-1 min-w-0 max-w-none md:max-w-md"
             >
               <input
                 type="text"
@@ -59,15 +58,9 @@ export default function Header() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={t('search_games')}
-                className={`w-full sm:w-64 bg-creo-bg-sec border border-creo-border rounded-full py-2 px-4 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
+                className={`flex-1 w-full sm:w-64 bg-creo-bg-sec border border-creo-border rounded-full py-2 px-4 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
               />
               <Search className={`absolute ${language === 'en' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-text-sec`} />
-              <button
-                type="submit"
-                className={`${language === 'en' ? 'ml-2' : 'mr-2'} p-2 bg-creo-accent rounded-full text-black hover:bg-creo-accent/90 transition-colors`}
-              >
-                <Search className="w-4 h-4" />
-              </button>
             </form>
 
             <Link to="/cart" className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors relative">
