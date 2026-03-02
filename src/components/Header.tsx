@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Gamepad2, ShoppingCart, User, Search } from 'lucide-react';
+import { Gamepad2, ShoppingCart, User, Search, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
@@ -13,6 +13,13 @@ export default function Header() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsSearchExpanded(false);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
   const handleSearch = (query: string) => {
     if (!query.trim()) return;
     navigate(`/search?q=${encodeURIComponent(query)}`);
@@ -43,33 +50,32 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-5">
-            {/* Mobile: Search Icon, Desktop: Search Field */}
+            {/* Mobile: Search Icon (opens overlay) */}
             <div className="md:hidden">
               <button
-                onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                onClick={() => setIsSearchExpanded(true)}
                 className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors flex-shrink-0"
+                aria-label="Open search"
               >
                 <Search className="w-5 h-5" />
               </button>
             </div>
-            
-            {/* Desktop Search Field / Mobile Expanded Search */}
+
+            {/* Desktop Search Field */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSearch(searchQuery);
               }}
-              className={`relative flex items-center ${isSearchExpanded ? 'absolute left-14 right-20 top-1/2 -translate-y-1/2 md:static md:translate-y-0' : 'hidden'} md:flex flex-1 min-w-0 max-w-none md:max-w-md`}
+              className={`hidden md:flex relative flex items-center flex-1 min-w-0 max-w-none md:max-w-md`}
             >
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onBlur={() => !searchQuery && setIsSearchExpanded(false)}
                 placeholder={t('search_games')}
                 className={`flex-1 w-full bg-creo-bg-sec border border-creo-border rounded-full py-2 px-4 ${language === 'en' ? 'pl-10 pr-4' : 'pr-10 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
-                autoFocus={isSearchExpanded}
               />
               <Search className={`absolute ${language === 'en' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-text-sec`} />
             </form>
@@ -102,7 +108,45 @@ export default function Header() {
         </div>
       </header>
 
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+          {/* Mobile centered search overlay */}
+          {isSearchExpanded && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsSearchExpanded(false)}
+            >
+              <div className="w-full px-4" onClick={(e) => e.stopPropagation()}>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSearch(searchQuery);
+                    setIsSearchExpanded(false);
+                  }}
+                  className="mx-auto max-w-md relative"
+                >
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={t('search_games')}
+                    className={`w-full bg-creo-bg-sec border border-creo-border rounded-full py-3 px-4 ${language === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} text-sm text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all`}
+                    autoFocus
+                  />
+                  <Search className={`absolute ${language === 'en' ? 'left-6' : 'right-6'} top-1/2 -translate-y-1/2 w-4 h-4 text-creo-text-sec`} />
+                  <button
+                    type="button"
+                    onClick={() => setIsSearchExpanded(false)}
+                    className="absolute top-2 right-2 p-2 text-creo-text-sec hover:text-white"
+                    aria-label="Close search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </>
   );
 }
