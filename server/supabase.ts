@@ -5,13 +5,19 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const rawServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const cleanEnv = (value?: string) => {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  return trimmed.replace(/^['"]|['"]$/g, '');
+};
+
+const supabaseUrl = cleanEnv(process.env.VITE_SUPABASE_URL) || cleanEnv(process.env.SUPABASE_URL);
+const rawServiceRoleKey = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const supabaseServiceRoleKey =
   rawServiceRoleKey && !rawServiceRoleKey.includes('PASTE_YOUR_SERVICE_ROLE_KEY_HERE')
     ? rawServiceRoleKey
     : undefined;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseAnonKey = cleanEnv(process.env.VITE_SUPABASE_ANON_KEY) || cleanEnv(process.env.SUPABASE_ANON_KEY);
 const supabaseKey = supabaseServiceRoleKey || supabaseAnonKey;
 
 if (!supabaseUrl || !supabaseKey) {
