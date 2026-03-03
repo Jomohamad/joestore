@@ -102,7 +102,10 @@ export default function Wishlist() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, delay: index * 0.03 }}
-                    className="home-cards-item snap-start shrink-0"
+                    className={cn(
+                      'home-cards-item shrink-0',
+                      index === 0 ? 'snap-start' : index === wishlist.length - 1 ? 'snap-end' : 'snap-center',
+                    )}
                   >
                     <Link
                       to={`/game/${game.id}`}

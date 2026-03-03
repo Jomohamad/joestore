@@ -115,7 +115,10 @@ export default function HorizontalCatalogSection({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, margin: '-50px' }}
                 transition={{ duration: 0.5, delay: index * 0.05, ease: 'easeOut' }}
-                className="home-cards-item snap-start shrink-0"
+                className={cn(
+                  'home-cards-item shrink-0',
+                  index === 0 ? 'snap-start' : index === items.length - 1 ? 'snap-end' : 'snap-center'
+                )}
               >
                 <Link
                   to={`/game/${item.id}`}
