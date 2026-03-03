@@ -104,7 +104,7 @@ export default function HorizontalCatalogSection({
             ref={scroll.ref}
             {...scroll.events}
               className={cn(
-                'home-cards-track flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth',
+                'home-cards-track flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-pan-x',
                 scroll.isDragging ? 'cursor-grabbing snap-none scroll-auto' : 'cursor-grab'
               )}
             >
