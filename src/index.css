@@ -92,7 +92,7 @@ body {
   width: 0ch;
   margin-inline-start: 0.06em;
   border-right: 2px solid var(--color-creo-accent);
-  animation: storeTyping 5s steps(5, end) infinite, storeCaret 0.85s step-end infinite;
+  animation: storeTyping 6.5s steps(5, end) infinite, storeCaret 1.05s step-end infinite;
 }
 
 @keyframes storeTyping {
@@ -159,10 +159,12 @@ body {
   }
 
   .home-cards-edge.right {
+    right: -1rem;
     background: linear-gradient(to left, rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0));
   }
 
   .home-cards-edge.left {
+    left: -1rem;
     background: linear-gradient(to right, rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0));
   }
 }
