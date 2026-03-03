@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
-import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, ShoppingCart } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { cn, imgSrc } from '../lib/utils';
 import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
@@ -129,6 +129,12 @@ export default function SearchPage() {
                       >
                         <Heart className={isInWishlist(item.id) ? 'w-4 h-4 md:w-5 md:h-5 fill-creo-accent' : 'w-4 h-4 md:w-5 md:h-5'} />
                       </button>
+
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-sm z-10 pb-4">
+                        <div className="w-7 h-7 md:w-9 md:h-9 bg-creo-accent rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.6)] transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                          <ShoppingCart className="w-3.5 h-3.5 md:w-4.5 md:h-4.5 text-black" />
+                        </div>
+                      </div>
 
                       <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <h3 className="text-[11px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">{item.name}</h3>

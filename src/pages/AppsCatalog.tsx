@@ -1,7 +1,7 @@
 import { MouseEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Heart } from 'lucide-react';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
 import { useStore } from '../context/StoreContext';
@@ -67,21 +67,28 @@ export default function AppsCatalog() {
                 to={`/game/${item.id}`}
                 className="group block relative aspect-video rounded-xl overflow-hidden border border-creo-border bg-creo-card hover:border-creo-accent transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.35),inset_0_0_20px_rgba(255,215,0,0.12)]"
               >
-                <img
-                  src={imgSrc(item.image_url)}
-                  alt={item.name}
-                  className="absolute inset-0 w-full h-full object-fill transform group-hover:scale-105 transition-transform duration-500 ease-out"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300" />
-                <button
-                  onClick={(e) => toggleWishlist(e, item)}
-                  className="absolute top-2 right-2 z-20 p-2 rounded-full bg-black/45 text-white hover:bg-creo-accent transition-colors"
-                >
-                  <Heart className={isInWishlist(item.id) ? 'w-4 h-4 fill-creo-accent' : 'w-4 h-4'} />
-                </button>
-                <div className="absolute bottom-0 left-0 right-0 p-2.5 z-10">
-                  <h3 className="text-sm font-bold text-white line-clamp-1">{item.name}</h3>
+                <div className="absolute inset-0 bg-creo-bg">
+                  <img
+                    src={imgSrc(item.image_url)}
+                    alt={item.name}
+                    className="w-full h-full object-fill transform group-hover:scale-105 transition-transform duration-500 ease-out"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300" />
+                  <button
+                    onClick={(e) => toggleWishlist(e, item)}
+                    className="absolute top-1.5 right-1.5 z-20 p-1.5 md:p-2 rounded-full bg-black/40 text-white hover:bg-creo-accent transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                  >
+                    <Heart className={isInWishlist(item.id) ? 'w-4 h-4 md:w-5 md:h-5 fill-creo-accent' : 'w-4 h-4 md:w-5 md:h-5'} />
+                  </button>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-sm z-10 pb-4">
+                    <div className="w-7 h-7 md:w-9 md:h-9 bg-creo-accent rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.6)] transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                      <ShoppingCart className="w-3.5 h-3.5 md:w-4.5 md:h-4.5 text-black" />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <h3 className="text-[11px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">{item.name}</h3>
+                  </div>
                 </div>
               </Link>
             </motion.div>
