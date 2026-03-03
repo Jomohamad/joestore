@@ -3,31 +3,29 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../context/StoreContext';
-import { Gamepad2 } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 
-export default function Login() {
+export default function SignUp() {
   const [error, setError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const { t } = useStore();
 
-  const oauthError = useMemo(() => {
+  const authError = useMemo(() => {
     const code = searchParams.get('error');
-    if (code === 'account_not_found') return t('account_not_found');
     if (code === 'account_exists') return t('account_exists');
-    if (code === 'complete_profile_required') return t('complete_profile_required');
     return null;
   }, [searchParams, t]);
 
-  const handleSocialLogin = async (provider: 'google' | 'discord') => {
+  const handleSocialSignUp = async (provider: 'google' | 'discord') => {
     try {
-      localStorage.setItem('auth_intent', 'login');
-      const { error: oauthErrorResponse } = await supabase.auth.signInWithOAuth({
+      localStorage.setItem('auth_intent', 'signup');
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/`,
         },
       });
-      if (oauthErrorResponse) throw oauthErrorResponse;
+      if (oauthError) throw oauthError;
     } catch (err: any) {
       setError(err.message);
     }
@@ -42,21 +40,21 @@ export default function Login() {
       >
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-creo-bg-sec rounded-full flex items-center justify-center mb-4">
-            <Gamepad2 className="h-8 w-8 text-creo-accent" />
+            <UserPlus className="h-8 w-8 text-creo-accent" />
           </div>
-          <h2 className="text-3xl font-display font-bold text-white">{t('login')}</h2>
-          <p className="mt-2 text-sm text-creo-text-sec">{t('login_desc')}</p>
+          <h2 className="text-3xl font-display font-bold text-white">{t('signup')}</h2>
+          <p className="mt-2 text-sm text-creo-text-sec">{t('signup_desc')}</p>
         </div>
 
-        {(oauthError || error) && (
+        {(authError || error) && (
           <div className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-3 rounded-lg text-sm text-center">
-            {oauthError || error}
+            {authError || error}
           </div>
         )}
 
         <div className="mt-8 space-y-4">
           <button
-            onClick={() => handleSocialLogin('google')}
+            onClick={() => handleSocialSignUp('google')}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-creo-border rounded-xl shadow-sm bg-creo-bg hover:bg-creo-bg-sec text-sm font-medium text-creo-text transition-colors"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -69,7 +67,7 @@ export default function Login() {
           </button>
 
           <button
-            onClick={() => handleSocialLogin('discord')}
+            onClick={() => handleSocialSignUp('discord')}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-creo-border rounded-xl shadow-sm bg-[#5865F2] hover:bg-[#4752C4] text-sm font-medium text-white transition-colors"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -80,9 +78,9 @@ export default function Login() {
         </div>
 
         <div className="text-center text-sm text-creo-text-sec">
-          <span className="me-1">{t('dont_have_account')}</span>
-          <Link to="/signup" className="text-creo-accent hover:underline font-semibold">
-            {t('signup')}
+          <span className="me-1">{t('already_have_account')}</span>
+          <Link to="/login" className="text-creo-accent hover:underline font-semibold">
+            {t('login')}
           </Link>
         </div>
       </motion.div>

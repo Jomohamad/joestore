@@ -21,6 +21,7 @@ export interface Game {
   genre?: string;
   popularity?: number;
   min_price?: number;
+  show_on_home?: boolean;
 }
 
 export interface Package {
@@ -29,6 +30,7 @@ export interface Package {
   amount: number;
   bonus: number;
   price: number;
+  image_url?: string | null;
 }
 
 export interface Order {

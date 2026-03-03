@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Promotion } from '../../types';
@@ -63,39 +62,11 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
             >
               <img
                 src={imgSrc(promo.image_url)}
-                alt={language === 'en' ? promo.subtitle_en : promo.subtitle_ar}
+                alt={`Promotion ${index + 1}`}
                 className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
                 referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
-
-              <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12">
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{
-                    y: activePromo === index ? 0 : 20,
-                    opacity: activePromo === index ? 1 : 0,
-                  }}
-                  transition={{ delay: 0.3, duration: 0.5 }}
-                >
-                  <h2
-                    style={{
-                      fontSize: `calc(1.5rem + ${(promo.font_size_scale || 5) * 0.15}rem)`,
-                    }}
-                    className="md:text-5xl lg:text-6xl font-display font-bold text-white mb-2 md:mb-4 leading-tight max-w-2xl transition-all duration-300"
-                  >
-                    {language === 'en' ? promo.subtitle_en : promo.subtitle_ar}
-                  </h2>
-                  {promo.link_url && (
-                    <Link
-                      to={promo.link_url}
-                      className="inline-block px-6 py-2.5 md:px-8 md:py-3 bg-white text-black rounded-full font-bold text-xs md:text-sm hover:bg-creo-accent transition-all transform hover:scale-105 shadow-lg"
-                    >
-                      {language === 'en' ? 'Claim Now' : 'احصل عليه الآن'}
-                    </Link>
-                  )}
-                </motion.div>
-              </div>
             </motion.div>
           ))}
 
@@ -106,7 +77,7 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
                   e.preventDefault();
                   prevPromo();
                 }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 group-hover:opacity-100 opacity-0 md:opacity-100"
+                className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 opacity-65 md:opacity-0 md:group-hover:opacity-100"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
@@ -115,7 +86,7 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
                   e.preventDefault();
                   nextPromo();
                 }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 group-hover:opacity-100 opacity-0 md:opacity-100"
+                className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 opacity-65 md:opacity-0 md:group-hover:opacity-100"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>

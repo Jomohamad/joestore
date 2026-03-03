@@ -1,20 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import { MouseEvent, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
-import { Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { cn, imgSrc } from '../lib/utils';
+import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+  const { t, language, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+  const scroll = useHorizontalScroll<HTMLDivElement>(language);
 
-  const toggleWishlist = (e: React.MouseEvent, game: Game) => {
+  const toggleWishlist = (e: MouseEvent, game: Game) => {
     e.preventDefault();
     e.stopPropagation();
     if (isInWishlist(game.id)) {
@@ -58,7 +60,7 @@ export default function SearchPage() {
 
   return (
     <div className="flex-1 bg-creo-bg py-12 md:py-16">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 relative group/section">
         <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-8">{t('search_results').replace('{query}', query)}</h1>
 
         {results.length === 0 ? (
@@ -66,48 +68,77 @@ export default function SearchPage() {
             <p className="text-creo-text-sec text-lg">{t('no_results').replace('{query}', query)}</p>
           </div>
         ) : (
-          <div className="cards-grid-responsive">
-            {results.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: index * 0.03 }}
-                className="card-shell"
+          <>
+            {scroll.scrollState.canScrollLeft && (
+              <button
+                onClick={() => scroll.scroll(language === 'ar' ? 'right' : 'left')}
+                className={cn(
+                  'absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
+                  language === 'ar' ? 'right-2 md:-right-4' : 'left-2 md:-left-4',
+                )}
               >
-                <Link
-                  to={`/game/${item.id}`}
-                  className="group block relative rounded-[inherit] overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 shadow-lg hover:shadow-[0_0_28px_rgba(255,215,0,0.28)] flex flex-col h-full"
+                <ChevronLeft className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
+              </button>
+            )}
+
+            {scroll.scrollState.canScrollRight && (
+              <button
+                onClick={() => scroll.scroll(language === 'ar' ? 'left' : 'right')}
+                className={cn(
+                  'absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
+                  language === 'ar' ? 'left-2 md:-left-4' : 'right-2 md:-right-4',
+                )}
+              >
+                <ChevronRight className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
+              </button>
+            )}
+
+            <div className="home-cards-edge right" />
+            <div
+              ref={scroll.ref}
+              {...scroll.events}
+              className={cn(
+                'home-cards-track flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth',
+                scroll.isDragging ? 'cursor-grabbing snap-none scroll-auto' : 'cursor-grab',
+              )}
+            >
+              {results.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.05, ease: 'easeOut' }}
+                  className="home-cards-item snap-start shrink-0"
                 >
-                  <div className="card-media relative overflow-hidden bg-creo-bg">
-                    <img
-                      src={imgSrc(item.image_url)}
-                      alt={item.name}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-100 group-hover:opacity-85 transition-opacity duration-300" />
+                  <Link
+                    to={`/game/${item.id}`}
+                    className="group block relative aspect-video rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.35),inset_0_0_20px_rgba(255,215,0,0.12)]"
+                  >
+                    <div className="absolute inset-0 bg-creo-bg">
+                      <img
+                        src={imgSrc(item.image_url)}
+                        alt={item.name}
+                        className="w-full h-full object-fill transform group-hover:scale-105 transition-transform duration-500 ease-out"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                    <button
-                      onClick={(e) => toggleWishlist(e, item)}
-                      className="card-touch-btn absolute top-1 right-1 z-20 rounded-full bg-black/45 text-white hover:bg-creo-accent hover:text-black transition-colors flex items-center justify-center"
-                      aria-label={isInWishlist(item.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                    >
-                      <Heart className={cn('w-4 h-4', isInWishlist(item.id) && 'fill-creo-accent')} />
-                    </button>
+                      <button
+                        onClick={(e) => toggleWishlist(e, item)}
+                        className="absolute top-1.5 right-1.5 z-20 p-1.5 md:p-2 rounded-full bg-black/40 text-white hover:bg-creo-accent transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                      >
+                        <Heart className={isInWishlist(item.id) ? 'w-4 h-4 md:w-5 md:h-5 fill-creo-accent' : 'w-4 h-4 md:w-5 md:h-5'} />
+                      </button>
 
-                    <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] uppercase font-bold text-white/85 border border-white/10">
-                      {item.category === 'game' ? t('games') : t('apps')}
+                      <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <h3 className="text-[11px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">{item.name}</h3>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="card-body flex flex-col items-center justify-center text-center bg-creo-card flex-1">
-                    <h3 className="card-title font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">{item.name}</h3>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

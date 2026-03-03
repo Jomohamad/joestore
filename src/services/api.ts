@@ -1,6 +1,28 @@
 import { Game, Package, Promotion, Order } from '../types';
 import { supabase } from '../lib/supabase';
 
+const API_TIMEOUT_MS = 2500;
+
+const fetchWithTimeout = async (url: string, init?: RequestInit, timeoutMs = API_TIMEOUT_MS): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+const fetchJsonWithTimeout = async <T>(url: string, timeoutMs = API_TIMEOUT_MS): Promise<T> => {
+  const response = await fetchWithTimeout(url, undefined, timeoutMs);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+};
+
 const getFallbackPromotions = (): Promotion[] => [
   {
     id: 1,
@@ -30,20 +52,10 @@ const getFallbackPromotions = (): Promotion[] => [
 
 export const fetchPromotions = async (): Promise<Promotion[]> => {
   try {
-    const { data, error } = await supabase
-      .from('promotions')
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
-      
-    if (error) {
-      console.warn('Supabase error fetching promotions (using fallback):', error.message);
-      return getFallbackPromotions();
-    }
-    
+    const data = await fetchJsonWithTimeout<Promotion[]>('/api/promotions');
     return data && data.length > 0 ? data : getFallbackPromotions();
   } catch (error) {
-    console.warn('Error fetching promotions (using fallback):', error);
+    console.warn('Error fetching promotions from API (using fallback):', error);
     return getFallbackPromotions();
   }
 };
@@ -99,40 +111,20 @@ const getFallbackPackages = (gameId: string): Package[] => [
 
 export const fetchGames = async (): Promise<Game[]> => {
   try {
-    const { data, error } = await supabase
-      .from('games')
-      .select('*');
-      
-    if (error) {
-      console.warn('Supabase error fetching games (using fallback):', error.message);
-      return getFallbackGames();
-    }
-    
+    const data = await fetchJsonWithTimeout<Game[]>('/api/games');
     return data && data.length > 0 ? data : getFallbackGames();
   } catch (error) {
-    console.warn('Error fetching games (using fallback):', error);
+    console.warn('Error fetching games from API (using fallback):', error);
     return getFallbackGames();
   }
 };
 
 export const fetchGameDetails = async (id: string): Promise<Game> => {
   try {
-    const { data, error } = await supabase
-      .from('games')
-      .select('*')
-      .eq('id', id)
-      .single();
-      
-    if (error) {
-      console.warn('Supabase error fetching game details (using fallback):', error.message);
-      const game = getFallbackGames().find(g => g.id === id);
-      if (game) return game;
-      throw new Error(error.message);
-    }
-    
+    const data = await fetchJsonWithTimeout<Game>(`/api/games/${encodeURIComponent(id)}`);
     return data;
   } catch (error) {
-    console.warn('Error fetching game details (using fallback):', error);
+    console.warn('Error fetching game details from API (using fallback):', error);
     const game = getFallbackGames().find(g => g.id === id);
     if (game) return game;
     throw error;
@@ -141,20 +133,10 @@ export const fetchGameDetails = async (id: string): Promise<Game> => {
 
 export const fetchGamePackages = async (id: string): Promise<Package[]> => {
   try {
-    const { data, error } = await supabase
-      .from('packages')
-      .select('*')
-      .eq('game_id', id)
-      .order('price', { ascending: true });
-      
-    if (error) {
-      console.warn('Supabase error fetching packages (using fallback):', error.message);
-      return getFallbackPackages(id);
-    }
-    
+    const data = await fetchJsonWithTimeout<Package[]>(`/api/games/${encodeURIComponent(id)}/packages`);
     return data && data.length > 0 ? data : getFallbackPackages(id);
   } catch (error) {
-    console.warn('Error fetching packages (using fallback):', error);
+    console.warn('Error fetching packages from API (using fallback):', error);
     return getFallbackPackages(id);
   }
 };
@@ -241,22 +223,75 @@ export const validateCoupon = async (code: string): Promise<{ valid: boolean; di
   }
 };
 
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return {};
+  return { Authorization: `Bearer ${session.access_token}` };
+};
+
+export const fetchProfileStatus = async (): Promise<{
+  exists: boolean;
+  onboarded: boolean;
+  profile?: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    username: string;
+    avatar_url?: string | null;
+    provider_avatar_url?: string | null;
+  };
+}> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/profile/status', { headers }, 5000);
+  if (!response.ok) {
+    throw new Error('Failed to fetch profile status');
+  }
+  return response.json();
+};
+
+export const completeProfileApi = async (payload: {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  avatarUrl?: string;
+  providerAvatarUrl?: string;
+}): Promise<{ success: boolean; profile: unknown }> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/profile/complete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+    body: JSON.stringify(payload),
+  }, 10000);
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(data?.error || 'Failed to complete profile');
+  }
+
+  return response.json();
+};
+
 export const createOrder = async (orderData: {
   gameId: string;
   packageId: number;
   amount: number;
 }): Promise<{ success: boolean; orderId: string; status: string }> => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const authHeaders = await getAuthHeaders();
 
   // Use server-side API for order creation to ensure security/logging
-  const response = await fetch('/api/orders', {
+  const response = await fetchWithTimeout('/api/orders', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      ...authHeaders,
     },
     body: JSON.stringify(orderData),
-  });
+  }, 10000);
   
   if (!response.ok) throw new Error('Failed to create order');
   return response.json();

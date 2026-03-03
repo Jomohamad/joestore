@@ -27,10 +27,13 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const Refund = lazy(() => import('./pages/Refund'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Login = lazy(() => import('./pages/Login'));
+const SignUp = lazy(() => import('./pages/SignUp'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const WhyChooseUs = lazy(() => import('./pages/WhyChooseUs'));
 const Orders = lazy(() => import('./pages/Orders'));
+const GamesCatalog = lazy(() => import('./pages/GamesCatalog'));
+const AppsCatalog = lazy(() => import('./pages/AppsCatalog'));
 
 function RouteLoader() {
   return (
@@ -68,10 +71,13 @@ export default function App() {
                     <Route path="/refund" element={<Refund />} />
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<SignUp />} />
                     <Route path="/search" element={<SearchPage />} />
                     <Route path="/wishlist" element={<Wishlist />} />
                     <Route path="/why-choose-us" element={<WhyChooseUs />} />
                     <Route path="/orders" element={<Orders />} />
+                    <Route path="/games" element={<GamesCatalog />} />
+                    <Route path="/apps" element={<AppsCatalog />} />
                   </Routes>
                 </Suspense>
               </main>

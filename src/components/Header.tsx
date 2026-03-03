@@ -4,14 +4,16 @@ import { ShoppingCart, User, Search, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
+import BrandWordmark from './BrandWordmark';
 
 export default function Header() {
-  const { language, toggleLanguage, cart, wishlist, t } = useStore();
-  const { user } = useAuth();
+  const { language, cart, t } = useStore();
+  const { user, profile } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const navigate = useNavigate();
+  const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   React.useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -31,14 +33,22 @@ export default function Header() {
     }
   };
 
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-creo-border bg-creo-bg/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between relative">
           <div className="flex items-center gap-3 md:gap-6">
             <Link to="/" className="flex-shrink-0 flex items-center gap-3 hover:opacity-80 transition-all duration-300 group">
-              <img src="/logo.png" alt="GameCurrency logo" className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full bg-creo-accent/10 p-1 border border-creo-border shadow-sm group-hover:shadow-lg group-hover:border-creo-accent transition-all duration-300" />
-              <span className="hidden md:inline text-lg md:text-xl font-display font-bold tracking-tight text-white group-hover:text-creo-accent transition-colors duration-300">GameCurrency</span>
+              <div className="relative">
+                <img
+                  src="/logo.png"
+                  alt="JOEStore logo"
+                  className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-lg p-0.5 shadow-[0_0_18px_rgba(255,215,0,0.2)] group-hover:shadow-[0_0_24px_rgba(255,215,0,0.35)] transition-all duration-300"
+                />
+              </div>
+              <BrandWordmark className="text-base sm:text-lg md:text-xl transition-colors duration-300" />
             </Link>
             
             <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-creo-text-sec uppercase tracking-wider">
@@ -79,9 +89,9 @@ export default function Header() {
 
             <Link to="/cart" className="p-2 text-creo-text-sec hover:text-creo-accent transition-colors relative">
               <ShoppingCart className="w-5 h-5" />
-              {cart.length > 0 && (
+              {cartItemsCount > 0 && (
                 <span className="absolute top-0 right-0 w-4 h-4 bg-creo-accent text-black text-[10px] font-bold flex items-center justify-center rounded-full">
-                  {cart.length}
+                  {cartItemsCount}
                 </span>
               )}
             </Link>
@@ -91,9 +101,9 @@ export default function Header() {
               onClick={() => setIsSidebarOpen(true)}
               className="w-10 h-10 rounded-full bg-creo-bg-sec border border-creo-border flex items-center justify-center overflow-hidden hover:border-creo-accent transition-colors focus:outline-none focus:ring-2 focus:ring-creo-accent focus:ring-offset-2 focus:ring-offset-creo-bg"
             >
-              {user?.user_metadata?.avatar_url ? (
+              {avatarUrl ? (
                 <img 
-                  src={user.user_metadata.avatar_url} 
+                  src={avatarUrl} 
                   alt="User avatar" 
                   className="w-full h-full object-cover"
                 />
