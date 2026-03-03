@@ -37,10 +37,13 @@ export function useHorizontalScroll<T extends HTMLElement>(language: string) {
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (ref.current && e.deltaY !== 0) {
+      if (ref.current) {
+        const horizontalIntent = e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY);
+        if (!horizontalIntent) return;
         e.preventDefault();
+        const delta = e.shiftKey && e.deltaX === 0 ? e.deltaY : e.deltaX || e.deltaY;
         ref.current.scrollBy({
-          left: e.deltaY > 0 ? 100 : -100,
+          left: delta,
           behavior: 'auto'
         });
       }
