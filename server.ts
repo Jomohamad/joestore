@@ -8,7 +8,8 @@ app.use(express.json());
 
 const USERNAME_REGEX = /^[A-Za-z0-9_]{3,30}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const hasServiceRoleKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const hasServiceRoleKey = Boolean(serviceRoleKey && !serviceRoleKey.includes('PASTE_YOUR_SERVICE_ROLE_KEY_HERE'));
 
 const getBearerToken = (authorization?: string) => {
   if (!authorization?.startsWith('Bearer ')) return null;
