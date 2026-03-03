@@ -7,6 +7,8 @@ interface ScrollState {
 
 export function useHorizontalScroll<T extends HTMLElement>(language: string) {
   const EPSILON = 2;
+  const WHEEL_STEP = 70;
+  const DRAG_MULTIPLIER = 1.25;
   const ref = useRef<T>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -40,7 +42,7 @@ export function useHorizontalScroll<T extends HTMLElement>(language: string) {
       if (ref.current && e.deltaY !== 0) {
         e.preventDefault();
         ref.current.scrollBy({
-          left: e.deltaY > 0 ? 100 : -100,
+          left: e.deltaY > 0 ? WHEEL_STEP : -WHEEL_STEP,
           behavior: 'auto'
         });
       }
@@ -89,7 +91,7 @@ export function useHorizontalScroll<T extends HTMLElement>(language: string) {
     if (!isDragging || !ref.current) return;
     e.preventDefault();
     const x = e.pageX - ref.current.offsetLeft;
-    const walk = (x - startX) * 2; // Scroll-fast
+    const walk = (x - startX) * DRAG_MULTIPLIER;
     ref.current.scrollLeft = scrollLeft - walk;
   };
 
