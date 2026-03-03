@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { translations } from '../translations';
-import { Game, Package } from '../types';
+import { Game } from '../types';
 import { useAuth } from './AuthContext';
-import { addToWishlistApi, fetchGamePackages, fetchGames, fetchWishlist, removeFromWishlistApi } from '../services/api';
+import { addToWishlistApi, fetchGames, fetchWishlist, removeFromWishlistApi } from '../services/api';
 
 type Language = 'en' | 'ar';
 type Currency = 'USD' | 'EGP';
@@ -24,7 +24,6 @@ export interface CartItem {
 
 export interface WishlistItem {
   game: Game;
-  package?: Package;
 }
 
 interface StoreContextType {
@@ -43,9 +42,9 @@ interface StoreContextType {
   clearCart: () => void;
   wishlist: WishlistItem[];
   allGames: Game[];
-  addToWishlist: (game: Game, pkg?: Package) => void;
-  removeFromWishlist: (gameId: string, packageId?: number) => void;
-  isInWishlist: (gameId: string, packageId?: number) => boolean;
+  addToWishlist: (game: Game) => void;
+  removeFromWishlist: (gameId: string) => void;
+  isInWishlist: (gameId: string) => boolean;
   orderToast: { orderId: string } | null;
   notifyOrder: (order: { orderId: string }) => void;
   clearOrderToast: () => void;
@@ -99,12 +98,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         for (const item of wishlistData) {
           const game = allGames.find((g) => g.id === item.game_id);
           if (game) {
-            let pkg: Package | undefined;
-            if (item.package_id) {
-              const pkgs = await fetchGamePackages(game.id);
-              pkg = pkgs.find((p) => p.id === item.package_id);
-            }
-            items.push({ game, package: pkg });
+            items.push({ game });
           }
         }
         setWishlist(items);
@@ -226,41 +220,41 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCart([]);
   };
 
-  const addToWishlist = async (game: Game, pkg?: Package) => {
+  const addToWishlist = async (game: Game) => {
     if (!user) {
       alert(language === 'ar' ? 'يجب تسجيل الدخول لإضافة منتجات للمفضلة' : 'You must be logged in to add items to wishlist');
       return;
     }
 
     setWishlist((prev) => {
-      if (prev.some((item) => item.game.id === game.id && item.package?.id === pkg?.id)) return prev;
-      return [...prev, { game, package: pkg }];
+      if (prev.some((item) => item.game.id === game.id)) return prev;
+      return [...prev, { game }];
     });
 
     try {
-      await addToWishlistApi(user.id, game.id, pkg?.id);
+      await addToWishlistApi(user.id, game.id);
     } catch (error) {
-      setWishlist((prev) => prev.filter((item) => !(item.game.id === game.id && item.package?.id === pkg?.id)));
+      setWishlist((prev) => prev.filter((item) => item.game.id !== game.id));
       console.error('Failed to add to wishlist', error);
     }
   };
 
-  const removeFromWishlist = async (gameId: string, packageId?: number) => {
+  const removeFromWishlist = async (gameId: string) => {
     if (!user) return;
 
     const previousWishlist = [...wishlist];
-    setWishlist((prev) => prev.filter((item) => !(item.game.id === gameId && item.package?.id === packageId)));
+    setWishlist((prev) => prev.filter((item) => item.game.id !== gameId));
 
     try {
-      await removeFromWishlistApi(user.id, gameId, packageId);
+      await removeFromWishlistApi(user.id, gameId);
     } catch (error) {
       setWishlist(previousWishlist);
       console.error('Failed to remove from wishlist', error);
     }
   };
 
-  const isInWishlist = (gameId: string, packageId?: number) => {
-    return wishlist.some((item) => item.game.id === gameId && item.package?.id === packageId);
+  const isInWishlist = (gameId: string) => {
+    return wishlist.some((item) => item.game.id === gameId);
   };
 
   const t = (key: keyof typeof translations['en']) => translations[language][key] || key;

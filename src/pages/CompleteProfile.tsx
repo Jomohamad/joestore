@@ -87,6 +87,13 @@ export default function CompleteProfile() {
       return;
     }
 
+    const currentUsername = String(profile?.username || user?.user_metadata?.username || '').trim().toLowerCase();
+    const requestedUsername = username.trim().toLowerCase();
+    if (currentUsername && requestedUsername === currentUsername) {
+      setUsernameAvailable(true);
+      return;
+    }
+
     setUsernameCheckLoading(true);
     try {
       const response = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`, {
@@ -101,7 +108,7 @@ export default function CompleteProfile() {
       const data = await response.json();
       setUsernameAvailable(Boolean(data.available));
     } catch {
-      setUsernameAvailable(false);
+      setUsernameAvailable(null);
     } finally {
       setUsernameCheckLoading(false);
     }
@@ -163,7 +170,7 @@ export default function CompleteProfile() {
         throw new Error('Username must be at least 3 characters');
       }
 
-      if (!usernameAvailable) {
+      if (usernameAvailable === false) {
         throw new Error('Username is not available');
       }
 
@@ -310,7 +317,7 @@ export default function CompleteProfile() {
 
           <button
             type="submit"
-            disabled={loading || !usernameAvailable || formData.username.length < 3}
+            disabled={loading || usernameAvailable === false || formData.username.length < 3}
             className="w-full bg-creo-accent hover:bg-creo-accent/90 text-black font-bold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
           >
             {loading && <Loader className="w-4 h-4 animate-spin" />}

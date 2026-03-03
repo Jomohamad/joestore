@@ -10,6 +10,7 @@ const USERNAME_REGEX = /^[A-Za-z0-9_]{3,30}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const hasServiceRoleKey = Boolean(serviceRoleKey && !serviceRoleKey.includes('PASTE_YOUR_SERVICE_ROLE_KEY_HERE'));
+const hasAdminClient = hasServiceRoleKey;
 
 const getBearerToken = (authorization?: string) => {
   if (!authorization?.startsWith('Bearer ')) return null;
@@ -25,15 +26,59 @@ const getRequestUser = async (authorization?: string) => {
   return data.user;
 };
 
-const getCurrentProfile = async (userId: string) => {
+const getMeta = (user: { user_metadata?: Record<string, unknown> | null }) =>
+  (user.user_metadata || {}) as Record<string, unknown>;
+
+const isUserAdmin = async (userId: string) => {
+  // Preferred path: security-definer function (works even when server runs with anon key).
+  const rpcResult = await supabase.rpc('is_admin_user', {
+    p_user_id: userId,
+  });
+
+  if (!rpcResult.error) {
+    return Boolean(rpcResult.data);
+  }
+
+  // Fallback path: direct table query (works when service role key is configured).
   const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
+    .from('admins')
+    .select('user_id')
+    .eq('user_id', userId)
     .maybeSingle();
 
+  if (error) {
+    // If admins table or function is not deployed yet, do not break auth flow.
+    if (error.code === '42P01' || error.code === '42883') return false;
+    throw error;
+  }
+  return Boolean(data?.user_id);
+};
+
+const buildProfileFromAuthUser = (
+  user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> | null },
+  isAdmin = false,
+) => {
+  const meta = getMeta(user);
+  return {
+    id: user.id,
+    email: String(user.email || meta.email || ''),
+    first_name: String(meta.first_name || ''),
+    last_name: String(meta.last_name || ''),
+    username: String(meta.username || ''),
+    avatar_url: meta.avatar_url ? String(meta.avatar_url) : null,
+    provider_avatar_url: meta.provider_avatar_url ? String(meta.provider_avatar_url) : null,
+    onboarded: Boolean(meta.onboarded),
+    is_admin: isAdmin,
+  };
+};
+
+const getUsernameOwner = async (username: string) => {
+  const { data, error } = await supabase.rpc('get_username_owner', {
+    p_username: username,
+  });
   if (error) throw error;
-  return data;
+  const result = Array.isArray(data) ? data[0] : null;
+  return result?.user_id ? String(result.user_id) : null;
 };
 
 // API Routes
@@ -55,13 +100,12 @@ app.get('/api/profile/status', async (req, res) => {
       return res.status(401).json({ exists: false, onboarded: false, error: 'Unauthorized' });
     }
 
-    const profile = await getCurrentProfile(requester.id);
-    if (!profile) {
-      return res.json({ exists: false, onboarded: false });
-    }
+    const isAdmin = await isUserAdmin(requester.id);
+    const profile = buildProfileFromAuthUser(requester, isAdmin);
 
+    const exists = Boolean(profile.username && profile.first_name && profile.last_name);
     return res.json({
-      exists: true,
+      exists,
       onboarded: Boolean(profile.onboarded),
       profile,
     });
@@ -72,6 +116,10 @@ app.get('/api/profile/status', async (req, res) => {
 });
 
 app.post('/api/profile/complete', async (req, res) => {
+  if (!hasAdminClient) {
+    return res.status(503).json({ success: false, error: 'Profile completion requires SUPABASE_SERVICE_ROLE_KEY' });
+  }
+
   try {
     const requester = await getRequestUser(req.headers.authorization);
     if (!requester) {
@@ -97,51 +145,30 @@ app.post('/api/profile/complete', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid email format' });
     }
 
-    const { data: usernameMatch, error: usernameMatchError } = await supabase
-      .from('profiles')
-      .select('id')
-      .ilike('username', username)
-      .neq('id', requester.id)
-      .maybeSingle();
-
-    if (usernameMatchError) throw usernameMatchError;
-    if (usernameMatch) {
+    const usernameOwner = await getUsernameOwner(username);
+    if (usernameOwner && usernameOwner !== requester.id) {
       return res.status(409).json({ success: false, error: 'Username is already taken' });
     }
-
-    const { data: emailMatch, error: emailMatchError } = await supabase
-      .from('profiles')
-      .select('id')
-      .ilike('email', email)
-      .neq('id', requester.id)
-      .maybeSingle();
-
-    if (emailMatchError) throw emailMatchError;
-    if (emailMatch) {
-      return res.status(409).json({ success: false, error: 'Email is already in use' });
-    }
-
-    const payload = {
-      id: requester.id,
-      email,
+    const existingMeta = getMeta(requester);
+    const updatedMeta = {
+      ...existingMeta,
       first_name: firstName,
       last_name: lastName,
       username,
       avatar_url: avatarUrl,
-      provider_avatar_url: providerAvatarUrl,
+      provider_avatar_url: providerAvatarUrl || existingMeta.provider_avatar_url || null,
+      email,
       onboarded: true,
-      updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert(payload, { onConflict: 'id' })
-      .select('*')
-      .single();
-
+    const { data, error } = await supabase.auth.admin.updateUserById(requester.id, {
+      email,
+      user_metadata: updatedMeta,
+    });
     if (error) throw error;
 
-    return res.json({ success: true, profile: data });
+    const isAdmin = await isUserAdmin(requester.id);
+    return res.json({ success: true, profile: buildProfileFromAuthUser(data.user || requester, isAdmin) });
   } catch (error) {
     console.error('Profile completion failed:', error);
     return res.status(500).json({ success: false, error: 'Failed to complete profile' });
@@ -221,20 +248,12 @@ app.get('/api/check-username', async (req, res) => {
 
   try {
     const requester = await getRequestUser(req.headers.authorization);
-
-    const { data: match, error } = await supabase
-      .from('profiles')
-      .select('id')
-      .ilike('username', rawUsername)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (!match) {
+    const usernameOwner = await getUsernameOwner(rawUsername);
+    if (!usernameOwner) {
       return res.json({ available: true });
     }
 
-    const available = requester ? requester.id === match.id : false;
+    const available = requester ? requester.id === usernameOwner : false;
     return res.json({ available });
   } catch (error) {
     console.error('Username check failed:', error);
@@ -258,9 +277,9 @@ app.delete('/api/user/delete', async (req, res) => {
     if (!requester) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
-
-    const profile = await getCurrentProfile(requester.id);
-    if (!profile || String(profile.username || '').toLowerCase() !== requestedUsername.toLowerCase()) {
+    const meta = getMeta(requester);
+    const currentUsername = String(meta.username || '').toLowerCase();
+    if (!currentUsername || currentUsername !== requestedUsername.toLowerCase()) {
       return res.status(403).json({ success: false, error: 'Username does not match authenticated user' });
     }
 
@@ -270,7 +289,13 @@ app.delete('/api/user/delete', async (req, res) => {
     return res.json({ success: true });
   } catch (error) {
     console.error('Account deletion failed:', error);
-    return res.status(500).json({ success: false, error: 'Failed to delete account' });
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'object' && error && 'message' in error
+          ? String((error as { message?: unknown }).message || '')
+          : 'Failed to delete account';
+    return res.status(500).json({ success: false, error: message || 'Failed to delete account' });
   }
 });
 
@@ -317,7 +342,6 @@ app.post('/api/orders', async (req, res) => {
           game_id: gameId,
           package_id: parsedPackageId,
           amount: parsedAmount,
-          player_id: 'WEB-CHECKOUT',
           status: 'COMPLETED',
         },
       ]);

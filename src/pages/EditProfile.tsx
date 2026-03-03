@@ -5,8 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import { completeProfileApi } from '../services/api';
 import { supabase } from '../lib/supabase';
 
-const USERNAME_COOLDOWN_MS = 6 * 30 * 24 * 60 * 60 * 1000;
-
 export default function EditProfile() {
   const navigate = useNavigate();
   const { user, profile, session, updateProfile, loading: authLoading } = useAuth();
@@ -17,6 +15,7 @@ export default function EditProfile() {
   const [usernameCheckLoading, setUsernameCheckLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -28,6 +27,8 @@ export default function EditProfile() {
 
   useEffect(() => {
     if (!user) return;
+    if (isFormDirty) return;
+
     setFormData((prev) => ({
       ...prev,
       firstName: profile?.first_name || user.user_metadata?.first_name || '',
@@ -36,27 +37,18 @@ export default function EditProfile() {
       email: profile?.email || user.email || '',
       avatarPreview: prev.avatarPreview || profile?.avatar_url || user.user_metadata?.avatar_url || '',
     }));
-  }, [user, profile]);
-
-  const lastUsernameChange = useMemo(() => {
-    const raw = user?.user_metadata?.last_username_change;
-    return raw ? new Date(raw) : null;
-  }, [user]);
-
-  const canChangeUsername = useMemo(() => {
-    if (!lastUsernameChange) return true;
-    return Date.now() - lastUsernameChange.getTime() > USERNAME_COOLDOWN_MS;
-  }, [lastUsernameChange]);
-
-  const daysRemaining = useMemo(() => {
-    if (!lastUsernameChange || canChangeUsername) return 0;
-    const remainingMs = USERNAME_COOLDOWN_MS - (Date.now() - lastUsernameChange.getTime());
-    return Math.max(1, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
-  }, [lastUsernameChange, canChangeUsername]);
+  }, [user, profile, isFormDirty]);
 
   const checkUsernameAvailability = async (username: string) => {
     if (!username || username.length < 3) {
       setUsernameAvailable(null);
+      return;
+    }
+
+    const currentUsername = String(profile?.username || user?.user_metadata?.username || '').trim().toLowerCase();
+    const requestedUsername = username.trim().toLowerCase();
+    if (currentUsername && requestedUsername === currentUsername) {
+      setUsernameAvailable(true);
       return;
     }
 
@@ -74,7 +66,8 @@ export default function EditProfile() {
       const data = await response.json();
       setUsernameAvailable(Boolean(data.available));
     } catch {
-      setUsernameAvailable(false);
+      // Avoid false "not available" on temporary API failures.
+      setUsernameAvailable(null);
     } finally {
       setUsernameCheckLoading(false);
     }
@@ -82,12 +75,14 @@ export default function EditProfile() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    setIsFormDirty(true);
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError('');
   };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    setIsFormDirty(true);
     setFormData((prev) => ({ ...prev, username: value }));
     checkUsernameAvailability(value);
   };
@@ -102,6 +97,7 @@ export default function EditProfile() {
     }
 
     setAvatarFile(file);
+    setIsFormDirty(true);
     setFormData((prev) => ({ ...prev, avatarPreview: URL.createObjectURL(file) }));
   };
 
@@ -139,20 +135,17 @@ export default function EditProfile() {
         throw new Error('Username must be at least 3 characters');
       }
 
-      const existingUsername = profile?.username || user.user_metadata?.username || '';
-      const usernameChanged = formData.username !== existingUsername;
+      const submittedUsername = formData.username.trim();
+      const existingUsername = String(profile?.username || user.user_metadata?.username || '').trim();
+      const usernameChanged = submittedUsername.toLowerCase() !== existingUsername.toLowerCase();
 
-      if (!canChangeUsername && usernameChanged) {
-        throw new Error(`You can change your username again in ${daysRemaining} day(s)`);
-      }
-
-      if (canChangeUsername && usernameChanged && usernameAvailable !== true) {
+      if (usernameChanged && usernameAvailable === false) {
         throw new Error('Username is not available');
       }
 
       const uploadedAvatarUrl = await uploadAvatarIfNeeded();
       const finalAvatar = uploadedAvatarUrl || formData.avatarPreview || user.user_metadata?.avatar_url || undefined;
-      const effectiveUsername = canChangeUsername ? formData.username : existingUsername || formData.username;
+      const effectiveUsername = submittedUsername;
 
       await completeProfileApi({
         firstName: formData.firstName,
@@ -276,11 +269,6 @@ export default function EditProfile() {
             <div>
               <label className="block text-sm font-semibold text-white mb-2 flex items-center gap-2">
                 Username
-                {!canChangeUsername && (
-                  <span className="text-[10px] px-2 py-1 rounded bg-creo-accent/15 text-creo-accent">
-                    Available in {daysRemaining} day(s)
-                  </span>
-                )}
               </label>
 
               <div className="relative">
@@ -290,16 +278,15 @@ export default function EditProfile() {
                   value={formData.username}
                   onChange={handleUsernameChange}
                   minLength={3}
-                  disabled={!canChangeUsername}
-                  className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-4 py-3 pr-10 text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-4 py-3 pr-10 text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all"
                 />
-                {canChangeUsername && usernameCheckLoading && (
+                {usernameCheckLoading && (
                   <Loader className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-creo-accent animate-spin" />
                 )}
-                {canChangeUsername && !usernameCheckLoading && usernameAvailable === true && (
+                {!usernameCheckLoading && usernameAvailable === true && (
                   <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
                 )}
-                {canChangeUsername && !usernameCheckLoading && usernameAvailable === false && (
+                {!usernameCheckLoading && usernameAvailable === false && (
                   <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-500" />
                 )}
               </div>

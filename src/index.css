@@ -92,7 +92,7 @@ body {
   width: 0ch;
   margin-inline-start: 0.06em;
   border-right: 2px solid var(--color-creo-accent);
-  animation: storeTyping 18s steps(5, end) infinite, storeCaret 0.85s step-end infinite;
+  animation: storeTyping 5s steps(5, end) infinite, storeCaret 0.85s step-end infinite;
 }
 
 @keyframes storeTyping {

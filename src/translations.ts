@@ -163,6 +163,7 @@ export const translations = {
     currency: 'Currency',
     language: 'Language',
     order_history: 'Order History',
+    dashboard: 'Dashboard',
     welcome_back: 'Welcome back',
     guest: 'Guest',
     
@@ -397,6 +398,7 @@ export const translations = {
     currency: 'العملة',
     language: 'اللغة',
     order_history: 'سجل الطلبات',
+    dashboard: 'لوحة التحكم',
     welcome_back: 'مرحباً بعودتك',
     guest: 'زائر',
     

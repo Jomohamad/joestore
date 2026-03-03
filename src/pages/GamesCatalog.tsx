@@ -25,7 +25,7 @@ export default function GamesCatalog() {
   }, []);
 
   const items = useMemo(
-    () => games.filter((g) => g.category === 'game').sort((a, b) => (b.popularity || 0) - (a.popularity || 0)),
+    () => games.filter((g) => g.category === 'game').sort((a, b) => a.name.localeCompare(b.name)),
     [games],
   );
 

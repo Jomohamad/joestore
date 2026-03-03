@@ -1,7 +1,5 @@
 export interface Promotion {
   id: number;
-  subtitle_en: string;
-  subtitle_ar: string;
   image_url: string;
   link_url?: string;
   is_active: boolean;
@@ -15,12 +13,7 @@ export interface Game {
   publisher: string;
   image_url: string;
   currency_name: string;
-  currency_icon: string;
-  color_theme: string;
   category: 'game' | 'app';
-  genre?: string;
-  popularity?: number;
-  min_price?: number;
   show_on_home?: boolean;
 }
 

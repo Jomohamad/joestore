@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages } from '../services/api';
 import { Game, Package } from '../types';
-import { ShieldCheck, CheckCircle2, X, Minus, Plus } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, X, Minus, Plus, Heart, BadgeCheck } from 'lucide-react';
 import { imgSrc } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,7 +12,7 @@ export default function GameDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToCart, t, language, formatPrice, getCartQuantity, incrementCartItem, decrementCartItem } = useStore();
+  const { addToCart, t, language, formatPrice, getCartQuantity, incrementCartItem, decrementCartItem, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
 
   const [game, setGame] = useState<Game | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -72,6 +72,15 @@ export default function GameDetails() {
   const handleDecrement = (pkg: Package) => {
     if (!game || !user) return;
     decrementCartItem(game.id, pkg.id);
+  };
+
+  const toggleWishlist = () => {
+    if (!game) return;
+    if (isInWishlist(game.id)) {
+      removeFromWishlist(game.id);
+    } else {
+      addToWishlist(game);
+    }
   };
 
   if (loading) {
@@ -149,8 +158,18 @@ export default function GameDetails() {
             </div>
             <div className="mb-1 md:mb-2 flex-1">
               <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
-              <div className="text-xs md:text-sm text-creo-text-sec italic">{game.publisher}</div>
+              <div className="flex items-center gap-1.5 text-xs md:text-sm text-creo-text-sec italic">
+                <span>{game.publisher}</span>
+                <BadgeCheck className="w-3.5 h-3.5 md:w-4 md:h-4 text-creo-accent not-italic" />
+              </div>
             </div>
+            <button
+              onClick={toggleWishlist}
+              className="mb-1 md:mb-2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/45 border border-creo-border text-white flex items-center justify-center hover:border-creo-accent hover:bg-creo-accent/20 transition-colors shrink-0"
+              aria-label={isInWishlist(game.id) ? t('remove_from_wishlist') : t('add_to_wishlist')}
+            >
+              <Heart className={isInWishlist(game.id) ? 'w-5 h-5 fill-creo-accent text-creo-accent' : 'w-5 h-5'} />
+            </button>
           </div>
         </div>
       </div>
@@ -158,52 +177,58 @@ export default function GameDetails() {
       <div className="container mx-auto px-4 mt-8 md:mt-12">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">{t('select_package')}</h2>
 
-        <div className="space-y-3 md:space-y-4">
-          {packages.map((pkg) => {
-            const quantity = getCartQuantity(game.id, pkg.id);
-            return (
-              <motion.div
-                key={pkg.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-creo-card border border-creo-border rounded-2xl p-3 md:p-4 flex items-center justify-between gap-3 md:gap-4 hover:border-creo-accent/70 transition-colors"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-28 md:w-36 aspect-video rounded-xl overflow-hidden bg-creo-bg-sec border border-creo-border shrink-0">
-                    <img src={imgSrc(pkg.image_url || game.image_url)} alt={`${game.name} package`} className="w-full h-full object-fill" referrerPolicy="no-referrer" />
+        {packages.length === 0 ? (
+          <div className="rounded-2xl border border-creo-border bg-creo-card px-4 py-6 text-center text-creo-text-sec">
+            {language === 'ar' ? 'لا توجد باقات متاحة لهذا المنتج حالياً.' : 'No packages available for this product right now.'}
+          </div>
+        ) : (
+          <div className="space-y-3 md:space-y-4">
+            {packages.map((pkg) => {
+              const quantity = getCartQuantity(game.id, pkg.id);
+              return (
+                <motion.div
+                  key={pkg.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-creo-card border border-creo-border rounded-2xl p-3 md:p-4 flex items-center justify-between gap-3 md:gap-4 hover:border-creo-accent/70 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-28 md:w-36 aspect-video rounded-xl overflow-hidden bg-creo-bg-sec border border-creo-border shrink-0">
+                      <img src={imgSrc(pkg.image_url || game.image_url)} alt={`${game.name} package`} className="w-full h-full object-fill" referrerPolicy="no-referrer" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <h3 className="text-white font-bold text-sm md:text-base line-clamp-1">{pkg.amount} {game.currency_name}</h3>
+                      <p className="text-creo-accent text-xs md:text-sm font-semibold mt-1">{formatPrice(pkg.price)}</p>
+                      {pkg.bonus > 0 && <p className="text-[11px] text-creo-text-sec mt-1">+{pkg.bonus} {t('bonus')}</p>}
+                    </div>
                   </div>
 
-                  <div className="min-w-0">
-                    <h3 className="text-white font-bold text-sm md:text-base line-clamp-1">{pkg.amount} {game.currency_name}</h3>
-                    <p className="text-creo-accent text-xs md:text-sm font-semibold mt-1">{formatPrice(pkg.price)}</p>
-                    {pkg.bonus > 0 && <p className="text-[11px] text-creo-text-sec mt-1">+{pkg.bonus} {t('bonus')}</p>}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleDecrement(pkg)}
+                      disabled={quantity === 0}
+                      className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent disabled:opacity-50"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+
+                    <span className="w-8 text-center font-bold text-white">{quantity}</span>
+
+                    <button
+                      onClick={() => handleIncrement(pkg)}
+                      className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => handleDecrement(pkg)}
-                    disabled={quantity === 0}
-                    className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent disabled:opacity-50"
-                    aria-label="Decrease quantity"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-
-                  <span className="w-8 text-center font-bold text-white">{quantity}</span>
-
-                  <button
-                    onClick={() => handleIncrement(pkg)}
-                    className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
-                    aria-label="Increase quantity"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

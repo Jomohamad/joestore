@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, Globe, History, LogOut, User, DollarSign, LogIn, ShieldCheck, Edit, Trash2, UserPlus, Headset } from 'lucide-react';
+import { X, Heart, Globe, History, LogOut, User, DollarSign, LogIn, ShieldCheck, Edit, Trash2, UserPlus, Headset, LayoutDashboard } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
 import DeleteAccountModal from './modals/DeleteAccountModal';
+import { supabase } from '../lib/supabase';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -17,9 +18,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isAdminByTable, setIsAdminByTable] = useState(false);
 
   const username = profile?.username || user?.user_metadata?.username;
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
+  const isAdmin = Boolean(profile?.is_admin || isAdminByTable);
   const displayName = profile?.first_name
     ? `${profile.first_name} ${profile.last_name || ''}`.trim()
     : user?.user_metadata?.full_name || user?.email || t('guest');
@@ -28,6 +31,34 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     onClose();
     navigate(path);
   };
+
+  useEffect(() => {
+    let active = true;
+    const checkAdminMembership = async () => {
+      if (!user?.id) {
+        if (active) setIsAdminByTable(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('admins')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!active) return;
+      if (error) {
+        setIsAdminByTable(false);
+        return;
+      }
+      setIsAdminByTable(Boolean(data?.user_id));
+    };
+
+    void checkAdminMembership();
+    return () => {
+      active = false;
+    };
+  }, [user?.id, profile?.is_admin]);
 
   return (
     <>
@@ -75,6 +106,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {user && (
                   <div className="space-y-1">
                     <p className="px-4 text-[10px] font-bold text-creo-muted uppercase tracking-widest mb-2">{t('my_account')}</p>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => goTo('/dashboard')}
+                        className="w-full text-left flex items-center gap-3 px-4 py-3 text-black bg-creo-accent hover:bg-[#ffe04d] rounded-xl transition-colors group shadow-[0_0_22px_rgba(255,215,0,0.25)]"
+                      >
+                        <span className="w-7 h-7 rounded-lg bg-black/15 flex items-center justify-center">
+                          <LayoutDashboard className="w-4 h-4" />
+                        </span>
+                        <span className="font-medium">{t('dashboard')}</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"

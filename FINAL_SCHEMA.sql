@@ -1,171 +1,335 @@
 -- ==========================================
--- FINAL COMBINED SCHEMA
+-- FINAL COMBINED SCHEMA (Profiles-free)
 -- ==========================================
 
--- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
--- 1. CLEANUP (Be careful in production, this resets tables)
-drop table if exists order_items;
-drop table if exists orders;
-drop table if exists wishlist;
-drop table if exists packages;
-drop table if exists games;
-drop table if exists coupons;
+-- 1) PRE-CLEANUP MIGRATION (move profiles -> auth.users metadata if profiles exists)
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.tables
+    where table_schema = 'public'
+      and table_name = 'profiles'
+  ) then
+    execute $m$
+      update auth.users as u
+      set raw_user_meta_data = coalesce(u.raw_user_meta_data, '{}'::jsonb) || jsonb_strip_nulls(
+        jsonb_build_object(
+          'email', p.email,
+          'first_name', p.first_name,
+          'last_name', p.last_name,
+          'username', p.username,
+          'avatar_url', p.avatar_url,
+          'provider_avatar_url', p.provider_avatar_url,
+          'onboarded', coalesce(p.onboarded, false)
+        )
+      )
+      from public.profiles as p
+      where p.id = u.id
+    $m$;
+  end if;
+end $$;
 
--- 2. GAMES TABLE
-create table if not exists games (
+-- 2) CLEANUP (full reset for this app schema)
+do $$
+begin
+  begin
+    execute 'drop view if exists public.users_profile cascade';
+  exception
+    when wrong_object_type then
+      execute 'drop table if exists public.users_profile cascade';
+  end;
+end $$;
+drop function if exists public.get_username_owner(text);
+drop function if exists public.is_admin_user(uuid);
+drop function if exists public.delete_my_account(text);
+
+drop table if exists public.order_items;
+drop table if exists public.orders;
+drop table if exists public.wishlist;
+drop table if exists public.packages;
+drop table if exists public.games;
+drop table if exists public.coupons;
+drop table if exists public.promotions;
+drop table if exists public.admins;
+drop table if exists public.profiles;
+
+-- 2) GAMES
+create table if not exists public.games (
   id text primary key,
   name text not null,
   publisher text not null,
   image_url text not null,
   currency_name text not null,
-  currency_icon text not null,
-  color_theme text not null,
-  category text not null default 'game',
-  genre text default 'Action',
-  popularity integer default 0,
-  min_price decimal(10, 2) default 0.99,
-  rating decimal(3, 1) default 0.0,
-  reviews_count integer default 0,
+  category text not null default 'game' check (category in ('game', 'app')),
   description text,
-  release_date date
+  release_date date,
+  show_on_home boolean not null default true
 );
 
--- 3. PACKAGES TABLE
-create table if not exists packages (
+create index if not exists games_show_on_home_category_idx
+  on public.games (show_on_home, category);
+
+-- 3) PACKAGES
+create table if not exists public.packages (
   id serial primary key,
-  game_id text not null references games(id),
+  game_id text not null references public.games(id) on delete cascade,
   amount integer not null,
   bonus integer default 0,
-  price decimal(10, 2) not null
+  price numeric(10,2) not null,
+  image_url text
 );
 
--- 4. ORDERS TABLE
-create table if not exists orders (
+create index if not exists packages_game_id_idx on public.packages(game_id);
+
+-- 4) ORDERS
+create table if not exists public.orders (
   id text primary key,
-  user_id uuid references auth.users(id),
-  game_id text not null references games(id),
-  package_id integer not null references packages(id),
-  player_id text not null,
-  amount decimal(10, 2) not null,
-  status text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  game_id text not null references public.games(id) on delete restrict,
+  package_id integer not null references public.packages(id) on delete restrict,
+  amount numeric(10,2) not null,
+  status text not null default 'PENDING' check (status in ('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED')),
   payment_method text,
-  created_at timestamptz default now()
+  created_at timestamptz not null default now()
 );
 
--- 5. WISHLIST TABLE (Updated to support specific packages)
-create table if not exists wishlist (
-  id uuid default uuid_generate_v4() primary key,
-  user_id uuid references auth.users(id) on delete cascade not null,
-  game_id text not null references games(id),
-  package_id integer references packages(id), -- Optional: if null, wishlisting the whole game
-  created_at timestamptz default now(),
-  unique(user_id, game_id, package_id)
+create index if not exists orders_user_id_created_at_idx on public.orders(user_id, created_at desc);
+
+-- 5) WISHLIST
+create table if not exists public.wishlist (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  game_id text not null references public.games(id) on delete cascade,
+  created_at timestamptz not null default now()
 );
 
--- 6. COUPONS TABLE
-create table if not exists coupons (
-  id uuid default uuid_generate_v4() primary key,
-  code text unique not null,
+create unique index if not exists wishlist_unique_item_idx
+  on public.wishlist (user_id, game_id);
+
+create index if not exists wishlist_user_id_idx on public.wishlist(user_id);
+
+-- 6) COUPONS
+create table if not exists public.coupons (
+  id uuid primary key default uuid_generate_v4(),
+  code text not null unique,
   discount_type text not null check (discount_type in ('percent', 'fixed')),
-  value decimal(10, 2) not null,
-  active boolean default true,
+  value numeric(10,2) not null,
+  active boolean not null default true,
   expires_at timestamptz,
-  created_at timestamptz default now()
+  created_at timestamptz not null default now()
 );
 
--- 6.5 PROMOTIONS TABLE
-create table if not exists promotions (
+-- 7) PROMOTIONS
+create table if not exists public.promotions (
   id serial primary key,
-  subtitle_en text not null,
-  subtitle_ar text not null,
   image_url text not null,
   link_url text,
-  is_active boolean default true,
-  sort_order integer default 0,
-  font_size_scale integer default 5 check (font_size_scale >= 1 and font_size_scale <= 10),
-  created_at timestamptz default now()
+  is_active boolean not null default true,
+  sort_order integer not null default 0,
+  font_size_scale integer not null default 5 check (font_size_scale between 1 and 10),
+  created_at timestamptz not null default now()
 );
 
--- 7. RLS POLICIES
+-- 8) ADMINS (manual admin assignment table)
+create table if not exists public.admins (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  note text,
+  created_at timestamptz not null default now()
+);
 
--- Enable RLS
-alter table games enable row level security;
-alter table packages enable row level security;
-alter table orders enable row level security;
-alter table wishlist enable row level security;
-alter table coupons enable row level security;
-alter table promotions enable row level security;
+-- 9) RLS
+alter table public.games enable row level security;
+alter table public.packages enable row level security;
+alter table public.orders enable row level security;
+alter table public.wishlist enable row level security;
+alter table public.coupons enable row level security;
+alter table public.promotions enable row level security;
+alter table public.admins enable row level security;
 
--- Games & Packages: Public Read
-drop policy if exists "Public games are viewable by everyone" on games;
-create policy "Public games are viewable by everyone" on games for select using (true);
+-- Public read
+create policy "Public games are viewable by everyone" on public.games
+  for select using (true);
 
-drop policy if exists "Public packages are viewable by everyone" on packages;
-create policy "Public packages are viewable by everyone" on packages for select using (true);
+create policy "Public packages are viewable by everyone" on public.packages
+  for select using (true);
 
--- Orders: Users see their own, Anon can insert (if we allow guest checkout, but user asked to restrict)
--- Updating policy based on request: "If not logged in, cannot add to cart" -> implies checkout requires login?
--- User said: "Anyone logged in keep info cloud, anyone not logged in keep local".
--- But also: "If not logged in, cannot add products to cart".
--- So orders will likely always have a user_id if we enforce login.
-drop policy if exists "Users can view their own orders" on orders;
-create policy "Users can view their own orders" on orders for select using (auth.uid() = user_id);
+create policy "Coupons are viewable by everyone" on public.coupons
+  for select using (true);
 
-drop policy if exists "Users can create orders" on orders;
-create policy "Users can create orders" on orders for insert with check (auth.uid() = user_id);
+create policy "Promotions are viewable by everyone" on public.promotions
+  for select using (true);
 
--- Wishlist: Users only
-drop policy if exists "Users can view their own wishlist" on wishlist;
-create policy "Users can view their own wishlist" on wishlist for select using (auth.uid() = user_id);
+-- Orders: user sees/creates own orders only
+create policy "Users can view their own orders" on public.orders
+  for select using (auth.uid() = user_id);
 
-drop policy if exists "Users can insert into their own wishlist" on wishlist;
-create policy "Users can insert into their own wishlist" on wishlist for insert with check (auth.uid() = user_id);
+create policy "Users can create orders" on public.orders
+  for insert with check (auth.uid() = user_id);
 
-drop policy if exists "Users can delete from their own wishlist" on wishlist;
-create policy "Users can delete from their own wishlist" on wishlist for delete using (auth.uid() = user_id);
+-- Wishlist: user scope
+create policy "Users can view their own wishlist" on public.wishlist
+  for select using (auth.uid() = user_id);
 
--- Coupons: Public Read (to validate)
-drop policy if exists "Coupons are viewable by everyone" on coupons;
-create policy "Coupons are viewable by everyone" on coupons for select using (true);
+create policy "Users can insert into their own wishlist" on public.wishlist
+  for insert with check (auth.uid() = user_id);
 
--- Promotions: Public Read
-drop policy if exists "Promotions are viewable by everyone" on promotions;
-create policy "Promotions are viewable by everyone" on promotions for select using (true);
+create policy "Users can delete from their own wishlist" on public.wishlist
+  for delete using (auth.uid() = user_id);
 
--- 8. SEED DATA
+-- Admin row visibility (minimal)
+create policy "Users can view own admin membership" on public.admins
+  for select using (auth.uid() = user_id);
 
--- Games
-insert into games (id, name, publisher, image_url, currency_name, currency_icon, color_theme, category, genre, popularity, min_price) values
-('pubg-mobile', 'PUBG Mobile', 'Level Infinite', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/pubg.jpeg', 'UC', 'uc-icon', '#F59E0B', 'game', 'Action', 98, 0.99),
-('free-fire', 'Free Fire', 'Garena', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/freefire.jpeg', 'Diamonds', 'diamond-icon', '#EF4444', 'game', 'Action', 95, 0.99),
-('mobile-legends', 'Mobile Legends', 'Moonton', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/mobile-legends2.jpeg', 'Diamonds', 'diamond-icon', '#3B82F6', 'game', 'Strategy', 92, 1.50),
-('tiktok', 'TikTok', 'ByteDance', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/tiktok.png', 'Coins', 'coin-icon', '#000000', 'app', 'Social', 99, 5.00),
-('steam', 'Steam', 'Valve', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/steam.jpeg', 'Wallet', 'wallet-icon', '#171a21', 'app', 'Entertainment', 95, 10.00),
-('xbox', 'Xbox', 'Microsoft', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/xbox.jpeg', 'Gift Card', 'card-icon', '#107C10', 'app', 'Entertainment', 92, 10.00)
+-- 10) AUTH USERS METADATA SUPPORT (instead of profiles table)
+-- Attempt username uniqueness index on auth.users metadata.
+-- In Supabase this may fail for non-owner roles, so we guard it to avoid breaking the whole schema run.
+do $$
+begin
+  execute '
+    create unique index if not exists auth_users_username_unique_lower_idx
+      on auth.users ((lower(coalesce(raw_user_meta_data ->> ''username'', ''''))))
+      where coalesce(raw_user_meta_data ->> ''username'', '''') <> ''''
+  ';
+exception
+  when insufficient_privilege then
+    raise notice 'Skipped auth.users index creation: current role is not owner of auth.users.';
+end $$;
+
+-- Lookup owner of username (used by API check-username)
+create or replace function public.get_username_owner(p_username text)
+returns table (user_id uuid)
+language sql
+security definer
+set search_path = public, auth
+as $$
+  select u.id
+  from auth.users u
+  where lower(coalesce(u.raw_user_meta_data ->> 'username', '')) = lower(trim(p_username))
+  limit 1;
+$$;
+
+revoke all on function public.get_username_owner(text) from public;
+grant execute on function public.get_username_owner(text) to anon, authenticated, service_role;
+
+-- Admin membership helper used by server API
+create or replace function public.is_admin_user(p_user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.admins a
+    where a.user_id = p_user_id
+  );
+$$;
+
+revoke all on function public.is_admin_user(uuid) from public;
+grant execute on function public.is_admin_user(uuid) to anon, authenticated, service_role;
+
+-- Self-delete helper for authenticated users (fallback when server delete endpoint is unavailable).
+create or replace function public.delete_my_account(p_username text)
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  requester_id uuid := auth.uid();
+  current_username text := '';
+begin
+  if requester_id is null then
+    raise exception 'Unauthorized';
+  end if;
+
+  select lower(coalesce(u.raw_user_meta_data ->> 'username', ''))
+    into current_username
+  from auth.users u
+  where u.id = requester_id;
+
+  if current_username = '' or current_username <> lower(trim(p_username)) then
+    raise exception 'Username does not match authenticated user';
+  end if;
+
+  delete from auth.users
+  where id = requester_id;
+
+  if not found then
+    raise exception 'User not found';
+  end if;
+end;
+$$;
+
+revoke all on function public.delete_my_account(text) from public;
+grant execute on function public.delete_my_account(text) to authenticated, service_role;
+
+-- 11) STORAGE (avatars bucket)
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "Avatar images are public" on storage.objects;
+create policy "Avatar images are public" on storage.objects
+  for select using (bucket_id = 'avatars');
+
+drop policy if exists "Users can upload own avatar" on storage.objects;
+create policy "Users can upload own avatar" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "Users can update own avatar" on storage.objects;
+create policy "Users can update own avatar" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "Users can delete own avatar" on storage.objects;
+create policy "Users can delete own avatar" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- 12) SEED DATA
+insert into public.games (id, name, publisher, image_url, currency_name, category, show_on_home)
+values
+('pubg-mobile', 'PUBG Mobile', 'Level Infinite', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/pubg.jpeg', 'UC', 'game', true),
+('free-fire', 'Free Fire', 'Garena', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/freefire.jpeg', 'Diamonds', 'game', true),
+('mobile-legends', 'Mobile Legends', 'Moonton', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/mobile-legends2.jpeg', 'Diamonds', 'game', true),
+('tiktok', 'TikTok', 'ByteDance', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/tiktok.png', 'Coins', 'app', true),
+('steam', 'Steam', 'Valve', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/steam.jpeg', 'Wallet', 'app', true),
+('xbox', 'Xbox', 'Microsoft', 'https://zcyyrvyltnpmdflupftn.supabase.co/storage/v1/object/public/images/xbox.jpeg', 'Gift Card', 'app', true)
 on conflict (id) do nothing;
 
--- Packages
-insert into packages (game_id, amount, bonus, price) values
+insert into public.packages (game_id, amount, bonus, price)
+values
 ('pubg-mobile', 60, 0, 0.99),
 ('pubg-mobile', 300, 25, 4.99),
 ('pubg-mobile', 600, 60, 9.99),
 ('free-fire', 100, 0, 0.99),
 ('free-fire', 210, 21, 2.49),
+('free-fire', 530, 53, 4.99),
+('mobile-legends', 86, 0, 1.50),
+('mobile-legends', 172, 17, 2.99),
 ('tiktok', 70, 0, 0.99),
-('tiktok', 350, 0, 4.99)
+('tiktok', 350, 0, 4.99),
+('steam', 10, 0, 10.00),
+('steam', 20, 0, 20.00),
+('xbox', 10, 0, 10.00),
+('xbox', 25, 0, 25.00)
 on conflict do nothing;
 
--- Coupons
-insert into coupons (code, discount_type, value) values
+insert into public.coupons (code, discount_type, value)
+values
 ('WELCOME10', 'percent', 10),
 ('SAVE5', 'fixed', 5)
 on conflict (code) do nothing;
 
--- Promotions
-insert into promotions (id, subtitle_en, subtitle_ar, image_url, sort_order) values
-(1, 'Get 20% extra Diamonds on Free Fire', 'احصل على 20% جواهر إضافية في فري فاير', 'https://picsum.photos/seed/gaming1/1200/600', 1),
-(2, 'Exclusive skins available now', 'سكنات حصرية متوفرة الآن', 'https://picsum.photos/seed/gaming2/1200/600', 2),
-(3, 'Save big on all App Subscriptions', 'وفر الكثير على جميع اشتراكات التطبيقات', 'https://picsum.photos/seed/gaming3/1200/600', 3)
+insert into public.promotions (id, image_url, sort_order)
+values
+(1, 'https://picsum.photos/seed/gaming1/1200/600', 1),
+(2, 'https://picsum.photos/seed/gaming2/1200/600', 2),
+(3, 'https://picsum.photos/seed/gaming3/1200/600', 3)
 on conflict (id) do nothing;

@@ -7,17 +7,17 @@ import { MouseEvent, useState } from 'react';
 import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 
 export default function Wishlist() {
-  const { wishlist, removeFromWishlist, t, formatPrice, language } = useStore();
+  const { wishlist, removeFromWishlist, t, language } = useStore();
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const scroll = useHorizontalScroll<HTMLDivElement>(language);
 
-  const handleRemove = (e: MouseEvent, gameId: string, pkgId?: number) => {
+  const handleRemove = (e: MouseEvent, gameId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    const uniqueId = `${gameId}-${pkgId || 'base'}`;
+    const uniqueId = gameId;
 
     if (confirmRemoveId === uniqueId) {
-      removeFromWishlist(gameId, pkgId);
+      removeFromWishlist(gameId);
       setConfirmRemoveId(null);
     } else {
       setConfirmRemoveId(uniqueId);
@@ -80,8 +80,7 @@ export default function Wishlist() {
             >
               {wishlist.map((item, index) => {
                 const game = item.game;
-                const pkg = item.package;
-                const uniqueKey = `${game.id}-${pkg?.id || 'base'}`;
+                const uniqueKey = game.id;
                 const isConfirming = confirmRemoveId === uniqueKey;
 
                 return (
@@ -105,14 +104,8 @@ export default function Wishlist() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300" />
 
-                        {pkg && (
-                          <div className="absolute bottom-1.5 left-1.5 bg-creo-accent text-black px-2 py-1 rounded text-[9px] font-bold shadow-[0_0_20px_rgba(255,215,0,0.6)]">
-                            {pkg.amount} {game.currency_name}
-                          </div>
-                        )}
-
                         <button
-                          onClick={(e) => handleRemove(e, game.id, pkg?.id)}
+                          onClick={(e) => handleRemove(e, game.id)}
                           className={`absolute top-1.5 right-1.5 p-1.5 md:p-2 rounded-full backdrop-blur-md transition-all duration-300 z-30 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 ${
                             isConfirming ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-black/40 text-creo-accent hover:bg-red-500/20'
                           }`}
@@ -123,11 +116,6 @@ export default function Wishlist() {
 
                       <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <h3 className="text-[11px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">{game.name}</h3>
-                        {pkg ? (
-                          <p className="text-[10px] font-bold text-creo-accent">{formatPrice(pkg.price)}</p>
-                        ) : (
-                          game.min_price && <p className="text-[10px] font-bold text-creo-accent">{t('from')} {formatPrice(game.min_price)}</p>
-                        )}
                       </div>
                     </Link>
                   </motion.div>

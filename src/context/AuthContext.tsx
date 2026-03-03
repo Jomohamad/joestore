@@ -12,6 +12,7 @@ interface Profile {
   avatar_url?: string | null;
   provider_avatar_url?: string | null;
   onboarded?: boolean;
+  is_admin?: boolean;
 }
 
 interface AuthContextType {
@@ -61,21 +62,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile((profileStatus.profile as Profile | undefined) ?? null);
       if (runId !== routeRunRef.current) return;
 
-      if (intent === 'login' && !profileStatus.exists) {
+      if (intent === 'login' && !profileStatus.onboarded) {
         localStorage.removeItem('auth_intent');
         await supabase.auth.signOut({ scope: 'local' });
         redirectTo('/login?error=account_not_found');
         return;
       }
 
-      if (intent === 'signup' && profileStatus.exists) {
+      if (intent === 'signup' && profileStatus.onboarded) {
         localStorage.removeItem('auth_intent');
         await supabase.auth.signOut({ scope: 'local' });
         redirectTo('/login?error=account_exists');
         return;
       }
 
-      if (intent === 'signup' && !profileStatus.exists) {
+      if (intent === 'signup') {
         localStorage.removeItem('auth_intent');
         if (pathname !== '/complete-profile') {
           redirectTo('/complete-profile');
@@ -85,25 +86,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       localStorage.removeItem('auth_intent');
 
-      if (!profileStatus.exists) {
-        if (pathname === '/' || isAuthPage(pathname)) {
-          redirectTo('/complete-profile');
-        }
-        return;
-      }
-
-      if (profileStatus.exists && !profileStatus.onboarded) {
-        if (pathname === '/' || isAuthPage(pathname)) {
+      if (!profileStatus.onboarded) {
+        if (pathname !== '/complete-profile') {
           redirectTo('/complete-profile?error=complete_profile_required');
         }
         return;
       }
 
-      if (profileStatus.exists && profileStatus.onboarded && (isAuthPage(pathname) || pathname === '/complete-profile')) {
+      if (profileStatus.onboarded && (isAuthPage(pathname) || pathname === '/complete-profile')) {
         redirectTo('/');
       }
     } catch (error) {
       console.error('Auth routing resolution failed:', error);
+
+      // Fallback routing when API is temporarily unavailable.
+      const onboardedFallback = Boolean(currentSession?.user?.user_metadata?.onboarded);
+      const pathname = window.location.pathname;
+      const intent = localStorage.getItem('auth_intent');
+
+      if (intent === 'login' && !onboardedFallback) {
+        localStorage.removeItem('auth_intent');
+        await supabase.auth.signOut({ scope: 'local' });
+        redirectTo('/login?error=account_not_found');
+        return;
+      }
+
+      if (intent === 'signup' && onboardedFallback) {
+        localStorage.removeItem('auth_intent');
+        await supabase.auth.signOut({ scope: 'local' });
+        redirectTo('/login?error=account_exists');
+        return;
+      }
+
+      if (intent === 'signup') {
+        localStorage.removeItem('auth_intent');
+        if (pathname !== '/complete-profile') {
+          redirectTo('/complete-profile');
+        }
+        return;
+      }
+
+      if (!onboardedFallback && pathname !== '/complete-profile') {
+        redirectTo('/complete-profile?error=complete_profile_required');
+        return;
+      }
+
+      if (onboardedFallback && (isAuthPage(pathname) || pathname === '/complete-profile')) {
+        redirectTo('/');
+      }
     }
   };
 
@@ -155,38 +185,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user?.id) return;
-
-    const channel = supabase
-      .channel(`profile:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${user.id}`,
-        },
-        (payload) => {
-          if (payload.eventType === 'DELETE') {
-            setProfile(null);
-            return;
-          }
-          if (payload.new) {
-            setProfile(payload.new as Profile);
-          }
-        },
-      )
-      .subscribe();
+    void refreshProfile();
 
     const intervalId = window.setInterval(() => {
       void refreshProfile();
     }, 15000);
 
-    void refreshProfile();
-
     return () => {
       window.clearInterval(intervalId);
-      void supabase.removeChannel(channel);
     };
   }, [user?.id, refreshProfile]);
 
@@ -231,11 +237,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         last_name: '',
         username: '',
         onboarded: true,
+        is_admin: false,
       }),
       first_name: data.first_name ?? prev?.first_name ?? '',
       last_name: data.last_name ?? prev?.last_name ?? '',
       username: data.username ?? prev?.username ?? '',
       avatar_url: data.avatar_url ?? prev?.avatar_url ?? null,
+      email: user.email || prev?.email || '',
+      onboarded: true,
+      is_admin: Boolean(prev?.is_admin),
     }));
   };
 

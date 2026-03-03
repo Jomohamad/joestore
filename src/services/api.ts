@@ -26,24 +26,18 @@ const fetchJsonWithTimeout = async <T>(url: string, timeoutMs = API_TIMEOUT_MS):
 const getFallbackPromotions = (): Promotion[] => [
   {
     id: 1,
-    subtitle_en: 'Get 20% extra Diamonds on Free Fire',
-    subtitle_ar: 'احصل على 20% جواهر إضافية في فري فاير',
     image_url: 'https://picsum.photos/seed/gaming1/1200/600',
     is_active: true,
     sort_order: 1
   },
   {
     id: 2,
-    subtitle_en: 'Exclusive skins available now',
-    subtitle_ar: 'سكنات حصرية متوفرة الآن',
     image_url: 'https://picsum.photos/seed/gaming2/1200/600',
     is_active: true,
     sort_order: 2
   },
   {
     id: 3,
-    subtitle_en: 'Save big on all App Subscriptions',
-    subtitle_ar: 'وفر الكثير على جميع اشتراكات التطبيقات',
     image_url: 'https://picsum.photos/seed/gaming3/1200/600',
     is_active: true,
     sort_order: 3
@@ -67,12 +61,8 @@ const getFallbackGames = (): Game[] => [
     publisher: 'Garena',
     image_url: 'https://picsum.photos/seed/ff/800/600',
     currency_name: 'Diamonds',
-    currency_icon: '💎',
-    color_theme: 'from-orange-500 to-red-500',
     category: 'game',
-    genre: 'Battle Royale',
-    popularity: 100,
-    min_price: 0.99
+    show_on_home: true
   },
   {
     id: 'pubg',
@@ -80,12 +70,8 @@ const getFallbackGames = (): Game[] => [
     publisher: 'Tencent',
     image_url: 'https://picsum.photos/seed/pubg/800/600',
     currency_name: 'UC',
-    currency_icon: '🪙',
-    color_theme: 'from-yellow-500 to-orange-500',
     category: 'game',
-    genre: 'Battle Royale',
-    popularity: 95,
-    min_price: 0.99
+    show_on_home: true
   },
   {
     id: 'netflix',
@@ -93,20 +79,9 @@ const getFallbackGames = (): Game[] => [
     publisher: 'Netflix Inc.',
     image_url: 'https://picsum.photos/seed/netflix/800/600',
     currency_name: 'Subscription',
-    currency_icon: '📺',
-    color_theme: 'from-red-600 to-red-900',
     category: 'app',
-    genre: 'Entertainment',
-    popularity: 90,
-    min_price: 9.99
+    show_on_home: true
   }
-];
-
-const getFallbackPackages = (gameId: string): Package[] => [
-  { id: 1, game_id: gameId, amount: 100, bonus: 10, price: 0.99 },
-  { id: 2, game_id: gameId, amount: 310, bonus: 31, price: 2.99 },
-  { id: 3, game_id: gameId, amount: 520, bonus: 52, price: 4.99 },
-  { id: 4, game_id: gameId, amount: 1060, bonus: 106, price: 9.99 },
 ];
 
 export const fetchGames = async (): Promise<Game[]> => {
@@ -134,18 +109,18 @@ export const fetchGameDetails = async (id: string): Promise<Game> => {
 export const fetchGamePackages = async (id: string): Promise<Package[]> => {
   try {
     const data = await fetchJsonWithTimeout<Package[]>(`/api/games/${encodeURIComponent(id)}/packages`);
-    return data && data.length > 0 ? data : getFallbackPackages(id);
+    return data || [];
   } catch (error) {
-    console.warn('Error fetching packages from API (using fallback):', error);
-    return getFallbackPackages(id);
+    console.warn('Error fetching packages from API:', error);
+    return [];
   }
 };
 
-export const fetchWishlist = async (userId: string): Promise<{ game_id: string; package_id?: number }[]> => {
+export const fetchWishlist = async (userId: string): Promise<{ game_id: string }[]> => {
   try {
     const { data, error } = await supabase
       .from('wishlist')
-      .select('game_id, package_id')
+      .select('game_id')
       .eq('user_id', userId);
 
     if (error) throw error;
@@ -156,11 +131,11 @@ export const fetchWishlist = async (userId: string): Promise<{ game_id: string; 
   }
 };
 
-export const addToWishlistApi = async (userId: string, gameId: string, packageId?: number): Promise<void> => {
+export const addToWishlistApi = async (userId: string, gameId: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('wishlist')
-      .insert([{ user_id: userId, game_id: gameId, package_id: packageId }]);
+      .insert([{ user_id: userId, game_id: gameId }]);
 
     if (error) throw error;
   } catch (error) {
@@ -169,21 +144,13 @@ export const addToWishlistApi = async (userId: string, gameId: string, packageId
   }
 };
 
-export const removeFromWishlistApi = async (userId: string, gameId: string, packageId?: number): Promise<void> => {
+export const removeFromWishlistApi = async (userId: string, gameId: string): Promise<void> => {
   try {
-    let query = supabase
+    const { error } = await supabase
       .from('wishlist')
       .delete()
       .eq('user_id', userId)
       .eq('game_id', gameId);
-      
-    if (packageId) {
-      query = query.eq('package_id', packageId);
-    } else {
-      query = query.is('package_id', null);
-    }
-
-    const { error } = await query;
 
     if (error) throw error;
   } catch (error) {
@@ -240,6 +207,7 @@ export const fetchProfileStatus = async (): Promise<{
     username: string;
     avatar_url?: string | null;
     provider_avatar_url?: string | null;
+    is_admin?: boolean;
   };
 }> => {
   const headers = await getAuthHeaders();
@@ -258,22 +226,60 @@ export const completeProfileApi = async (payload: {
   avatarUrl?: string;
   providerAvatarUrl?: string;
 }): Promise<{ success: boolean; profile: unknown }> => {
+  const fallbackClientUpdate = async () => {
+    const { data: userData, error } = await supabase.auth.updateUser({
+      data: {
+        first_name: payload.firstName,
+        last_name: payload.lastName,
+        username: payload.username,
+        avatar_url: payload.avatarUrl || null,
+        provider_avatar_url: payload.providerAvatarUrl || null,
+        email: payload.email,
+        onboarded: true,
+      },
+    });
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      profile: {
+        id: userData.user?.id,
+        email: userData.user?.email || payload.email,
+        first_name: payload.firstName,
+        last_name: payload.lastName,
+        username: payload.username,
+        avatar_url: payload.avatarUrl || null,
+        provider_avatar_url: payload.providerAvatarUrl || null,
+        onboarded: true,
+      },
+    };
+  };
+
   const headers = await getAuthHeaders();
-  const response = await fetchWithTimeout('/api/profile/complete', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    body: JSON.stringify(payload),
-  }, 10000);
+  try {
+    const response = await fetchWithTimeout('/api/profile/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: JSON.stringify(payload),
+    }, 10000);
 
-  if (!response.ok) {
-    const data = await response.json().catch(() => null);
-    throw new Error(data?.error || 'Failed to complete profile');
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      const errorMsg = String(data?.error || '');
+      if (response.status >= 500 || errorMsg.includes('SUPABASE_SERVICE_ROLE_KEY')) {
+        return fallbackClientUpdate();
+      }
+      throw new Error(errorMsg || 'Failed to complete profile');
+    }
+
+    return response.json();
+  } catch {
+    return fallbackClientUpdate();
   }
-
-  return response.json();
 };
 
 export const createOrder = async (orderData: {

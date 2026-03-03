@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { AlertTriangle, Loader2, Trash2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
+import { supabase } from '../../lib/supabase';
 
 interface DeleteAccountModalProps {
   isOpen: boolean;
@@ -47,7 +48,16 @@ export default function DeleteAccountModal({ isOpen, onClose, username }: Delete
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error || 'Failed to delete account');
+        const serverError = payload?.error || 'Failed to delete account';
+
+        // Fallback: self-delete via SQL RPC (works even when server admin key is unavailable).
+        const { error: rpcError } = await supabase.rpc('delete_my_account', {
+          p_username: input,
+        });
+
+        if (rpcError) {
+          throw new Error(rpcError.message || serverError);
+        }
       }
 
       await signOut();

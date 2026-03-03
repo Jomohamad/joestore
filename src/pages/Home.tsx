@@ -16,7 +16,7 @@ export default function Home() {
     () =>
       games
         .filter((g) => g.category === 'game' && g.show_on_home !== false)
-        .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+        .sort((a, b) => a.name.localeCompare(b.name))
         .slice(0, 20),
     [games],
   );
@@ -25,7 +25,7 @@ export default function Home() {
     () =>
       games
         .filter((g) => g.category === 'app' && g.show_on_home !== false)
-        .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+        .sort((a, b) => a.name.localeCompare(b.name))
         .slice(0, 20),
     [games],
   );
@@ -87,7 +87,7 @@ export default function Home() {
         items={gameItems}
         language={language}
         viewMoreTo="/games"
-        viewMoreLabel="View more >>"
+        viewMoreLabel="View all >>"
         onToggleWishlist={handleToggleWishlist}
         isInWishlist={(gameId) => isInWishlist(gameId)}
       />
@@ -99,7 +99,7 @@ export default function Home() {
         language={language}
         bordered
         viewMoreTo="/apps"
-        viewMoreLabel="View more >>"
+        viewMoreLabel="View all >>"
         onToggleWishlist={handleToggleWishlist}
         isInWishlist={(gameId) => isInWishlist(gameId)}
       />
