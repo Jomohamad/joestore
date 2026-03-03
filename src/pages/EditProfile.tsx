@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useStore } from '../context/StoreContext';
-import { User, Mail, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
 export default function EditProfile() {
   const navigate = useNavigate();
-  const { user, updateProfile } = useAuth();
+  const { user, session, updateProfile } = useAuth();
   const { t } = useStore();
   
   const [loading, setLoading] = useState(false);
@@ -14,7 +14,6 @@ export default function EditProfile() {
   const [success, setSuccess] = useState('');
   const [usernameCheckLoading, setUsernameCheckLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
-  const [passwordShown, setPasswordShown] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteUsername, setDeleteUsername] = useState('');
   
@@ -63,14 +62,15 @@ export default function EditProfile() {
     
     setUsernameCheckLoading(true);
     try {
-      // في الواقع، يجب عليك التحقق من API حقيقي
-      // هنا بديل مؤقت - تحقق من أن الـ username مختلف عن الحالي
-      if (username === user?.user_metadata?.username) {
-        setUsernameAvailable(true);
-      } else {
-        // محاكاة التحقق
-        setUsernameAvailable(true);
-      }
+      const response = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`, {
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
+      });
+      if (!response.ok) throw new Error('Username check failed');
+
+      const data = await response.json();
+      setUsernameAvailable(Boolean(data.available));
     } catch (err) {
       setUsernameAvailable(false);
     } finally {
@@ -95,7 +95,8 @@ export default function EditProfile() {
         throw new Error('First name and last name are required');
       }
 
-      if (canChangeUsername && !usernameAvailable) {
+      const usernameChanged = formData.username !== user?.user_metadata?.username;
+      if (canChangeUsername && usernameChanged && !usernameAvailable) {
         throw new Error('Username is not available or invalid');
       }
 
@@ -127,11 +128,17 @@ export default function EditProfile() {
       // استدعاء API لحذف الحساب
       const response = await fetch('/api/user/delete', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ username: deleteUsername })
       });
 
-      if (!response.ok) throw new Error('Failed to delete account');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || 'Failed to delete account');
+      }
       
       setSuccess('Account deleted successfully');
       setTimeout(() => navigate('/'), 2000);

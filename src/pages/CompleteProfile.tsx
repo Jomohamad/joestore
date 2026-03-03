@@ -41,13 +41,14 @@ export default function CompleteProfile() {
     
     setUsernameCheckLoading(true);
     try {
-      // محاكاة التحقق - في الواقع استدعي API حقيقي
       const response = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`);
+      if (!response.ok) {
+        throw new Error('Username check failed');
+      }
       const data = await response.json();
-      setUsernameAvailable(data.available);
+      setUsernameAvailable(Boolean(data.available));
     } catch (err) {
-      // Default to true إذا فشل الـ check
-      setUsernameAvailable(true);
+      setUsernameAvailable(false);
     } finally {
       setUsernameCheckLoading(false);
     }

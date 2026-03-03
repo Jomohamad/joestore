@@ -246,11 +246,14 @@ export const createOrder = async (orderData: {
   packageId: number;
   amount: number;
 }): Promise<{ success: boolean; orderId: string; status: string }> => {
+  const { data: { session } } = await supabase.auth.getSession();
+
   // Use server-side API for order creation to ensure security/logging
   const response = await fetch('/api/orders', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
     },
     body: JSON.stringify(orderData),
   });

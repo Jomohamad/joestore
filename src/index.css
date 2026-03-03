@@ -17,6 +17,56 @@
   --color-creo-border: #27272a;
 }
 
+:root {
+  --card-min-xs: 130px;
+  --card-min-sm: 150px;
+  --card-min-md: 220px;
+  --card-radius: 0.9rem;
+  --card-media-ratio: 16 / 9;
+}
+
+.cards-grid-responsive {
+  display: grid;
+  gap: clamp(0.5rem, 1.8vw, 1rem);
+  grid-template-columns: repeat(auto-fit, minmax(clamp(var(--card-min-xs), 42vw, var(--card-min-md)), 1fr));
+}
+
+.cards-grid-packages {
+  --card-min-xs: 120px;
+  --card-min-sm: 140px;
+  --card-min-md: 180px;
+}
+
+.card-shell {
+  min-width: 0;
+  height: 100%;
+  border-radius: var(--card-radius);
+}
+
+.card-media {
+  aspect-ratio: var(--card-media-ratio);
+}
+
+.card-body {
+  padding: clamp(0.45rem, 1.8vw, 0.75rem);
+}
+
+.card-title {
+  font-size: clamp(0.7rem, 2.7vw, 0.9rem);
+  line-height: 1.2;
+}
+
+.card-touch-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@media (min-width: 640px) {
+  .cards-grid-responsive {
+    grid-template-columns: repeat(auto-fit, minmax(clamp(var(--card-min-sm), 24vw, var(--card-min-md)), 1fr));
+  }
+}
+
 body {
   background-color: var(--color-creo-bg);
   color: var(--color-creo-text);

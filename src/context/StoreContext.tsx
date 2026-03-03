@@ -3,8 +3,6 @@ import { translations } from '../translations';
 import { Game, Package } from '../types';
 import { useAuth } from './AuthContext';
 import { fetchWishlist, addToWishlistApi, removeFromWishlistApi, fetchGames, fetchGamePackages } from '../services/api';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 
 type Language = 'en' | 'ar';
 type Currency = 'USD' | 'EGP';
@@ -38,6 +36,7 @@ interface StoreContextType {
   updateCartItem: (id: string, updates: Partial<CartItem>) => void;
   clearCart: () => void;
   wishlist: WishlistItem[];
+  allGames: Game[];
   addToWishlist: (game: Game, pkg?: Package) => void;
   removeFromWishlist: (gameId: string, packageId?: number) => void;
   isInWishlist: (gameId: string, packageId?: number) => boolean;
@@ -60,7 +59,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [allGames, setAllGames] = useState<Game[]>([]);
-  const [allPackages, setAllPackages] = useState<Package[]>([]);
   const [orderToast, setOrderToast] = useState<{ orderId: string } | null>(null);
 
   // Load all games and packages for context
@@ -268,6 +266,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       updateCartItem,
       clearCart, 
       wishlist,
+      allGames,
       addToWishlist,
       removeFromWishlist,
       isInWishlist,

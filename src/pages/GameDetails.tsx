@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages } from '../services/api';
 import { Game, Package } from '../types';
-import { ShieldCheck, ShoppingCart, Heart, CheckCircle2, X } from 'lucide-react';
-import { cn, imgSrc } from '../lib/utils';
+import { ShieldCheck, ShoppingCart, CheckCircle2, X } from 'lucide-react';
+import { imgSrc } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -12,7 +12,7 @@ export default function GameDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToCart, t, language, isInWishlist, addToWishlist, removeFromWishlist, formatPrice } = useStore();
+  const { addToCart, t, language, formatPrice } = useStore();
   
   const [game, setGame] = useState<Game | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -76,15 +76,6 @@ export default function GameDetails() {
     
     // Hide toast after 3 seconds
     setTimeout(() => setShowSuccess(false), 3000);
-  };
-
-  const toggleWishlist = (pkg: Package) => {
-    if (!game) return;
-    if (isInWishlist(game.id, pkg.id)) {
-      removeFromWishlist(game.id, pkg.id);
-    } else {
-      addToWishlist(game, pkg);
-    }
   };
 
   if (loading) {
@@ -213,24 +204,24 @@ export default function GameDetails() {
       <div className="container mx-auto px-4 mt-8 md:mt-12">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">{t('select_package')}</h2>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+        <div className="cards-grid-responsive cards-grid-packages">
           {packages.map((pkg) => (
             <motion.div
               key={pkg.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="w-44 sm:w-52 md:w-56 lg:w-60 bg-creo-card border border-creo-border rounded-xl overflow-hidden hover:border-creo-accent transition-all duration-300 group relative flex flex-col h-full hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)] mx-auto"
+              className="card-shell bg-creo-card border border-creo-border overflow-hidden hover:border-creo-accent transition-all duration-300 group relative flex flex-col h-full hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)]"
             >
-              <div className="aspect-video relative overflow-hidden bg-creo-bg-sec/30 flex items-center justify-center group-hover:bg-creo-bg-sec/50 transition-colors">
+              <div className="card-media relative overflow-hidden bg-creo-bg-sec/30 flex items-center justify-center group-hover:bg-creo-bg-sec/50 transition-colors">
                 {/* Background Accent - Large faded amount */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] select-none pointer-events-none group-hover:opacity-[0.05] transition-opacity">
-                  <span className="text-7xl font-bold text-white transform -rotate-12">{pkg.amount}</span>
+                  <span className="text-6xl md:text-7xl font-bold text-white transform -rotate-12">{pkg.amount}</span>
                 </div>
 
                 {/* Main Display in Aspect Area */}
                 <div className="relative z-10 flex flex-col items-center">
-                  <span className="text-2xl md:text-3xl font-bold text-white group-hover:text-creo-accent transition-colors">{pkg.amount}</span>
-                  <span className="text-[10px] uppercase tracking-widest text-creo-muted font-bold">{game.currency_name}</span>
+                  <span className="text-xl md:text-3xl font-bold text-white group-hover:text-creo-accent transition-colors">{pkg.amount}</span>
+                  <span className="text-[9px] uppercase tracking-widest text-creo-muted font-bold">{game.currency_name}</span>
                 </div>
 
 
@@ -245,9 +236,9 @@ export default function GameDetails() {
                 <button
                   onClick={() => handleAddToCart(pkg)}
                   disabled={addingToCartId === pkg.id}
-                  className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10"
+                  className="absolute inset-0 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10"
                 >
-                  <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                  <div className="card-touch-btn bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-100 md:scale-50 md:group-hover:scale-100 transition-transform duration-300">
                     {addingToCartId === pkg.id ? (
                       <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                     ) : (
@@ -257,8 +248,8 @@ export default function GameDetails() {
                 </button>
               </div>
 
-              <div className="p-2 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-0.5 border-t border-creo-border/50">
-                <p className="text-[11px] font-bold text-creo-accent">
+              <div className="card-body flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-0.5 border-t border-creo-border/50">
+                <p className="text-xs font-bold text-creo-accent">
                   {formatPrice(pkg.price)}
                 </p>
               </div>

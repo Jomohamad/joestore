@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { StoreProvider } from './context/StoreContext';
 import { AuthProvider } from './context/AuthContext';
@@ -14,21 +15,30 @@ import Footer from './components/Footer';
 // import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
-import GameDetails from './pages/GameDetails';
-import EditProfile from './pages/EditProfile';
-import CompleteProfile from './pages/CompleteProfile';
-import Support from './pages/Support';
-import FAQ from './pages/FAQ';
-import PaymentMethods from './pages/PaymentMethods';
-import Terms from './pages/Terms';
-import Privacy from './pages/Privacy';
-import Refund from './pages/Refund';
-import Cart from './pages/Cart';
-import Login from './pages/Login';
-import SearchPage from './pages/SearchPage';
-import Wishlist from './pages/Wishlist';
-import WhyChooseUs from './pages/WhyChooseUs';
-import Orders from './pages/Orders';
+
+const GameDetails = lazy(() => import('./pages/GameDetails'));
+const EditProfile = lazy(() => import('./pages/EditProfile'));
+const CompleteProfile = lazy(() => import('./pages/CompleteProfile'));
+const Support = lazy(() => import('./pages/Support'));
+const FAQ = lazy(() => import('./pages/FAQ'));
+const PaymentMethods = lazy(() => import('./pages/PaymentMethods'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Refund = lazy(() => import('./pages/Refund'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Login = lazy(() => import('./pages/Login'));
+const SearchPage = lazy(() => import('./pages/SearchPage'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const WhyChooseUs = lazy(() => import('./pages/WhyChooseUs'));
+const Orders = lazy(() => import('./pages/Orders'));
+
+function RouteLoader() {
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[40vh]">
+      <div className="w-10 h-10 border-4 border-creo-accent/20 border-t-creo-accent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -42,26 +52,28 @@ export default function App() {
             <ErrorBoundary>
               <Header />
               <main className="flex-1 flex flex-col">
-              <Routes>
-                <Route path="/" element={<Home />} />
+                <Suspense fallback={<RouteLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
 
-                <Route path="/game/:id" element={<GameDetails />} />
-                <Route path="/edit-profile" element={<EditProfile />} />
-                <Route path="/complete-profile" element={<CompleteProfile />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/contact" element={<Support />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/payment-methods" element={<PaymentMethods />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/refund" element={<Refund />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/wishlist" element={<Wishlist />} />
-                <Route path="/why-choose-us" element={<WhyChooseUs />} />
-                <Route path="/orders" element={<Orders />} />
-              </Routes>
+                    <Route path="/game/:id" element={<GameDetails />} />
+                    <Route path="/edit-profile" element={<EditProfile />} />
+                    <Route path="/complete-profile" element={<CompleteProfile />} />
+                    <Route path="/support" element={<Support />} />
+                    <Route path="/contact" element={<Support />} />
+                    <Route path="/faq" element={<FAQ />} />
+                    <Route path="/payment-methods" element={<PaymentMethods />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/refund" element={<Refund />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/search" element={<SearchPage />} />
+                    <Route path="/wishlist" element={<Wishlist />} />
+                    <Route path="/why-choose-us" element={<WhyChooseUs />} />
+                    <Route path="/orders" element={<Orders />} />
+                  </Routes>
+                </Suspense>
               </main>
             </ErrorBoundary>
             <Footer />

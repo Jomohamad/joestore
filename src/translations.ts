@@ -192,6 +192,7 @@ export const translations = {
     
     // Auth
     login: 'Login',
+    login_required: 'You need to login to continue',
     login_desc: 'Sign in with your social account to continue',
     login_with_google: 'Continue with Google',
     login_with_apple: 'Continue with Apple',
@@ -206,6 +207,7 @@ export const translations = {
     wishlist: 'Wishlist',
     wishlist_desc: 'Your collection of favorite games and apps.',
     wishlist_empty: 'Your wishlist is empty.',
+    from: 'From',
     add_to_wishlist: 'Add to Wishlist',
     remove_from_wishlist: 'Remove from Wishlist',
     
@@ -406,6 +408,7 @@ export const translations = {
     
     // Auth
     login: 'تسجيل الدخول',
+    login_required: 'يجب تسجيل الدخول للمتابعة',
     login_desc: 'سجل الدخول باستخدام حسابك الاجتماعي للمتابعة',
     login_with_google: 'المتابعة باستخدام جوجل',
     login_with_apple: 'المتابعة باستخدام أبل',
@@ -420,6 +423,7 @@ export const translations = {
     wishlist: 'قائمة الرغبات',
     wishlist_desc: 'مجموعتك من الألعاب والتطبيقات المفضلة.',
     wishlist_empty: 'قائمة رغباتك فارغة.',
+    from: 'يبدأ من',
     add_to_wishlist: 'أضف إلى قائمة الرغبات',
     remove_from_wishlist: 'إزالة من قائمة الرغبات',
     
