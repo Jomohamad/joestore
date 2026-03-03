@@ -85,16 +85,29 @@ export default function HorizontalCatalogSection({
             </button>
           )}
 
-          <div className="home-cards-edge right" />
+          <div
+            className={cn(
+              'home-cards-edge left transition-opacity duration-200',
+              scroll.scrollState.canScrollLeft ? 'opacity-100' : 'opacity-0'
+            )}
+            aria-hidden="true"
+          />
+          <div
+            className={cn(
+              'home-cards-edge right transition-opacity duration-200',
+              scroll.scrollState.canScrollRight ? 'opacity-100' : 'opacity-0'
+            )}
+            aria-hidden="true"
+          />
 
           <div
             ref={scroll.ref}
             {...scroll.events}
-            className={cn(
-              'home-cards-track flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth',
-              scroll.isDragging ? 'cursor-grabbing snap-none scroll-auto' : 'cursor-grab'
-            )}
-          >
+              className={cn(
+                'home-cards-track flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-pan-x',
+                scroll.isDragging ? 'cursor-grabbing snap-none scroll-auto' : 'cursor-grab'
+              )}
+            >
             {items.map((item, index) => (
               <motion.div
                 key={item.id}

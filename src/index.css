@@ -122,8 +122,10 @@ body {
 
 .home-cards-track {
   --home-cards-gap: clamp(0.5rem, 1vw, 0.85rem);
-  --home-cards-visible: 2.2;
+  --home-cards-visible: 1.5;
   gap: var(--home-cards-gap);
+  scroll-padding-inline: 1rem;
+  overscroll-behavior-x: contain;
 }
 
 .home-cards-item {
@@ -145,16 +147,29 @@ body {
   background: linear-gradient(to left, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0));
 }
 
+.home-cards-edge.left {
+  left: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0));
+}
+
 @media (max-width: 767px) {
+  .home-cards-edge.left,
   .home-cards-edge.right {
     width: clamp(22px, 12vw, 52px);
+  }
+
+  .home-cards-edge.right {
     background: linear-gradient(to left, rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0));
+  }
+
+  .home-cards-edge.left {
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0));
   }
 }
 
 @media (min-width: 640px) {
   .home-cards-track {
-    --home-cards-visible: 3.3;
+    --home-cards-visible: 2.3;
   }
 }
 

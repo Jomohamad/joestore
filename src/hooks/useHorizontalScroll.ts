@@ -6,6 +6,7 @@ interface ScrollState {
 }
 
 export function useHorizontalScroll<T extends HTMLElement>(language: string) {
+  const EPSILON = 2;
   const ref = useRef<T>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -23,11 +24,11 @@ export function useHorizontalScroll<T extends HTMLElement>(language: string) {
       let canRight = false;
       
       if (language === 'ar') {
-        canRight = Math.abs(currentScrollLeft) > 0;
-        canLeft = Math.abs(currentScrollLeft) + clientWidth < scrollWidth - 1;
+        canRight = Math.abs(currentScrollLeft) > EPSILON;
+        canLeft = Math.abs(currentScrollLeft) + clientWidth < scrollWidth - EPSILON;
       } else {
-        canLeft = currentScrollLeft > 0;
-        canRight = Math.ceil(currentScrollLeft + clientWidth) < scrollWidth;
+        canLeft = currentScrollLeft > EPSILON;
+        canRight = currentScrollLeft + clientWidth < scrollWidth - EPSILON;
       }
       
       setScrollState({ canScrollLeft: canLeft, canScrollRight: canRight });
@@ -47,6 +48,10 @@ export function useHorizontalScroll<T extends HTMLElement>(language: string) {
 
     const currentRef = ref.current;
     if (currentRef) {
+      // Keep the initial position stable on LTR to avoid tiny auto-offset on mobile.
+      if (language !== 'ar') {
+        currentRef.scrollLeft = 0;
+      }
       currentRef.addEventListener('wheel', handleWheel, { passive: false });
     }
 
