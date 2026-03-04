@@ -18,6 +18,8 @@ export default function SignUp() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
+  const [resendingConfirmation, setResendingConfirmation] = useState(false);
   const [searchParams] = useSearchParams();
   const { t, language } = useStore();
 
@@ -75,6 +77,7 @@ export default function SignUp() {
         email: email.trim(),
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/login`,
           data: {
             first_name: firstName.trim(),
             last_name: lastName.trim(),
@@ -85,16 +88,64 @@ export default function SignUp() {
 
       if (signUpError) throw signUpError;
 
+      // Supabase may return an obfuscated user for already-registered emails.
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setError(
+          language === 'ar'
+            ? 'هذا البريد مسجل بالفعل. جرّب تسجيل الدخول أو إعادة إرسال رسالة التفعيل.'
+            : 'This email is already registered. Please login or resend the confirmation email.',
+        );
+        return;
+      }
+
       if (data.session) {
+        setPendingConfirmationEmail('');
         navigate('/complete-profile');
         return;
       }
 
-      setInfo(language === 'ar' ? 'تم إنشاء الحساب. تحقق من البريد الإلكتروني لتأكيد الحساب.' : 'Account created. Please check your email to confirm your account.');
+      setPendingConfirmationEmail(email.trim());
+      setInfo(
+        language === 'ar'
+          ? 'تم إنشاء الحساب. تم إرسال رابط التفعيل، تحقق من البريد الوارد و Spam.'
+          : 'Account created. A confirmation link was sent. Check Inbox and Spam folders.',
+      );
     } catch (err: any) {
       setError(err.message || (language === 'ar' ? 'فشل إنشاء الحساب' : 'Sign up failed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    const targetEmail = pendingConfirmationEmail || email.trim();
+    if (!targetEmail) {
+      setError(language === 'ar' ? 'اكتب بريدك الإلكتروني أولاً' : 'Enter your email first');
+      return;
+    }
+
+    setError(null);
+    setInfo(null);
+    setResendingConfirmation(true);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: targetEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+      if (resendError) throw resendError;
+
+      setInfo(
+        language === 'ar'
+          ? 'أعدنا إرسال رابط التفعيل. راجع البريد الوارد وSpam.'
+          : 'Confirmation email resent. Check your Inbox and Spam.',
+      );
+    } catch (err: any) {
+      setError(err.message || (language === 'ar' ? 'تعذر إعادة إرسال رابط التفعيل' : 'Failed to resend confirmation email'));
+    } finally {
+      setResendingConfirmation(false);
     }
   };
 
@@ -121,6 +172,23 @@ export default function SignUp() {
             <div className="bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 px-4 py-3 rounded-lg text-sm text-center">
               {info}
             </div>
+          )}
+
+          {(pendingConfirmationEmail || email.trim()) && (
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              disabled={resendingConfirmation}
+              className="w-full rounded-lg border border-creo-border bg-creo-bg-sec hover:border-creo-accent text-sm font-medium text-white py-2.5 transition-colors disabled:opacity-60"
+            >
+              {resendingConfirmation
+                ? language === 'ar'
+                  ? 'جاري إعادة الإرسال...'
+                  : 'Resending...'
+                : language === 'ar'
+                  ? 'إعادة إرسال إيميل التفعيل'
+                  : 'Resend confirmation email'}
+            </button>
           )}
 
           <form onSubmit={handleSignUp} className="space-y-3">

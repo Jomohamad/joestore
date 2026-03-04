@@ -11,6 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [resendingConfirmation, setResendingConfirmation] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [searchParams] = useSearchParams();
@@ -87,6 +88,38 @@ export default function Login() {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    setError(null);
+    setInfo(null);
+
+    if (!email.trim()) {
+      setError(language === 'ar' ? 'اكتب البريد الإلكتروني أولًا' : 'Enter your email first');
+      return;
+    }
+
+    setResendingConfirmation(true);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+      if (resendError) throw resendError;
+
+      setInfo(
+        language === 'ar'
+          ? 'تمت إعادة إرسال رسالة التفعيل. راجع البريد الوارد وSpam.'
+          : 'Confirmation email resent. Check Inbox and Spam.',
+      );
+    } catch (err: any) {
+      setError(err.message || (language === 'ar' ? 'تعذر إعادة إرسال رسالة التفعيل' : 'Failed to resend confirmation email'));
+    } finally {
+      setResendingConfirmation(false);
+    }
+  };
+
   return (
     <div className="flex-1 bg-creo-bg flex items-center justify-center py-10 px-4 sm:px-6">
       <motion.div
@@ -104,6 +137,23 @@ export default function Login() {
             <div className="bg-red-500/10 border border-red-500/40 text-red-300 px-4 py-3 rounded-lg text-sm text-center">
               {oauthError || error}
             </div>
+          )}
+
+          {String(oauthError || error || '').toLowerCase().includes('email not confirmed') && (
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              disabled={resendingConfirmation}
+              className="w-full rounded-lg border border-creo-border bg-creo-bg-sec hover:border-creo-accent text-sm font-medium text-white py-2.5 transition-colors disabled:opacity-60"
+            >
+              {resendingConfirmation
+                ? language === 'ar'
+                  ? 'جاري إعادة الإرسال...'
+                  : 'Resending...'
+                : language === 'ar'
+                  ? 'إعادة إرسال إيميل التفعيل'
+                  : 'Resend confirmation email'}
+            </button>
           )}
 
           {info && (
