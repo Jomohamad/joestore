@@ -282,10 +282,37 @@ export const completeProfileApi = async (payload: {
   }
 };
 
+export const checkUsernameAvailabilityApi = async (
+  username: string,
+  token?: string,
+): Promise<{ available: boolean; suggestions: string[]; error?: string }> => {
+  const response = await fetchWithTimeout(`/api/check-username?username=${encodeURIComponent(username)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  }, 5000);
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    return {
+      available: false,
+      suggestions: Array.isArray(payload?.suggestions) ? payload.suggestions : [],
+      error: String(payload?.error || 'Username check failed'),
+    };
+  }
+
+  return {
+    available: Boolean(payload?.available),
+    suggestions: Array.isArray(payload?.suggestions) ? payload.suggestions : [],
+  };
+};
+
 export const createOrder = async (orderData: {
   gameId: string;
   packageId: number;
   amount: number;
+  quantity: number;
+  paymentMethod: 'fawry' | 'wallet' | 'card' | 'paypal';
+  accountIdentifier: string;
+  paymentDetails: Record<string, unknown>;
 }): Promise<{ success: boolean; orderId: string; status: string }> => {
   const authHeaders = await getAuthHeaders();
 

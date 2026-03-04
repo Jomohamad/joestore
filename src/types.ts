@@ -14,6 +14,7 @@ export interface Game {
   image_url: string;
   currency_name: string;
   category: 'game' | 'app';
+  description?: string | null;
   show_on_home?: boolean;
 }
 
@@ -24,6 +25,10 @@ export interface Package {
   bonus: number;
   price: number;
   image_url?: string | null;
+  discount_type?: 'percent' | 'fixed' | null;
+  discount_value?: number;
+  discount_active?: boolean;
+  discount_ends_at?: string | null;
 }
 
 export interface Order {
@@ -32,5 +37,9 @@ export interface Order {
   package_id: number;
   amount: number;
   status: string;
+  payment_method?: string | null;
+  account_identifier?: string | null;
+  payment_details?: Record<string, unknown>;
+  quantity?: number;
   created_at: string;
 }

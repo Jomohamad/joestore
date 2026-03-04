@@ -112,7 +112,11 @@ create table if not exists public.packages (
   amount integer not null,
   bonus integer default 0,
   price numeric(10,2) not null,
-  image_url text
+  image_url text,
+  discount_type text check (discount_type in ('percent', 'fixed')),
+  discount_value numeric(10,2) not null default 0,
+  discount_active boolean not null default false,
+  discount_ends_at timestamptz
 );
 
 create index if not exists packages_game_id_idx on public.packages(game_id);
@@ -126,6 +130,9 @@ create table if not exists public.orders (
   amount numeric(10,2) not null,
   status text not null default 'PENDING' check (status in ('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED')),
   payment_method text,
+  account_identifier text,
+  payment_details jsonb not null default '{}'::jsonb,
+  quantity integer not null default 1,
   created_at timestamptz not null default now()
 );
 

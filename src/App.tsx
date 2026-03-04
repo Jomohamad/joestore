@@ -4,7 +4,7 @@
  */
 
 import { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { StoreProvider } from './context/StoreContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
@@ -44,48 +44,56 @@ function RouteLoader() {
   );
 }
 
+function AppShell() {
+  const location = useLocation();
+  const hideChrome = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/complete-profile';
+
+  return (
+    <div className="min-h-screen flex flex-col bg-creo-bg text-creo-text font-sans selection:bg-creo-accent/30">
+      <OrderToast />
+      <ErrorBoundary>
+        {!hideChrome && <Header />}
+        <main className="flex-1 flex flex-col">
+          <Suspense fallback={<RouteLoader />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+
+              <Route path="/game/:id" element={<GameDetails />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/complete-profile" element={<CompleteProfile />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/contact" element={<Support />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/payment-methods" element={<PaymentMethods />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/refund" element={<Refund />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/wishlist" element={<Wishlist />} />
+              <Route path="/why-choose-us" element={<WhyChooseUs />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/games" element={<GamesCatalog />} />
+              <Route path="/apps" element={<AppsCatalog />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Routes>
+          </Suspense>
+        </main>
+      </ErrorBoundary>
+      {!hideChrome && <Footer />}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <StoreProvider>
         <Router>
           <ScrollToTop />
-          <div className="min-h-screen flex flex-col bg-creo-bg text-creo-text font-sans selection:bg-creo-accent/30">
-            <OrderToast />
-            {/* wrap header/main in error boundary to surface runtime errors */}
-            <ErrorBoundary>
-              <Header />
-              <main className="flex-1 flex flex-col">
-                <Suspense fallback={<RouteLoader />}>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-
-                    <Route path="/game/:id" element={<GameDetails />} />
-                    <Route path="/edit-profile" element={<EditProfile />} />
-                    <Route path="/complete-profile" element={<CompleteProfile />} />
-                    <Route path="/support" element={<Support />} />
-                    <Route path="/contact" element={<Support />} />
-                    <Route path="/faq" element={<FAQ />} />
-                    <Route path="/payment-methods" element={<PaymentMethods />} />
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/privacy" element={<Privacy />} />
-                    <Route path="/refund" element={<Refund />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<SignUp />} />
-                    <Route path="/search" element={<SearchPage />} />
-                    <Route path="/wishlist" element={<Wishlist />} />
-                    <Route path="/why-choose-us" element={<WhyChooseUs />} />
-                    <Route path="/orders" element={<Orders />} />
-                    <Route path="/games" element={<GamesCatalog />} />
-                    <Route path="/apps" element={<AppsCatalog />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                  </Routes>
-                </Suspense>
-              </main>
-            </ErrorBoundary>
-            <Footer />
-          </div>
+          <AppShell />
         </Router>
       </StoreProvider>
     </AuthProvider>

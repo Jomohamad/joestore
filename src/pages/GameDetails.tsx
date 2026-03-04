@@ -1,18 +1,44 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages } from '../services/api';
 import { Game, Package } from '../types';
 import { ShieldCheck, CheckCircle2, X, Minus, Plus, Heart, BadgeCheck } from 'lucide-react';
-import { imgSrc } from '../lib/utils';
+import { cn, imgSrc } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
+
+const getDiscountedPrice = (pkg: Package) => {
+  const basePrice = Number(pkg.price || 0);
+  const hasDiscountWindow = !pkg.discount_ends_at || new Date(pkg.discount_ends_at).getTime() > Date.now();
+  const discountActive = Boolean(pkg.discount_active) && Number(pkg.discount_value || 0) > 0 && hasDiscountWindow;
+
+  if (!discountActive) {
+    return {
+      hasDiscount: false,
+      original: basePrice,
+      final: basePrice,
+    };
+  }
+
+  const discountValue = Number(pkg.discount_value || 0);
+  const finalPrice =
+    pkg.discount_type === 'percent'
+      ? Math.max(0, basePrice - basePrice * (discountValue / 100))
+      : Math.max(0, basePrice - discountValue);
+
+  return {
+    hasDiscount: finalPrice < basePrice,
+    original: basePrice,
+    final: finalPrice,
+  };
+};
 
 export default function GameDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToCart, t, language, formatPrice, getCartQuantity, incrementCartItem, decrementCartItem, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+  const { addToCart, t, language, formatPrice, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
 
   const [game, setGame] = useState<Game | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -20,6 +46,9 @@ export default function GameDetails() {
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showLoginError, setShowLoginError] = useState(false);
+  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
+  const [packageQuantities, setPackageQuantities] = useState<Record<number, number>>({});
+  const [accountIdentifier, setAccountIdentifier] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -29,6 +58,15 @@ export default function GameDetails() {
         const [gameData, packagesData] = await Promise.all([fetchGameDetails(id), fetchGamePackages(id)]);
         setGame(gameData);
         setPackages(packagesData);
+
+        if (packagesData.length > 0) {
+          setSelectedPackageId(packagesData[0].id);
+          const initialQuantities: Record<number, number> = {};
+          for (const pkg of packagesData) {
+            initialQuantities[pkg.id] = 1;
+          }
+          setPackageQuantities(initialQuantities);
+        }
       } catch {
         setError(t('failed_load_details'));
       } finally {
@@ -36,11 +74,30 @@ export default function GameDetails() {
       }
     };
 
-    loadData();
+    void loadData();
   }, [id, t]);
 
-  const handleIncrement = (pkg: Package) => {
-    if (!game) return;
+  const selectedPackage = useMemo(
+    () => packages.find((pkg) => pkg.id === selectedPackageId) || null,
+    [packages, selectedPackageId],
+  );
+
+  const selectedQuantity = selectedPackage ? packageQuantities[selectedPackage.id] ?? 1 : 1;
+
+  const handleQuantityChange = (pkgId: number, delta: number) => {
+    setPackageQuantities((prev) => {
+      const current = prev[pkgId] ?? 1;
+      return {
+        ...prev,
+        [pkgId]: Math.max(1, current + delta),
+      };
+    });
+  };
+
+  const handleConfirmAddToCart = () => {
+    if (!game || !selectedPackage) {
+      return;
+    }
 
     if (!user) {
       setShowLoginError(true);
@@ -48,30 +105,30 @@ export default function GameDetails() {
       return;
     }
 
-    const quantity = getCartQuantity(game.id, pkg.id);
-    if (quantity > 0) {
-      incrementCartItem(game.id, pkg.id);
-    } else {
-      addToCart({
-        gameId: game.id,
-        gameName: game.name,
-        gameImage: game.image_url,
-        packageId: pkg.id,
-        packageName: `${pkg.amount} ${game.currency_name}`,
-        packageAmount: pkg.amount,
-        currency: game.currency_name,
-        unitPrice: pkg.price,
-        packageImage: pkg.image_url || null,
-      });
+    if (!accountIdentifier.trim()) {
+      alert(language === 'ar' ? 'من فضلك أدخل الـ ID أولاً' : 'Please enter account ID first');
+      return;
     }
+
+    const pricing = getDiscountedPrice(selectedPackage);
+
+    addToCart({
+      gameId: game.id,
+      gameName: game.name,
+      gameImage: game.image_url,
+      packageId: selectedPackage.id,
+      packageName: `${selectedPackage.amount} ${game.currency_name}`,
+      packageAmount: selectedPackage.amount,
+      currency: game.currency_name,
+      unitPrice: pricing.final,
+      originalUnitPrice: pricing.original,
+      accountIdentifier: accountIdentifier.trim(),
+      packageImage: selectedPackage.image_url || null,
+      quantity: selectedQuantity,
+    });
 
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 1600);
-  };
-
-  const handleDecrement = (pkg: Package) => {
-    if (!game || !user) return;
-    decrementCartItem(game.id, pkg.id);
   };
 
   const toggleWishlist = () => {
@@ -175,60 +232,129 @@ export default function GameDetails() {
       </div>
 
       <div className="container mx-auto px-4 mt-8 md:mt-12">
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">{t('select_package')}</h2>
+        <div className="lg:grid lg:grid-cols-3 lg:gap-8 xl:gap-10 items-start">
+          <aside className="lg:sticky lg:top-5 self-start mb-8 lg:mb-0 space-y-4">
+            <div className="rounded-2xl border border-creo-border bg-creo-card p-4 md:p-5">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">{game.name}</h2>
+              <p className="text-sm md:text-base text-creo-text-sec">
+                {game.description || (language === 'ar' ? 'لا يوجد وصف متاح حالياً.' : 'No description available right now.')}
+              </p>
+            </div>
 
-        {packages.length === 0 ? (
-          <div className="rounded-2xl border border-creo-border bg-creo-card px-4 py-6 text-center text-creo-text-sec">
-            {language === 'ar' ? 'لا توجد باقات متاحة لهذا المنتج حالياً.' : 'No packages available for this product right now.'}
-          </div>
-        ) : (
-          <div className="space-y-3 md:space-y-4">
-            {packages.map((pkg) => {
-              const quantity = getCartQuantity(game.id, pkg.id);
-              return (
-                <motion.div
-                  key={pkg.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-creo-card border border-creo-border rounded-2xl p-3 md:p-4 flex items-center justify-between gap-3 md:gap-4 hover:border-creo-accent/70 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-28 md:w-36 aspect-video rounded-xl overflow-hidden bg-creo-bg-sec border border-creo-border shrink-0">
-                      <img src={imgSrc(pkg.image_url || game.image_url)} alt={`${game.name} package`} className="w-full h-full object-fill" referrerPolicy="no-referrer" />
-                    </div>
+            <div className="rounded-2xl border border-creo-border bg-creo-card p-4 md:p-5 space-y-3">
+              <label className="block text-sm font-semibold text-white">{language === 'ar' ? 'ID' : 'ID'}</label>
+              <input
+                type="text"
+                value={accountIdentifier}
+                onChange={(e) => setAccountIdentifier(e.target.value)}
+                placeholder={language === 'ar' ? 'اكتب ID الحساب' : 'Enter account/player ID'}
+                className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-creo-accent"
+              />
 
-                    <div className="min-w-0">
-                      <h3 className="text-white font-bold text-sm md:text-base line-clamp-1">{pkg.amount} {game.currency_name}</h3>
-                      <p className="text-creo-accent text-xs md:text-sm font-semibold mt-1">{formatPrice(pkg.price)}</p>
-                      {pkg.bonus > 0 && <p className="text-[11px] text-creo-text-sec mt-1">+{pkg.bonus} {t('bonus')}</p>}
-                    </div>
-                  </div>
+              {selectedPackage && (
+                <div className="text-xs text-creo-text-sec">
+                  {language === 'ar' ? 'الباقة المختارة:' : 'Selected package:'}{' '}
+                  <span className="text-white">{selectedPackage.amount} {game.currency_name}</span>
+                  <span className="mx-1">x</span>
+                  <span className="text-white">{selectedQuantity}</span>
+                </div>
+              )}
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => handleDecrement(pkg)}
-                      disabled={quantity === 0}
-                      className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent disabled:opacity-50"
-                      aria-label="Decrease quantity"
+              <button
+                onClick={handleConfirmAddToCart}
+                className="w-full bg-creo-accent hover:bg-white text-black font-bold py-3 rounded-xl transition-colors"
+              >
+                {language === 'ar' ? 'تأكيد الإضافة للسلة' : 'Confirm Add to Cart'}
+              </button>
+            </div>
+          </aside>
+
+          <section className="lg:col-span-2">
+            <h3 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">{t('select_package')}</h3>
+
+            {packages.length === 0 ? (
+              <div className="rounded-2xl border border-creo-border bg-creo-card px-4 py-6 text-center text-creo-text-sec">
+                {language === 'ar' ? 'لا توجد باقات متاحة لهذا المنتج حالياً.' : 'No packages available for this product right now.'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                {packages.map((pkg) => {
+                  const quantity = packageQuantities[pkg.id] ?? 1;
+                  const pricing = getDiscountedPrice(pkg);
+                  const selected = selectedPackageId === pkg.id;
+
+                  return (
+                    <motion.button
+                      key={pkg.id}
+                      type="button"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      onClick={() => setSelectedPackageId(pkg.id)}
+                      className={cn(
+                        'text-left bg-creo-card border rounded-2xl p-3 md:p-4 hover:border-creo-accent/70 transition-colors',
+                        selected ? 'border-creo-accent shadow-[0_0_0_1px_rgba(255,215,0,0.35)]' : 'border-creo-border',
+                      )}
                     >
-                      <Minus className="w-4 h-4" />
-                    </button>
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-24 md:w-28 aspect-video rounded-xl overflow-hidden bg-creo-bg-sec border border-creo-border shrink-0">
+                          <img src={imgSrc(pkg.image_url || game.image_url)} alt={`${game.name} package`} className="w-full h-full object-fill" referrerPolicy="no-referrer" />
+                        </div>
 
-                    <span className="w-8 text-center font-bold text-white">{quantity}</span>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-white font-bold text-sm md:text-base line-clamp-1">
+                            {pkg.amount} {game.currency_name}{' '}
+                            {pkg.bonus > 0 && (
+                              <span className="text-creo-accent">+ {pkg.bonus} {t('bonus')}</span>
+                            )}
+                          </h4>
 
-                    <button
-                      onClick={() => handleIncrement(pkg)}
-                      className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
-                      aria-label="Increase quantity"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
+                          <div className="mt-2 flex items-center justify-between gap-3">
+                            {pricing.hasDiscount ? (
+                              <>
+                                <span className="text-creo-accent text-sm md:text-base font-bold">{formatPrice(pricing.final)}</span>
+                                <span className="text-white/80 text-xs md:text-sm line-through">{formatPrice(pricing.original)}</span>
+                              </>
+                            ) : (
+                              <span className="text-creo-accent text-sm md:text-base font-bold">{formatPrice(pricing.final)}</span>
+                            )}
+                          </div>
+
+                          <div className="mt-3 flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuantityChange(pkg.id, -1);
+                              }}
+                              className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+
+                            <span className="w-8 text-center font-bold text-white">{quantity}</span>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuantityChange(pkg.id, 1);
+                              }}
+                              className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

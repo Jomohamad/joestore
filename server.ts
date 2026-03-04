@@ -6,7 +6,8 @@ const PORT = 3000;
 
 app.use(express.json());
 
-const USERNAME_REGEX = /^[A-Za-z0-9_]{3,30}$/;
+const USERNAME_REGEX = /^[A-Za-z0-9._-]{3,30}$/;
+const USERNAME_SANITIZE_REGEX = /[^A-Za-z0-9._-]/g;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const hasServiceRoleKey = Boolean(serviceRoleKey && !serviceRoleKey.includes('PASTE_YOUR_SERVICE_ROLE_KEY_HERE'));
@@ -81,6 +82,60 @@ const getUsernameOwner = async (username: string) => {
   return result?.user_id ? String(result.user_id) : null;
 };
 
+const normalizeUsername = (value: string) => value.trim().toLowerCase();
+
+const buildUsernameSuggestionSeeds = (rawUsername: string): string[] => {
+  const base = normalizeUsername(rawUsername).replace(USERNAME_SANITIZE_REGEX, '').slice(0, 30);
+  if (!base) return [];
+
+  const compact = base.replace(/[._-]+/g, '');
+  const year = new Date().getUTCFullYear().toString().slice(-2);
+  const stems = [base, compact].filter(Boolean);
+  const suffixes = ['1', '7', '9', '11', '22', '99', '123', year, '_01', '-eg', '.x', '_vip', '_pro'];
+  const candidates = new Set<string>();
+
+  for (const stem of stems) {
+    if (USERNAME_REGEX.test(stem)) candidates.add(stem);
+
+    for (const suffix of suffixes) {
+      const candidate = `${stem}${suffix}`.slice(0, 30);
+      if (USERNAME_REGEX.test(candidate)) {
+        candidates.add(candidate);
+      }
+    }
+  }
+
+  return [...candidates];
+};
+
+const getAvailableUsernameSuggestions = async (
+  requestedUsername: string,
+  requesterId: string | null,
+  limit = 5,
+): Promise<string[]> => {
+  const seeds = buildUsernameSuggestionSeeds(requestedUsername);
+  const suggestions: string[] = [];
+
+  for (const candidate of seeds) {
+    if (suggestions.length >= limit) break;
+    const owner = await getUsernameOwner(candidate);
+    if (!owner || owner === requesterId) {
+      suggestions.push(candidate);
+    }
+  }
+
+  return suggestions;
+};
+
+const maskCardNumber = (cardNumber: string) => {
+  const digits = cardNumber.replace(/\D/g, '');
+  const last4 = digits.slice(-4);
+  return {
+    last4,
+    masked: `**** **** **** ${last4}`,
+  };
+};
+
 // API Routes
 app.get('/api/health', async (req, res) => {
   try {
@@ -138,7 +193,7 @@ app.post('/api/profile/complete', async (req, res) => {
     }
 
     if (!USERNAME_REGEX.test(username)) {
-      return res.status(400).json({ success: false, error: 'Username must be 3-30 characters and contain only letters, numbers, or underscores' });
+      return res.status(400).json({ success: false, error: 'Username must be 3-30 characters and contain only letters, numbers, dots, underscores, or hyphens' });
     }
 
     if (!EMAIL_REGEX.test(email)) {
@@ -242,7 +297,8 @@ app.get('/api/check-username', async (req, res) => {
   if (!USERNAME_REGEX.test(rawUsername)) {
     return res.status(400).json({
       available: false,
-      error: 'Username must be 3-30 characters and contain only letters, numbers, or underscores',
+      suggestions: [],
+      error: 'Username must be 3-30 characters and contain only letters, numbers, dots, underscores, or hyphens',
     });
   }
 
@@ -250,14 +306,20 @@ app.get('/api/check-username', async (req, res) => {
     const requester = await getRequestUser(req.headers.authorization);
     const usernameOwner = await getUsernameOwner(rawUsername);
     if (!usernameOwner) {
-      return res.json({ available: true });
+      return res.json({ available: true, suggestions: [] });
     }
 
-    const available = requester ? requester.id === usernameOwner : false;
-    return res.json({ available });
+    const requesterId = requester?.id || null;
+    const available = requesterId ? requesterId === usernameOwner : false;
+    if (available) {
+      return res.json({ available: true, suggestions: [] });
+    }
+
+    const suggestions = await getAvailableUsernameSuggestions(rawUsername, requesterId);
+    return res.json({ available: false, suggestions });
   } catch (error) {
     console.error('Username check failed:', error);
-    return res.status(500).json({ available: false, error: 'Failed to check username' });
+    return res.status(500).json({ available: false, suggestions: [], error: 'Failed to check username' });
   }
 });
 
@@ -300,9 +362,15 @@ app.delete('/api/user/delete', async (req, res) => {
 });
 
 app.post('/api/orders', async (req, res) => {
-  const { gameId, packageId, amount } = req.body || {};
+  const { gameId, packageId, amount, paymentMethod, accountIdentifier, paymentDetails, quantity } = req.body || {};
   const parsedPackageId = Number(packageId);
   const parsedAmount = Number(amount);
+  const parsedQuantity = Number(quantity);
+  const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase();
+  const normalizedAccountIdentifier = String(accountIdentifier || '').trim();
+  const rawPaymentDetails: Record<string, unknown> =
+    paymentDetails && typeof paymentDetails === 'object' ? (paymentDetails as Record<string, unknown>) : {};
+  const safePaymentDetails: Record<string, unknown> = {};
 
   if (
     typeof gameId !== 'string' ||
@@ -310,9 +378,68 @@ app.post('/api/orders', async (req, res) => {
     !Number.isInteger(parsedPackageId) ||
     parsedPackageId <= 0 ||
     !Number.isFinite(parsedAmount) ||
-    parsedAmount <= 0
+    parsedAmount <= 0 ||
+    !Number.isInteger(parsedQuantity) ||
+    parsedQuantity <= 0
   ) {
     return res.status(400).json({ error: 'Invalid order payload' });
+  }
+
+  if (!normalizedAccountIdentifier) {
+    return res.status(400).json({ error: 'Account identifier is required' });
+  }
+
+  if (!['fawry', 'wallet', 'card', 'paypal'].includes(normalizedPaymentMethod)) {
+    return res.status(400).json({ error: 'Invalid payment method' });
+  }
+
+  if (normalizedPaymentMethod === 'wallet') {
+    const walletPhone = String(rawPaymentDetails.walletPhone || '').trim();
+    const walletProvider = String(rawPaymentDetails.walletProvider || '').trim();
+    if (!/^[0-9+][0-9\s-]{7,19}$/.test(walletPhone)) {
+      return res.status(400).json({ error: 'Wallet phone is invalid' });
+    }
+    safePaymentDetails.wallet_phone = walletPhone;
+    if (walletProvider) safePaymentDetails.wallet_provider = walletProvider;
+  }
+
+  if (normalizedPaymentMethod === 'paypal') {
+    const paypalId = String(rawPaymentDetails.paypalId || '').trim();
+    if (paypalId.length < 3) {
+      return res.status(400).json({ error: 'PayPal account ID is required' });
+    }
+    safePaymentDetails.paypal_id = paypalId;
+  }
+
+  if (normalizedPaymentMethod === 'card') {
+    const cardHolder = String(rawPaymentDetails.cardHolder || '').trim();
+    const expiry = String(rawPaymentDetails.expiry || '').trim();
+    const cardNumber = String(rawPaymentDetails.cardNumber || '').trim();
+    const cvv = String(rawPaymentDetails.cvv || '').trim();
+    const normalizedCardDigits = cardNumber.replace(/\D/g, '');
+
+    if (!cardHolder) {
+      return res.status(400).json({ error: 'Card holder name is required' });
+    }
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
+      return res.status(400).json({ error: 'Card expiry must be in MM/YY format' });
+    }
+    if (normalizedCardDigits.length < 12 || normalizedCardDigits.length > 19) {
+      return res.status(400).json({ error: 'Card number is invalid' });
+    }
+    if (!/^\d{3,4}$/.test(cvv)) {
+      return res.status(400).json({ error: 'CVV is invalid' });
+    }
+
+    const maskedCard = maskCardNumber(normalizedCardDigits);
+    safePaymentDetails.card_holder = cardHolder;
+    safePaymentDetails.expiry = expiry;
+    safePaymentDetails.card_last4 = maskedCard.last4;
+    safePaymentDetails.masked_card_number = maskedCard.masked;
+  }
+
+  if (normalizedPaymentMethod === 'fawry') {
+    safePaymentDetails.channel = 'fawry';
   }
 
   try {
@@ -343,6 +470,10 @@ app.post('/api/orders', async (req, res) => {
           package_id: parsedPackageId,
           amount: parsedAmount,
           status: 'COMPLETED',
+          payment_method: normalizedPaymentMethod,
+          account_identifier: normalizedAccountIdentifier,
+          payment_details: safePaymentDetails,
+          quantity: parsedQuantity,
         },
       ]);
 

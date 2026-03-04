@@ -62,13 +62,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile((profileStatus.profile as Profile | undefined) ?? null);
       if (runId !== routeRunRef.current) return;
 
-      if (intent === 'login' && !profileStatus.onboarded) {
-        localStorage.removeItem('auth_intent');
-        await supabase.auth.signOut({ scope: 'local' });
-        redirectTo('/login?error=account_not_found');
-        return;
-      }
-
       if (intent === 'signup' && profileStatus.onboarded) {
         localStorage.removeItem('auth_intent');
         await supabase.auth.signOut({ scope: 'local' });
@@ -76,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (intent === 'signup') {
+      if ((intent === 'signup' || intent === 'login') && !profileStatus.onboarded) {
         localStorage.removeItem('auth_intent');
         if (pathname !== '/complete-profile') {
           redirectTo('/complete-profile');
@@ -104,13 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const pathname = window.location.pathname;
       const intent = localStorage.getItem('auth_intent');
 
-      if (intent === 'login' && !onboardedFallback) {
-        localStorage.removeItem('auth_intent');
-        await supabase.auth.signOut({ scope: 'local' });
-        redirectTo('/login?error=account_not_found');
-        return;
-      }
-
       if (intent === 'signup' && onboardedFallback) {
         localStorage.removeItem('auth_intent');
         await supabase.auth.signOut({ scope: 'local' });
@@ -118,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (intent === 'signup') {
+      if ((intent === 'signup' || intent === 'login') && !onboardedFallback) {
         localStorage.removeItem('auth_intent');
         if (pathname !== '/complete-profile') {
           redirectTo('/complete-profile');

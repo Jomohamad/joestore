@@ -15,9 +15,11 @@ export interface CartItem {
   packageId: number;
   packageName: string;
   packageAmount: number;
+  accountIdentifier: string;
   quantity: number;
   currency: string;
   unitPrice: number;
+  originalUnitPrice?: number;
   totalPrice: number;
   packageImage?: string | null;
 }
@@ -35,10 +37,10 @@ interface StoreContextType {
   cart: CartItem[];
   addToCart: (item: Omit<CartItem, 'id' | 'quantity' | 'totalPrice'> & { quantity?: number }) => void;
   removeFromCart: (id: string) => void;
-  setCartQuantity: (gameId: string, packageId: number, quantity: number) => void;
-  incrementCartItem: (gameId: string, packageId: number) => void;
-  decrementCartItem: (gameId: string, packageId: number) => void;
-  getCartQuantity: (gameId: string, packageId: number) => number;
+  setCartQuantity: (gameId: string, packageId: number, accountIdentifier: string, quantity: number) => void;
+  incrementCartItem: (gameId: string, packageId: number, accountIdentifier: string) => void;
+  decrementCartItem: (gameId: string, packageId: number, accountIdentifier: string) => void;
+  getCartQuantity: (gameId: string, packageId: number, accountIdentifier: string) => number;
   clearCart: () => void;
   wishlist: WishlistItem[];
   allGames: Game[];
@@ -140,13 +142,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const clearOrderToast = () => setOrderToast(null);
 
-  const setCartQuantity = (gameId: string, packageId: number, quantity: number) => {
+  const setCartQuantity = (gameId: string, packageId: number, accountIdentifier: string, quantity: number) => {
+    const normalizedAccountIdentifier = accountIdentifier.trim();
     setCart((prev) => {
-      const idx = prev.findIndex((item) => item.gameId === gameId && item.packageId === packageId);
+      const idx = prev.findIndex(
+        (item) =>
+          item.gameId === gameId &&
+          item.packageId === packageId &&
+          item.accountIdentifier === normalizedAccountIdentifier,
+      );
       if (idx === -1) return prev;
 
       if (quantity <= 0) {
-        return prev.filter((item) => !(item.gameId === gameId && item.packageId === packageId));
+        return prev.filter(
+          (item) =>
+            !(
+              item.gameId === gameId &&
+              item.packageId === packageId &&
+              item.accountIdentifier === normalizedAccountIdentifier
+            ),
+        );
       }
 
       return prev.map((item, i) =>
@@ -161,20 +176,40 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const incrementCartItem = (gameId: string, packageId: number) => {
-    const current = cart.find((item) => item.gameId === gameId && item.packageId === packageId);
+  const incrementCartItem = (gameId: string, packageId: number, accountIdentifier: string) => {
+    const normalizedAccountIdentifier = accountIdentifier.trim();
+    const current = cart.find(
+      (item) =>
+        item.gameId === gameId &&
+        item.packageId === packageId &&
+        item.accountIdentifier === normalizedAccountIdentifier,
+    );
     if (!current) return;
-    setCartQuantity(gameId, packageId, current.quantity + 1);
+    setCartQuantity(gameId, packageId, normalizedAccountIdentifier, current.quantity + 1);
   };
 
-  const decrementCartItem = (gameId: string, packageId: number) => {
-    const current = cart.find((item) => item.gameId === gameId && item.packageId === packageId);
+  const decrementCartItem = (gameId: string, packageId: number, accountIdentifier: string) => {
+    const normalizedAccountIdentifier = accountIdentifier.trim();
+    const current = cart.find(
+      (item) =>
+        item.gameId === gameId &&
+        item.packageId === packageId &&
+        item.accountIdentifier === normalizedAccountIdentifier,
+    );
     if (!current) return;
-    setCartQuantity(gameId, packageId, current.quantity - 1);
+    setCartQuantity(gameId, packageId, normalizedAccountIdentifier, current.quantity - 1);
   };
 
-  const getCartQuantity = (gameId: string, packageId: number) => {
-    return cart.find((item) => item.gameId === gameId && item.packageId === packageId)?.quantity || 0;
+  const getCartQuantity = (gameId: string, packageId: number, accountIdentifier: string) => {
+    const normalizedAccountIdentifier = accountIdentifier.trim();
+    return (
+      cart.find(
+        (item) =>
+          item.gameId === gameId &&
+          item.packageId === packageId &&
+          item.accountIdentifier === normalizedAccountIdentifier,
+      )?.quantity || 0
+    );
   };
 
   const addToCart = (item: Omit<CartItem, 'id' | 'quantity' | 'totalPrice'> & { quantity?: number }) => {
@@ -184,12 +219,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     const quantityToAdd = item.quantity && item.quantity > 0 ? item.quantity : 1;
+    const normalizedAccountIdentifier = item.accountIdentifier.trim();
+    if (!normalizedAccountIdentifier) {
+      return;
+    }
 
     setCart((prev) => {
-      const existing = prev.find((i) => i.gameId === item.gameId && i.packageId === item.packageId);
+      const existing = prev.find(
+        (i) =>
+          i.gameId === item.gameId &&
+          i.packageId === item.packageId &&
+          i.accountIdentifier === normalizedAccountIdentifier,
+      );
       if (existing) {
         return prev.map((i) =>
-          i.gameId === item.gameId && i.packageId === item.packageId
+          i.gameId === item.gameId &&
+          i.packageId === item.packageId &&
+          i.accountIdentifier === normalizedAccountIdentifier
             ? {
                 ...i,
                 quantity: i.quantity + quantityToAdd,
@@ -199,11 +245,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      const id = `${item.gameId}:${item.packageId}`;
+      const id = `${item.gameId}:${item.packageId}:${normalizedAccountIdentifier}`;
       return [
         ...prev,
         {
           ...item,
+          accountIdentifier: normalizedAccountIdentifier,
           id,
           quantity: quantityToAdd,
           totalPrice: item.unitPrice * quantityToAdd,
