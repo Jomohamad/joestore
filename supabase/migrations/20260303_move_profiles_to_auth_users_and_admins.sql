@@ -2,20 +2,30 @@
 begin;
 
 -- 1) Move profile fields into auth.users.raw_user_meta_data
-update auth.users as u
-set raw_user_meta_data = coalesce(u.raw_user_meta_data, '{}'::jsonb) || jsonb_strip_nulls(
-  jsonb_build_object(
-    'email', p.email,
-    'first_name', p.first_name,
-    'last_name', p.last_name,
-    'username', p.username,
-    'avatar_url', p.avatar_url,
-    'provider_avatar_url', p.provider_avatar_url,
-    'onboarded', coalesce(p.onboarded, false)
-  )
-)
-from public.profiles as p
-where p.id = u.id;
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.tables
+    where table_schema = 'public'
+      and table_name = 'profiles'
+  ) then
+    update auth.users as u
+    set raw_user_meta_data = coalesce(u.raw_user_meta_data, '{}'::jsonb) || jsonb_strip_nulls(
+      jsonb_build_object(
+        'email', p.email,
+        'first_name', p.first_name,
+        'last_name', p.last_name,
+        'username', p.username,
+        'avatar_url', p.avatar_url,
+        'provider_avatar_url', p.provider_avatar_url,
+        'onboarded', coalesce(p.onboarded, false)
+      )
+    )
+    from public.profiles as p
+    where p.id = u.id;
+  end if;
+end $$;
 
 -- 2) Username owner lookup (used by server API username validation)
 create or replace function public.get_username_owner(p_username text)
@@ -36,6 +46,7 @@ grant execute on function public.get_username_owner(text) to anon, authenticated
 -- 3) Create admins table for manual admin management
 create table if not exists public.admins (
   user_id uuid primary key references auth.users(id) on delete cascade,
+  display_name text not null default '',
   note text,
   created_at timestamptz not null default now()
 );
@@ -99,8 +110,20 @@ revoke all on function public.delete_my_account(text) from public;
 grant execute on function public.delete_my_account(text) to authenticated, service_role;
 
 -- 3.1) Migrate old is_admin metadata into admins table
-insert into public.admins (user_id, note)
-select u.id, 'migrated from auth.users metadata'
+insert into public.admins (user_id, display_name, note)
+select
+  u.id,
+  coalesce(
+    nullif(trim(concat_ws(
+      ' ',
+      coalesce(u.raw_user_meta_data ->> 'first_name', ''),
+      coalesce(u.raw_user_meta_data ->> 'last_name', '')
+    )), ''),
+    nullif(trim(coalesce(u.raw_user_meta_data ->> 'username', '')), ''),
+    nullif(u.email, ''),
+    u.id::text
+  ),
+  'migrated from auth.users metadata'
 from auth.users u
 where coalesce((u.raw_user_meta_data ->> 'is_admin')::boolean, false) = true
 on conflict (user_id) do nothing;

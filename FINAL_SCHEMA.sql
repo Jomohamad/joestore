@@ -4,6 +4,38 @@
 
 create extension if not exists "uuid-ossp";
 
+-- 0) LEGACY PROFILES REALTIME SYNC (from old migrations; guarded)
+-- Keep this as compatibility glue if a legacy profiles table still exists.
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.tables
+    where table_schema = 'public'
+      and table_name = 'profiles'
+  ) then
+    alter table public.profiles replica identity full;
+  end if;
+end $$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.tables
+    where table_schema = 'public'
+      and table_name = 'profiles'
+  ) and not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'profiles'
+  ) then
+    alter publication supabase_realtime add table public.profiles;
+  end if;
+end $$;
+
 -- 1) PRE-CLEANUP MIGRATION (move profiles -> auth.users metadata if profiles exists)
 do $$
 begin
@@ -45,6 +77,7 @@ end $$;
 drop function if exists public.get_username_owner(text);
 drop function if exists public.is_admin_user(uuid);
 drop function if exists public.delete_my_account(text);
+drop function if exists public.set_admin_display_name();
 
 drop table if exists public.order_items;
 drop table if exists public.orders;
@@ -136,9 +169,69 @@ create table if not exists public.promotions (
 -- 8) ADMINS (manual admin assignment table)
 create table if not exists public.admins (
   user_id uuid primary key references auth.users(id) on delete cascade,
+  display_name text not null default '',
   note text,
   created_at timestamptz not null default now()
 );
+
+create or replace function public.set_admin_display_name()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  meta jsonb := '{}'::jsonb;
+  auth_email text := null;
+  first_name text := '';
+  last_name text := '';
+  username text := '';
+begin
+  if new.user_id is null then
+    return new;
+  end if;
+
+  select coalesce(u.raw_user_meta_data, '{}'::jsonb), u.email
+    into meta, auth_email
+  from auth.users u
+  where u.id = new.user_id;
+
+  first_name := trim(coalesce(meta ->> 'first_name', ''));
+  last_name := trim(coalesce(meta ->> 'last_name', ''));
+  username := trim(coalesce(meta ->> 'username', ''));
+
+  new.display_name := coalesce(
+    nullif(trim(concat_ws(' ', first_name, last_name)), ''),
+    nullif(username, ''),
+    nullif(auth_email, ''),
+    new.user_id::text
+  );
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_set_admin_display_name on public.admins;
+create trigger trg_set_admin_display_name
+before insert or update of user_id
+on public.admins
+for each row
+execute function public.set_admin_display_name();
+
+-- Backfill display_name for existing admins rows.
+update public.admins a
+set display_name = coalesce(
+  nullif(trim(concat_ws(
+    ' ',
+    coalesce(u.raw_user_meta_data ->> 'first_name', ''),
+    coalesce(u.raw_user_meta_data ->> 'last_name', '')
+  )), ''),
+  nullif(trim(coalesce(u.raw_user_meta_data ->> 'username', '')), ''),
+  nullif(u.email, ''),
+  a.user_id::text
+)
+from auth.users u
+where u.id = a.user_id;
 
 -- 9) RLS
 alter table public.games enable row level security;
