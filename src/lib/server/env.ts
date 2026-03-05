@@ -41,8 +41,14 @@ export const serverEnv = {
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
   sandboxMode: clean(process.env.SANDBOX_MODE || 'true').toLowerCase() !== 'false',
 
-  supabaseUrl: required('NEXT_PUBLIC_SUPABASE_URL or VITE_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL),
-  supabaseAnonKey: required('NEXT_PUBLIC_SUPABASE_ANON_KEY or VITE_SUPABASE_ANON_KEY', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY),
+  supabaseUrl: required(
+    'NEXT_PUBLIC_SUPABASE_URL or NEXT_VITE_SUPABASE_URL or VITE_SUPABASE_URL',
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+  ),
+  supabaseAnonKey: required(
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_ANON_KEY',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY,
+  ),
   supabaseServiceRole: required('SUPABASE_SERVICE_ROLE or SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_ROLE_KEY),
 
   jwtSecret: requiredWhenOrDefault(
