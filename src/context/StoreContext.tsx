@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { translations } from '../translations';
 import { Game } from '../types';
 import { useAuth } from './AuthContext';
-import { addToWishlistApi, connectOrderSocket, fetchGames, fetchWishlist, removeFromWishlistApi } from '../services/api';
+import { addToWishlistApi, fetchGames, fetchWishlist, removeFromWishlistApi, subscribeToUserOrders } from '../services/api';
 
 type Language = 'en' | 'ar';
 type Currency = 'USD' | 'EGP';
@@ -64,7 +64,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [orderToast, setOrderToast] = useState<{ orderId: string; status?: string; message?: string } | null>(null);
-  const socketRef = useRef<Awaited<ReturnType<typeof connectOrderSocket>> | null>(null);
+  const socketRef = useRef<Awaited<ReturnType<typeof subscribeToUserOrders>> | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -155,7 +155,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const socket = await connectOrderSocket((payload) => {
+      const socket = await subscribeToUserOrders(user.id, (payload) => {
         notifyOrder({
           orderId: payload.orderId,
           status: payload.status,

@@ -394,7 +394,7 @@ export const createOrder = async (orderData: {
 }): Promise<{ orderId: string; checkoutUrl: string; status: string; paymentReference?: string }> => {
   const authHeaders = await getAuthHeaders();
 
-  const response = await fetchWithTimeout('/api/orders', {
+  const response = await fetchWithTimeout('/api/orders/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -419,7 +419,7 @@ export const fetchOrders = async (_userId?: string): Promise<Order[]> => {
   const authHeaders = await getAuthHeaders();
   try {
     const response = await fetchWithTimeout(
-      '/api/orders',
+      '/api/orders/user',
       {
         headers: authHeaders,
       },
@@ -450,7 +450,7 @@ export const verifyPaymentCallbackApi = async (
   payload: Record<string, unknown>,
 ): Promise<{ success: boolean; orderId: string; status: string }> => {
   const response = await fetchWithTimeout(
-    `/api/payment/verify/${provider}`,
+    `/api/payment/${provider}/verify`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -490,29 +490,44 @@ export const completeHostedCheckoutInSandbox = async (checkoutUrl: string) => {
   return true;
 };
 
-export const connectOrderSocket = async (
+export const subscribeToUserOrders = async (
+  userId: string,
   onStatusUpdated: (payload: {
     orderId: string;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
+    status: 'pending' | 'paid' | 'processing' | 'completed' | 'failed';
     transactionId?: string | null;
     updatedAt: string;
     message?: string;
   }) => void,
 ) => {
-  const token = await getAccessToken();
-  if (!token) return null;
+  const channel = supabase
+    .channel(`orders:user:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'orders',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        const next = payload.new as Record<string, unknown>;
+        onStatusUpdated({
+          orderId: String(next.id || ''),
+          status: String(next.status || 'pending') as 'pending' | 'paid' | 'processing' | 'completed' | 'failed',
+          transactionId: next.transaction_id ? String(next.transaction_id) : null,
+          updatedAt: new Date().toISOString(),
+          message: `Order status changed to ${String(next.status || '').toUpperCase()}`,
+        });
+      },
+    )
+    .subscribe();
 
-  const { io } = await import('socket.io-client');
-  const socket = io('/', {
-    transports: ['websocket'],
-    auth: {
-      token,
+  return {
+    disconnect: () => {
+      void supabase.removeChannel(channel);
     },
-  });
-
-  socket.on('order.status.updated', onStatusUpdated);
-
-  return socket;
+  };
 };
 
 export const deleteAccountApi = async (username: string) => {

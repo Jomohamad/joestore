@@ -9,6 +9,7 @@ export interface Promotion {
 
 export interface Game {
   id: string;
+  slug?: string | null;
   name: string;
   publisher: string;
   image_url: string;
@@ -36,7 +37,7 @@ export interface Order {
   game_id: string;
   package_id: number;
   amount: number;
-  status: string;
+  status: 'pending' | 'paid' | 'processing' | 'completed' | 'failed' | string;
   payment_method?: string | null;
   payment_provider?: string | null;
   account_identifier?: string | null;
