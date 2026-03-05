@@ -1,3 +1,13 @@
 {
-  "framework": "nextjs"
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "builds": [
+    {
+      "src": "next.config.js",
+      "use": "@vercel/next"
+    }
+  ]
 }
