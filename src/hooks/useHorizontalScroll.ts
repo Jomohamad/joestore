@@ -7,7 +7,6 @@ interface ScrollState {
 
 export function useHorizontalScroll<T extends HTMLElement>(language: string) {
   const EPSILON = 2;
-  const WHEEL_STEP = 70;
   const DRAG_MULTIPLIER = 1.25;
   const ref = useRef<T>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -38,32 +37,18 @@ export function useHorizontalScroll<T extends HTMLElement>(language: string) {
   };
 
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (ref.current && e.deltaY !== 0) {
-        e.preventDefault();
-        ref.current.scrollBy({
-          left: e.deltaY > 0 ? WHEEL_STEP : -WHEEL_STEP,
-          behavior: 'auto'
-        });
-      }
-    };
-
     const currentRef = ref.current;
     if (currentRef) {
       // Keep the initial position stable on LTR to avoid tiny auto-offset on mobile.
       if (language !== 'ar') {
         currentRef.scrollLeft = 0;
       }
-      currentRef.addEventListener('wheel', handleWheel, { passive: false });
     }
 
     checkScroll();
     window.addEventListener('resize', checkScroll);
     
     return () => {
-      if (currentRef) {
-        currentRef.removeEventListener('wheel', handleWheel);
-      }
       window.removeEventListener('resize', checkScroll);
     };
   }, [language]);
