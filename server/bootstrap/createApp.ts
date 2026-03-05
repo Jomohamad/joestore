@@ -1,6 +1,5 @@
 import express from 'express';
 import { requestLogger } from '../middleware/requestLogger.js';
-import { errorHandler, notFoundHandler } from '../middleware/errorHandler.js';
 import { authRoutes } from '../routes/authRoutes.js';
 import { gamesRoutes } from '../routes/gamesRoutes.js';
 import { ordersRoutes } from '../routes/ordersRoutes.js';
@@ -88,9 +87,6 @@ export const createApp = () => {
       res.json({ success: true });
     }),
   );
-
-  app.use(notFoundHandler);
-  app.use(errorHandler);
 
   return app;
 };

@@ -1,4 +1,5 @@
 import { createServer } from 'http';
+import net from 'net';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
@@ -7,6 +8,38 @@ import { env } from '../config/env.js';
 import { createSocketServer } from '../socket/index.js';
 import { startOrderWorker, stopOrderWorker } from '../queue/orderWorker.js';
 import { closeOrderQueue } from '../queue/orderQueue.js';
+import { errorHandler, notFoundHandler } from '../middleware/errorHandler.js';
+
+const canConnectRedis = async (redisUrl: string): Promise<boolean> => {
+  try {
+    const parsed = new URL(redisUrl);
+    const host = parsed.hostname || '127.0.0.1';
+    const port = Number(parsed.port || '6379');
+
+    await new Promise<void>((resolve, reject) => {
+      const socket = net.createConnection({ host, port });
+      const timeout = setTimeout(() => {
+        socket.destroy();
+        reject(new Error('Redis connection timeout'));
+      }, 1000);
+
+      socket.once('connect', () => {
+        clearTimeout(timeout);
+        socket.end();
+        resolve();
+      });
+
+      socket.once('error', (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+    });
+
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const startServer = async () => {
   const app = createApp();
@@ -28,9 +61,18 @@ export const startServer = async () => {
     });
   }
 
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
   const httpServer = createServer(app);
   createSocketServer(httpServer);
-  startOrderWorker();
+
+  const redisReachable = await canConnectRedis(env.redisUrl);
+  if (redisReachable) {
+    startOrderWorker();
+  } else {
+    console.warn(`[queue] Redis is unreachable at ${env.redisUrl}. Worker disabled; inline fulfillment fallback is active.`);
+  }
 
   httpServer.listen(env.port, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${env.port}`);

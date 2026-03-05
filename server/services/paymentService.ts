@@ -3,6 +3,7 @@ import { paymobAdapter } from '../adapters/paymobAdapter.js';
 import { enqueueOrderFulfillment } from '../queue/orderQueue.js';
 import { emitOrderStatus } from '../socket/index.js';
 import { HttpError } from '../utils/http.js';
+import { fulfillmentService } from './fulfillmentService.js';
 import { ordersService } from './ordersService.js';
 
 export const paymentService = {
@@ -57,10 +58,15 @@ export const paymentService = {
       message: 'Payment verified. Processing order.',
     });
 
-    await enqueueOrderFulfillment({
-      orderId: updated.id,
-      userId: String(updated.user_id),
-    });
+    try {
+      await enqueueOrderFulfillment({
+        orderId: updated.id,
+        userId: String(updated.user_id),
+      });
+    } catch (queueError) {
+      console.warn('[queue] Redis unavailable, processing order inline:', queueError);
+      await fulfillmentService.processOrder(updated.id);
+    }
 
     return updated;
   },
