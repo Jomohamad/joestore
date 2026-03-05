@@ -35,6 +35,7 @@ const Orders = lazy(() => import('./pages/Orders'));
 const GamesCatalog = lazy(() => import('./pages/GamesCatalog'));
 const AppsCatalog = lazy(() => import('./pages/AppsCatalog'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
 
 function RouteLoader() {
   return (
@@ -75,6 +76,7 @@ function AppShell() {
               <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/why-choose-us" element={<WhyChooseUs />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/payment/callback/:provider" element={<PaymentCallback />} />
               <Route path="/games" element={<GamesCatalog />} />
               <Route path="/apps" element={<AppsCatalog />} />
               <Route path="/dashboard" element={<Dashboard />} />

@@ -19,8 +19,11 @@ export default function OrderToast() {
         <div className="bg-creo-card border border-creo-accent/50 rounded-2xl p-4 shadow-2xl shadow-creo-accent/20 flex items-center gap-4 backdrop-blur-xl">
           <div className="flex-1">
             <h4 className="text-white font-bold text-sm">
-              {t('order_placed').replace('{id}', orderToast.orderId)}
+              {orderToast.message || t('order_placed').replace('{id}', orderToast.orderId)}
             </h4>
+            {orderToast.status && (
+              <p className="text-xs text-creo-text-sec mt-1 uppercase tracking-wide">{orderToast.status}</p>
+            )}
           </div>
           <button
             onClick={clearOrderToast}

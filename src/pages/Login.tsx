@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../context/StoreContext';
+import { loginWithBackendApi } from '../services/api';
 
 export default function Login() {
   const [error, setError] = useState<string | null>(null);
@@ -53,11 +54,15 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const session = await loginWithBackendApi({
         email: email.trim(),
         password,
       });
-      if (signInError) throw signInError;
+      const { error: setSessionError } = await supabase.auth.setSession({
+        access_token: session.accessToken,
+        refresh_token: session.refreshToken,
+      });
+      if (setSessionError) throw setSessionError;
     } catch (err: any) {
       setError(err.message || (language === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed'));
     } finally {

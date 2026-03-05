@@ -34,6 +34,37 @@ export default function Orders() {
     loadOrders();
   }, [user]);
 
+  useEffect(() => {
+    const onOrderUpdated = (event: Event) => {
+      const custom = event as CustomEvent<{
+        orderId: string;
+        status: 'pending' | 'processing' | 'completed' | 'failed';
+        transactionId?: string | null;
+      }>;
+      const payload = custom.detail;
+      if (!payload?.orderId) return;
+
+      setOrders((prev) => {
+        const hasOrder = prev.some((order) => order.id === payload.orderId);
+        if (!hasOrder) return prev;
+        return prev.map((order) =>
+          order.id === payload.orderId
+            ? {
+                ...order,
+                status: payload.status,
+                transaction_id: payload.transactionId || order.transaction_id || null,
+              }
+            : order,
+        );
+      });
+    };
+
+    window.addEventListener('order-status-updated', onOrderUpdated as EventListener);
+    return () => {
+      window.removeEventListener('order-status-updated', onOrderUpdated as EventListener);
+    };
+  }, []);
+
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':

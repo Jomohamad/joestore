@@ -38,7 +38,14 @@ export interface Order {
   amount: number;
   status: string;
   payment_method?: string | null;
+  payment_provider?: string | null;
   account_identifier?: string | null;
+  player_id?: string | null;
+  server?: string | null;
+  package?: string | null;
+  price?: number | null;
+  transaction_id?: string | null;
+  provider_order_ref?: string | null;
   payment_details?: Record<string, unknown>;
   quantity?: number;
   created_at: string;

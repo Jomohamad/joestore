@@ -190,10 +190,86 @@ export const validateCoupon = async (code: string): Promise<{ valid: boolean; di
   }
 };
 
+export const getAccessToken = async (): Promise<string | null> => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token || null;
+};
+
 const getAuthHeaders = async (): Promise<Record<string, string>> => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) return {};
-  return { Authorization: `Bearer ${session.access_token}` };
+  const token = await getAccessToken();
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
+};
+
+export const registerWithBackendApi = async (payload: {
+  email: string;
+  password: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<{
+  user: { id: string; email: string; username: string; created_at: string } | null;
+  requiresEmailConfirmation: boolean;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+}> => {
+  const response = await fetchWithTimeout(
+    '/api/auth/register',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    12000,
+  );
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(String(body?.error || body?.message || 'Registration failed'));
+  }
+
+  return {
+    user: body?.user || null,
+    requiresEmailConfirmation: Boolean(body?.requiresEmailConfirmation),
+    accessToken: body?.accessToken || null,
+    refreshToken: body?.refreshToken || null,
+  };
+};
+
+export const loginWithBackendApi = async (payload: {
+  email: string;
+  password: string;
+}): Promise<{
+  accessToken: string;
+  refreshToken: string;
+  user: { id: string; email: string; username: string; created_at: string };
+}> => {
+  const response = await fetchWithTimeout(
+    '/api/auth/login',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    12000,
+  );
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(String(body?.error || body?.message || 'Login failed'));
+  }
+
+  if (!body?.accessToken || !body?.refreshToken) {
+    throw new Error('Missing auth session tokens');
+  }
+
+  return {
+    accessToken: String(body.accessToken),
+    refreshToken: String(body.refreshToken),
+    user: body.user,
+  };
 };
 
 export const fetchProfileStatus = async (): Promise<{
@@ -313,10 +389,11 @@ export const createOrder = async (orderData: {
   paymentMethod: 'fawry' | 'wallet' | 'card' | 'paypal';
   accountIdentifier: string;
   paymentDetails: Record<string, unknown>;
-}): Promise<{ success: boolean; orderId: string; status: string }> => {
+  packageName?: string;
+  server?: string;
+}): Promise<{ orderId: string; checkoutUrl: string; status: string; paymentReference?: string }> => {
   const authHeaders = await getAuthHeaders();
 
-  // Use server-side API for order creation to ensure security/logging
   const response = await fetchWithTimeout('/api/orders', {
     method: 'POST',
     headers: {
@@ -325,27 +402,140 @@ export const createOrder = async (orderData: {
     },
     body: JSON.stringify(orderData),
   }, 10000);
-  
-  if (!response.ok) throw new Error('Failed to create order');
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(String(body?.error || 'Failed to create order'));
+  }
+
+  return {
+    orderId: String(body?.orderId || ''),
+    checkoutUrl: String(body?.checkoutUrl || ''),
+    status: String(body?.status || 'pending'),
+    paymentReference: body?.paymentReference ? String(body.paymentReference) : undefined,
+  };
+};
+
+export const fetchOrders = async (_userId?: string): Promise<Order[]> => {
+  const authHeaders = await getAuthHeaders();
+  try {
+    const response = await fetchWithTimeout(
+      '/api/orders',
+      {
+        headers: authHeaders,
+      },
+      10000,
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const data = (await response.json()) as Order[];
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Error fetching orders from API, fallback to Supabase:', error);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.id) return [];
+    const { data } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    return data || [];
+  }
+};
+
+export const verifyPaymentCallbackApi = async (
+  provider: 'paymob' | 'fawry',
+  payload: Record<string, unknown>,
+): Promise<{ success: boolean; orderId: string; status: string }> => {
+  const response = await fetchWithTimeout(
+    `/api/payment/verify/${provider}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    12000,
+  );
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(String(body?.error || 'Payment verification failed'));
+  }
+
+  return {
+    success: Boolean(body?.success),
+    orderId: String(body?.orderId || ''),
+    status: String(body?.status || ''),
+  };
+};
+
+export const completeHostedCheckoutInSandbox = async (checkoutUrl: string) => {
+  const parsed = new URL(checkoutUrl, window.location.origin);
+  const pathname = parsed.pathname.toLowerCase();
+  if (!pathname.startsWith('/payment/callback/')) {
+    return false;
+  }
+
+  const provider = pathname.includes('/paymob') ? 'paymob' : pathname.includes('/fawry') ? 'fawry' : null;
+  if (!provider) return false;
+
+  const payload: Record<string, unknown> = {};
+  for (const [key, value] of parsed.searchParams.entries()) {
+    payload[key] = value;
+  }
+
+  await verifyPaymentCallbackApi(provider, payload);
+  return true;
+};
+
+export const connectOrderSocket = async (
+  onStatusUpdated: (payload: {
+    orderId: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    transactionId?: string | null;
+    updatedAt: string;
+    message?: string;
+  }) => void,
+) => {
+  const token = await getAccessToken();
+  if (!token) return null;
+
+  const { io } = await import('socket.io-client');
+  const socket = io('/', {
+    transports: ['websocket'],
+    auth: {
+      token,
+    },
+  });
+
+  socket.on('order.status.updated', onStatusUpdated);
+
+  return socket;
+};
+
+export const deleteAccountApi = async (username: string) => {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/user/delete',
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify({ username }),
+    },
+    10000,
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(String(body?.error || 'Failed to delete account'));
+  }
+
   return response.json();
 };
 
-export const fetchOrders = async (userId: string): Promise<Order[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Supabase error fetching orders:', error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    return [];
-  }
-};
+export const getSocketAuthToken = getAccessToken;

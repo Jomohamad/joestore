@@ -88,6 +88,7 @@ drop table if exists public.coupons;
 drop table if exists public.promotions;
 drop table if exists public.admins;
 drop table if exists public.profiles;
+drop table if exists public.users;
 
 -- 2) GAMES
 create table if not exists public.games (
@@ -97,13 +98,23 @@ create table if not exists public.games (
   image_url text not null,
   currency_name text not null,
   category text not null default 'game' check (category in ('game', 'app')),
+  provider_api text not null default 'reloadly' check (provider_api in ('reloadly', 'gamesdrop')),
+  provider_game_code text,
   description text,
   release_date date,
   show_on_home boolean not null default true
 );
 
-create index if not exists games_show_on_home_category_idx
-  on public.games (show_on_home, category);
+create index if not exists games_show_on_home_category_idx on public.games (show_on_home, category);
+
+-- 2.1) USERS MIRROR (auth.users remains source of truth)
+create table if not exists public.users (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null unique,
+  username text,
+  password_hash text,
+  created_at timestamptz not null default now()
+);
 
 -- 3) PACKAGES
 create table if not exists public.packages (
@@ -128,9 +139,16 @@ create table if not exists public.orders (
   game_id text not null references public.games(id) on delete restrict,
   package_id integer not null references public.packages(id) on delete restrict,
   amount numeric(10,2) not null,
-  status text not null default 'PENDING' check (status in ('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED')),
+  status text not null default 'pending' check (status in ('pending', 'processing', 'completed', 'failed')),
   payment_method text,
+  payment_provider text check (payment_provider in ('paymob', 'fawrypay')),
   account_identifier text,
+  player_id text,
+  server text,
+  package text,
+  price numeric(10,2),
+  transaction_id text,
+  provider_order_ref text,
   payment_details jsonb not null default '{}'::jsonb,
   quantity integer not null default 1,
   created_at timestamptz not null default now()
@@ -244,6 +262,7 @@ where u.id = a.user_id;
 alter table public.games enable row level security;
 alter table public.packages enable row level security;
 alter table public.orders enable row level security;
+alter table public.users enable row level security;
 alter table public.wishlist enable row level security;
 alter table public.coupons enable row level security;
 alter table public.promotions enable row level security;
@@ -261,6 +280,14 @@ create policy "Coupons are viewable by everyone" on public.coupons
 
 create policy "Promotions are viewable by everyone" on public.promotions
   for select using (true);
+
+-- Users mirror: own row only
+create policy "Users can view own mirror user" on public.users
+  for select using (auth.uid() = id);
+
+create policy "Users can update own mirror user" on public.users
+  for update using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 -- Orders: user sees/creates own orders only
 create policy "Users can view their own orders" on public.orders
@@ -313,6 +340,64 @@ $$;
 
 revoke all on function public.get_username_owner(text) from public;
 grant execute on function public.get_username_owner(text) to anon, authenticated, service_role;
+
+-- Sync auth.users -> public.users mirror
+create or replace function public.sync_public_users_from_auth()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  meta jsonb := '{}'::jsonb;
+  username_value text := null;
+begin
+  if tg_op = 'DELETE' then
+    delete from public.users where id = old.id;
+    return old;
+  end if;
+
+  meta := coalesce(new.raw_user_meta_data, '{}'::jsonb);
+  username_value := nullif(trim(coalesce(meta ->> 'username', '')), '');
+
+  insert into public.users (id, email, username, password_hash)
+  values (
+    new.id,
+    coalesce(new.email, ''),
+    username_value,
+    'SUPABASE_MANAGED'
+  )
+  on conflict (id) do update
+  set
+    email = excluded.email,
+    username = excluded.username,
+    password_hash = excluded.password_hash;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.sync_public_users_from_auth() from public;
+grant execute on function public.sync_public_users_from_auth() to service_role;
+
+drop trigger if exists trg_sync_public_users_from_auth on auth.users;
+create trigger trg_sync_public_users_from_auth
+after insert or update or delete on auth.users
+for each row
+execute function public.sync_public_users_from_auth();
+
+insert into public.users (id, email, username, password_hash)
+select
+  u.id,
+  coalesce(u.email, ''),
+  nullif(trim(coalesce(u.raw_user_meta_data ->> 'username', '')), ''),
+  'SUPABASE_MANAGED'
+from auth.users u
+on conflict (id) do update
+set
+  email = excluded.email,
+  username = excluded.username,
+  password_hash = excluded.password_hash;
 
 -- Admin membership helper used by server API
 create or replace function public.is_admin_user(p_user_id uuid)

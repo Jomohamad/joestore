@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../context/StoreContext';
+import { registerWithBackendApi } from '../services/api';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -73,32 +74,19 @@ export default function SignUp() {
     setLoading(true);
     try {
       localStorage.setItem('auth_intent', 'signup');
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const result = await registerWithBackendApi({
         email: email.trim(),
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`,
-          data: {
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            email: email.trim(),
-          },
-        },
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
       });
 
-      if (signUpError) throw signUpError;
-
-      // Supabase may return an obfuscated user for already-registered emails.
-      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        setError(
-          language === 'ar'
-            ? 'هذا البريد مسجل بالفعل. جرّب تسجيل الدخول أو إعادة إرسال رسالة التفعيل.'
-            : 'This email is already registered. Please login or resend the confirmation email.',
-        );
-        return;
-      }
-
-      if (data.session) {
+      if (!result.requiresEmailConfirmation && result.accessToken && result.refreshToken) {
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: result.accessToken,
+          refresh_token: result.refreshToken,
+        });
+        if (setSessionError) throw setSessionError;
         setPendingConfirmationEmail('');
         navigate('/complete-profile');
         return;

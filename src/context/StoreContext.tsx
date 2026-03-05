@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { translations } from '../translations';
 import { Game } from '../types';
 import { useAuth } from './AuthContext';
-import { addToWishlistApi, fetchGames, fetchWishlist, removeFromWishlistApi } from '../services/api';
+import { addToWishlistApi, connectOrderSocket, fetchGames, fetchWishlist, removeFromWishlistApi } from '../services/api';
 
 type Language = 'en' | 'ar';
 type Currency = 'USD' | 'EGP';
@@ -47,8 +47,8 @@ interface StoreContextType {
   addToWishlist: (game: Game) => void;
   removeFromWishlist: (gameId: string) => void;
   isInWishlist: (gameId: string) => boolean;
-  orderToast: { orderId: string } | null;
-  notifyOrder: (order: { orderId: string }) => void;
+  orderToast: { orderId: string; status?: string; message?: string } | null;
+  notifyOrder: (order: { orderId: string; status?: string; message?: string }) => void;
   clearOrderToast: () => void;
   t: (key: keyof typeof translations['en']) => string;
 }
@@ -63,7 +63,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [allGames, setAllGames] = useState<Game[]>([]);
-  const [orderToast, setOrderToast] = useState<{ orderId: string } | null>(null);
+  const [orderToast, setOrderToast] = useState<{ orderId: string; status?: string; message?: string } | null>(null);
+  const socketRef = useRef<Awaited<ReturnType<typeof connectOrderSocket>> | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -135,12 +136,55 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return `$${priceInUSD.toFixed(2)}`;
   };
 
-  const notifyOrder = (order: { orderId: string }) => {
+  const notifyOrder = (order: { orderId: string; status?: string; message?: string }) => {
     setOrderToast(order);
     setTimeout(() => setOrderToast(null), 4000);
   };
 
   const clearOrderToast = () => setOrderToast(null);
+
+  useEffect(() => {
+    let disposed = false;
+
+    const initSocket = async () => {
+      if (!user?.id) {
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+          socketRef.current = null;
+        }
+        return;
+      }
+
+      const socket = await connectOrderSocket((payload) => {
+        notifyOrder({
+          orderId: payload.orderId,
+          status: payload.status,
+          message: payload.message,
+        });
+        window.dispatchEvent(new CustomEvent('order-status-updated', { detail: payload }));
+      });
+
+      if (disposed) {
+        socket?.disconnect();
+        return;
+      }
+
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      socketRef.current = socket;
+    };
+
+    void initSocket();
+
+    return () => {
+      disposed = true;
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [user?.id]);
 
   const setCartQuantity = (gameId: string, packageId: number, accountIdentifier: string, quantity: number) => {
     const normalizedAccountIdentifier = accountIdentifier.trim();

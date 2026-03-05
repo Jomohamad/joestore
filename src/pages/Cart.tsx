@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Trash2, ShoppingCart, ArrowRight, Tag, AlertCircle, Minus, Plus, CreditCard, Wallet, CircleDollarSign } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { cn } from '../lib/utils';
-import { createOrder, validateCoupon } from '../services/api';
+import { completeHostedCheckoutInSandbox, createOrder, validateCoupon } from '../services/api';
 
 type PaymentMethod = 'fawry' | 'wallet' | 'card' | 'paypal';
 
@@ -120,7 +120,6 @@ export default function Cart() {
         cardHolder: cardHolder.trim(),
         expiry: cardExpiry.trim(),
         cardNumber: cardNumber.trim(),
-        cvv: cardCvv.trim(),
       };
     }
 
@@ -139,8 +138,9 @@ export default function Cart() {
     setIsCheckingOut(true);
     try {
       const paymentDetails = buildPaymentDetails();
+      let externalCheckoutUrl: string | null = null;
 
-      for (const item of cart) {
+      for (const item of [...cart]) {
         const res = await createOrder({
           gameId: item.gameId,
           packageId: item.packageId,
@@ -149,11 +149,25 @@ export default function Cart() {
           paymentMethod: selectedPayment,
           accountIdentifier: item.accountIdentifier,
           paymentDetails,
+          packageName: item.packageName,
         });
 
         if (res?.orderId) {
-          notifyOrder({ orderId: res.orderId });
+          notifyOrder({ orderId: res.orderId, status: res.status });
         }
+
+        if (res?.checkoutUrl) {
+          const handled = await completeHostedCheckoutInSandbox(res.checkoutUrl);
+          if (!handled && !externalCheckoutUrl) {
+            externalCheckoutUrl = res.checkoutUrl;
+            break;
+          }
+        }
+      }
+
+      if (externalCheckoutUrl) {
+        window.location.assign(externalCheckoutUrl);
+        return;
       }
 
       clearCart();
