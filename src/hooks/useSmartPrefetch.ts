@@ -56,9 +56,31 @@ export const useSmartPrefetch = () => {
     };
 
     const fromAnchor = (target: EventTarget | null) => {
-      const node = target as HTMLElement | null;
-      if (!node) return null;
-      const anchor = node.closest('a[href]') as HTMLAnchorElement | null;
+      if (!(target instanceof Node)) return null;
+      const element = target instanceof Element ? target : target.parentElement;
+      if (!element) return null;
+
+      const maybeClosest = (element as Element & { closest?: (selector: string) => Element | null }).closest;
+      let anchor: HTMLAnchorElement | null = null;
+
+      if (typeof maybeClosest === 'function') {
+        const found = maybeClosest.call(element, 'a[href]');
+        if (found instanceof HTMLAnchorElement) {
+          anchor = found;
+        }
+      }
+
+      if (!anchor) {
+        let current: Element | null = element;
+        while (current) {
+          if (current instanceof HTMLAnchorElement && current.hasAttribute('href')) {
+            anchor = current;
+            break;
+          }
+          current = current.parentElement;
+        }
+      }
+
       if (!anchor) return null;
       return getInternalHref(anchor.getAttribute('href'));
     };

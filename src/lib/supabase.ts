@@ -14,10 +14,14 @@ const hasValidAnonKey = Boolean(supabaseAnonKey && supabaseAnonKey !== 'INSERT_Y
 if (!hasValidUrl || !hasValidAnonKey) {
   // Avoid hard-crashing the client bundle when env vars are missing on deploy.
   // API calls will fail with clear network/auth errors until proper env vars are set.
-  // eslint-disable-next-line no-console
-  console.error(
-    'Supabase env vars are missing/invalid. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel.',
-  );
+  const scope = globalThis as typeof globalThis & { __SUPABASE_ENV_WARNED__?: boolean };
+  if (!scope.__SUPABASE_ENV_WARNED__) {
+    scope.__SUPABASE_ENV_WARNED__ = true;
+    // eslint-disable-next-line no-console
+    console.warn(
+      'Supabase env vars are missing/invalid. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel.',
+    );
+  }
 }
 
 export const supabase = createClient(
