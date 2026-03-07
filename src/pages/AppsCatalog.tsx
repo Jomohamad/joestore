@@ -60,7 +60,7 @@ export default function AppsCatalog() {
           <h1 className="text-[clamp(1.4rem,4vw,2.4rem)] font-display font-bold text-white">{t('popular_apps')}</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {items.map((item, index) => (
             <motion.div
               key={item.id}

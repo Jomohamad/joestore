@@ -73,6 +73,7 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
           {promotions.length > 1 && (
             <>
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   prevPromo();
@@ -83,6 +84,7 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
                 <ChevronLeft className="w-6 h-6" />
               </button>
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   nextPromo();
@@ -97,15 +99,20 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
 
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
             {promotions.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActivePromo(i)}
-                aria-label={`Go to promotion ${i + 1}`}
-                className={cn(
-                  'w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-300',
-                  activePromo === i ? 'bg-creo-accent w-6 md:w-8' : 'bg-white/30 hover:bg-white/50'
-                )}
-              />
+                <button
+                  type="button"
+                  key={i}
+                  onClick={() => setActivePromo(i)}
+                  aria-label={`Go to promotion ${i + 1}`}
+                  className="h-11 min-h-11 px-1 flex items-center justify-center"
+                >
+                <span
+                  className={cn(
+                    'w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-300',
+                    activePromo === i ? 'bg-creo-accent w-6 md:w-8' : 'bg-white/30 hover:bg-white/50'
+                  )}
+                />
+              </button>
             ))}
           </div>
         </div>

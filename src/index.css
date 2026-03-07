@@ -91,6 +91,15 @@ html {
   scroll-behavior: smooth;
 }
 
+body {
+  -webkit-overflow-scrolling: touch;
+}
+
+.overflow-x-auto,
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
 img,
 video,
 canvas,
@@ -121,6 +130,34 @@ li {
 button,
 [role='button'] {
   touch-action: manipulation;
+}
+
+button,
+a,
+[role='button'] {
+  transition: transform 160ms ease, opacity 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+button:active,
+a:active,
+[role='button']:active {
+  transform: scale(0.96);
+}
+
+.haptic-fallback {
+  animation: haptic-fallback-pulse 160ms ease-out;
+}
+
+@keyframes haptic-fallback-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 a,
@@ -208,15 +245,18 @@ select {
 
 .home-cards-track {
   --home-cards-gap: clamp(0.5rem, 1vw, 0.85rem);
-  --home-cards-visible: 1.2;
+  --home-cards-visible: 1.5;
   gap: var(--home-cards-gap);
-  scroll-padding-inline: 1rem;
+  scroll-padding-inline: clamp(0.75rem, 3vw, 1rem);
   overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 }
 
 .home-cards-item {
   flex: 0 0 calc((100% - (var(--home-cards-gap) * (var(--home-cards-visible) - 1))) / var(--home-cards-visible));
   min-width: 9rem;
+  scroll-snap-stop: always;
 }
 
 .home-cards-edge {
@@ -256,10 +296,6 @@ select {
 }
 
 @media (max-width: 480px) {
-  .home-cards-track {
-    --home-cards-visible: 1;
-  }
-
   .container {
     padding-inline: 0.875rem;
   }
@@ -321,5 +357,16 @@ select {
   textarea,
   select {
     font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

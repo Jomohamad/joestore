@@ -61,6 +61,7 @@ export default function HorizontalCatalogSection({
         <div className="relative">
           {scroll.scrollState.canScrollLeft && (
             <button
+              type="button"
               onClick={() => scroll.scroll(language === 'ar' ? 'right' : 'left')}
               className={cn(
                 'absolute top-1/2 -translate-y-1/2 z-20 w-11 h-11 md:w-10 md:h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
@@ -74,6 +75,7 @@ export default function HorizontalCatalogSection({
 
           {scroll.scrollState.canScrollRight && (
             <button
+              type="button"
               onClick={() => scroll.scroll(language === 'ar' ? 'left' : 'right')}
               className={cn(
                 'absolute top-1/2 -translate-y-1/2 z-20 w-11 h-11 md:w-10 md:h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
@@ -103,11 +105,12 @@ export default function HorizontalCatalogSection({
           <div
             ref={scroll.ref}
             {...scroll.events}
-              className={cn(
-                'home-cards-track flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-auto',
-                scroll.isDragging ? 'cursor-grabbing snap-none scroll-auto' : 'cursor-grab'
-              )}
-            >
+            data-swipe-carousel
+            className={cn(
+              'home-cards-track flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-pan-x',
+              scroll.isDragging ? 'cursor-grabbing snap-none scroll-auto' : 'cursor-grab'
+            )}
+          >
             {items.map((item, index) => (
               <motion.div
                 key={item.id}
@@ -135,6 +138,7 @@ export default function HorizontalCatalogSection({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <button
+                      type="button"
                       onClick={(e) => onToggleWishlist(e, item)}
                       className="absolute top-1.5 right-1.5 z-20 w-11 h-11 md:w-9 md:h-9 rounded-full bg-black/40 text-white hover:bg-creo-accent transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center justify-center"
                     >
@@ -157,6 +161,27 @@ export default function HorizontalCatalogSection({
               </motion.div>
             ))}
           </div>
+
+          {scroll.scrollState.dotCount > 1 && (
+            <div className="mt-1 flex items-center justify-center gap-1.5" aria-label="Carousel position indicators">
+              {Array.from({ length: scroll.scrollState.dotCount }).map((_, dotIndex) => (
+                <button
+                  type="button"
+                  key={`${id}-dot-${dotIndex}`}
+                  onClick={() => scroll.scrollToDot(dotIndex)}
+                  aria-label={`Go to position ${dotIndex + 1}`}
+                  className="h-11 min-h-11 px-1 flex items-center justify-center"
+                >
+                  <span
+                    className={cn(
+                      'h-1.5 rounded-full transition-all duration-200',
+                      scroll.scrollState.activeDot === dotIndex ? 'w-6 bg-creo-accent' : 'w-1.5 bg-white/40 hover:bg-white/70',
+                    )}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
