@@ -16,7 +16,7 @@ export default function PaymentCallback() {
 
   const normalizedProvider = useMemo(() => {
     const value = String(provider || '').trim().toLowerCase();
-    return value === 'paymob' || value === 'fawry' ? value : null;
+    return value === 'fawaterk' ? ('fawaterk' as const) : null;
   }, [provider]);
 
   useEffect(() => {

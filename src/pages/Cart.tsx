@@ -6,7 +6,7 @@ import { useStore } from '../context/StoreContext';
 import { cn } from '../lib/utils';
 import { completeHostedCheckoutInSandbox, createOrder, validateCoupon } from '../services/api';
 
-type PaymentMethod = 'fawry' | 'wallet' | 'card' | 'paypal';
+type PaymentMethod = 'fawaterk' | 'wallet' | 'card' | 'paypal';
 
 export default function Cart() {
   const { cart, removeFromCart, setCartQuantity, clearCart, t, language, formatPrice, notifyOrder } = useStore();
@@ -123,7 +123,7 @@ export default function Cart() {
       };
     }
 
-    return { channel: 'fawry' };
+    return { channel: 'fawaterk' };
   };
 
   const handleCheckout = async () => {
@@ -146,7 +146,7 @@ export default function Cart() {
           packageId: item.packageId,
           amount: item.packageAmount * item.quantity,
           quantity: item.quantity,
-          paymentMethod: selectedPayment,
+          paymentMethod: 'fawaterk',
           accountIdentifier: item.accountIdentifier,
           paymentDetails,
           packageName: item.packageName,
@@ -269,11 +269,10 @@ export default function Cart() {
                 <div className="space-y-2">
                   {[
                     {
-                      key: 'fawry' as const,
-                      label: 'Fawry Pay',
+                      key: 'fawaterk' as const,
+                      label: 'Fawaterk',
                       icon: CircleDollarSign,
-                      logos: ['/Fawrypay.webp'],
-                      leadingLogo: '/Fawrypay.webp',
+                      logos: [],
                     },
                     {
                       key: 'wallet' as const,
@@ -328,11 +327,11 @@ export default function Cart() {
                 </div>
               </div>
 
-              {selectedPayment === 'fawry' && (
+              {selectedPayment === 'fawaterk' && (
                 <div className="rounded-xl border border-creo-border bg-creo-bg p-4 text-sm text-creo-text-sec">
                   {language === 'ar'
-                    ? 'بعد تأكيد الطلب ستصلك تعليمات الدفع عبر فاوري.'
-                    : 'After checkout, you will receive your Fawry payment reference.'}
+                    ? 'بعد تأكيد الطلب سيتم تحويلك إلى صفحة دفع فواتيرك.'
+                    : 'After checkout, you will be redirected to Fawaterk payment page.'}
                 </div>
               )}
 

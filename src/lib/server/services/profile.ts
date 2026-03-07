@@ -32,6 +32,11 @@ export const profileService = {
     const rpcResult = await supabaseAdmin.rpc('is_admin_user', { p_user_id: userId });
     if (!rpcResult.error) return Boolean(rpcResult.data);
 
+    const roleLookup = await supabaseAdmin.from('users').select('role').eq('id', userId).maybeSingle();
+    if (!roleLookup.error && String(roleLookup.data?.role || '').toLowerCase() === 'admin') {
+      return true;
+    }
+
     const { data, error } = await supabaseAdmin.from('admins').select('user_id').eq('user_id', userId).maybeSingle();
     if (error) {
       if (error.code === '42P01' || error.code === '42883') return false;

@@ -11,13 +11,6 @@ const required = (name: string, value?: string) => {
   return v;
 };
 
-const requiredProdOrDefault = (name: string, value: string | undefined, devDefault: string, isProduction: boolean) => {
-  const v = clean(value);
-  if (v) return v;
-  if (!isProduction) return devDefault;
-  throw new Error(`Missing required environment variable: ${name}`);
-};
-
 const requiredWhenOrDefault = (
   name: string,
   value: string | undefined,
@@ -42,12 +35,12 @@ export const serverEnv = {
   sandboxMode: clean(process.env.SANDBOX_MODE || 'true').toLowerCase() !== 'false',
 
   supabaseUrl: required(
-    'NEXT_PUBLIC_SUPABASE_URL or NEXT_VITE_SUPABASE_URL or VITE_SUPABASE_URL',
-    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+    'SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL or NEXT_VITE_SUPABASE_URL or VITE_SUPABASE_URL',
+    process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
   ),
   supabaseAnonKey: required(
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_ANON_KEY',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY,
+    'SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_ANON_KEY',
+    process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY,
   ),
   supabaseServiceRole: required('SUPABASE_SERVICE_ROLE or SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_ROLE_KEY),
 
@@ -70,42 +63,63 @@ export const serverEnv = {
     'sandbox-reloadly-client-secret',
     isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
   ),
+  reloadlyAuthBase:
+    clean(process.env.RELOADLY_AUTH_BASE) ||
+    'https://auth.reloadly.com',
+  reloadlyTopupsBase:
+    clean(process.env.RELOADLY_TOPUPS_BASE) ||
+    'https://topups.reloadly.com',
   gamesdropApiKey: requiredWhenOrDefault(
     'GAMESDROP_API_KEY',
     process.env.GAMESDROP_API_KEY,
     'sandbox-gamesdrop-api-key',
     isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
   ),
+  gamesdropApiBase:
+    clean(process.env.GAMESDROP_API_BASE) ||
+    'https://api.gamesdrop.com/v1',
+  providerTimeoutMs: Number(clean(process.env.PROVIDER_TIMEOUT_MS || '15000')) || 15000,
+  redisUrl: clean(process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL || ''),
+  redisTls: clean(process.env.REDIS_TLS || 'false').toLowerCase() === 'true',
+  queueMode: clean(process.env.QUEUE_MODE || 'bullmq').toLowerCase(),
+  rabbitmqUrl: clean(process.env.RABBITMQ_URL || ''),
+  bullPrefix: clean(process.env.BULLMQ_PREFIX || 'joestore'),
+  topupJobAttempts: Number(clean(process.env.TOPUP_JOB_ATTEMPTS || '3')) || 3,
+  topupJobBackoffMs: Number(clean(process.env.TOPUP_JOB_BACKOFF_MS || '2000')) || 2000,
 
-  paymobApiKey: requiredWhenOrDefault(
-    'PAYMOB_API_KEY',
-    process.env.PAYMOB_API_KEY,
-    'sandbox-paymob-api-key',
+  fawaterkApiBase:
+    clean(process.env.FAWATERK_API_BASE) ||
+    'https://api.fawaterk.com/api/v2',
+  fawaterkApiKey: requiredWhenOrDefault(
+    'FAWATERK_API_KEY',
+    process.env.FAWATERK_API_KEY,
+    'sandbox-fawaterk-api-key',
     isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
   ),
-  paymobIntegrationId: requiredWhenOrDefault(
-    'PAYMOB_INTEGRATION_ID',
-    process.env.PAYMOB_INTEGRATION_ID,
-    'sandbox-paymob-integration-id',
+  fawaterkSecretKey: requiredWhenOrDefault(
+    'FAWATERK_SECRET_KEY or FAWATERK_SECRET',
+    process.env.FAWATERK_SECRET_KEY || process.env.FAWATERK_SECRET,
+    'sandbox-fawaterk-secret-key',
     isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
   ),
-  paymobHmacSecret: requiredWhenOrDefault(
-    'PAYMOB_HMAC_SECRET',
-    process.env.PAYMOB_HMAC_SECRET || process.env.PAYMOB_API_KEY,
-    'sandbox-paymob-hmac-secret',
+  fawaterkWebhookSecret: requiredWhenOrDefault(
+    'FAWATERK_WEBHOOK_SECRET',
+    process.env.FAWATERK_WEBHOOK_SECRET || process.env.FAWATERK_SECRET_KEY || process.env.FAWATERK_SECRET,
+    'sandbox-fawaterk-webhook-secret',
     isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
   ),
 
-  fawrypayApiKey: requiredWhenOrDefault(
-    'FAWRYPAY_API_KEY',
-    process.env.FAWRYPAY_API_KEY,
-    'sandbox-fawrypay-api-key',
-    isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
-  ),
-  fawrypaySecret: requiredWhenOrDefault(
-    'FAWRYPAY_SECRET',
-    process.env.FAWRYPAY_SECRET,
-    'sandbox-fawrypay-secret',
-    isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
-  ),
+  unipinApiKey: clean(process.env.UNIPIN_API_KEY || ''),
+  unipinApiBase: clean(process.env.UNIPIN_API_BASE) || 'https://api.unipin.com/v1',
+
+  seagmApiKey: clean(process.env.SEAGM_API_KEY || ''),
+  seagmApiBase: clean(process.env.SEAGM_API_BASE) || 'https://api.seagm.com/v1',
+
+  driffleApiKey: clean(process.env.DRIFFLE_API_KEY || ''),
+  driffleApiBase: clean(process.env.DRIFFLE_API_BASE) || 'https://api.driffle.com/v1',
+
+  geolocationApiBase: clean(process.env.GEOLOCATION_API_BASE || 'https://ipapi.co'),
+  geolocationApiKey: clean(process.env.GEOLOCATION_API_KEY || ''),
+  fraudMaxOrdersPerMinute: Number(clean(process.env.FRAUD_MAX_ORDERS_PER_MINUTE || '6')) || 6,
+  fraudBlockRiskScore: Number(clean(process.env.FRAUD_BLOCK_RISK_SCORE || '80')) || 80,
 };

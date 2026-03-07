@@ -1,16 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiError, methodNotAllowed, withErrorHandling } from '../../../src/lib/server/http';
 import { requireAuthUser } from '../../../src/lib/server/auth';
-import { ordersService, type PaymentProvider } from '../../../src/lib/server/services/orders';
-
-const normalizePaymentProvider = (value: unknown): PaymentProvider => {
-  const v = String(value || '').trim().toLowerCase();
-  if (v === 'fawry' || v === 'fawrypay') return 'fawry';
-  return 'paymob';
-};
+import { enforceRateLimit, getClientIp } from '../../../src/lib/server/rateLimit';
+import { ordersService } from '../../../src/lib/server/services/orders';
+import { fraudService } from '../../../src/lib/server/services/fraud';
 
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+  await enforceRateLimit(req, { key: 'orders:create', windowMs: 60_000, max: 30 });
 
   const { user } = await requireAuthUser(req);
 
@@ -20,10 +17,30 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   const playerId = String(req.body?.player_id || req.body?.playerId || req.body?.accountIdentifier || '').trim();
   const server = String(req.body?.server || '').trim() || null;
   const quantity = Number(req.body?.quantity || 1);
-  const paymentProvider = normalizePaymentProvider(req.body?.payment_provider || req.body?.paymentProvider || req.body?.paymentMethod);
+  const paymentMethod = String(req.body?.paymentMethod || req.body?.payment_method || 'fawaterk').trim().toLowerCase();
 
   if (!gameIdentifier || !playerId) {
     throw new ApiError(400, 'game and player_id are required', 'INVALID_ORDER_PAYLOAD');
+  }
+  if (paymentMethod !== 'fawaterk') {
+    throw new ApiError(400, 'Only fawaterk payment gateway is supported', 'UNSUPPORTED_PAYMENT_METHOD');
+  }
+
+  const ipAddress = getClientIp(req);
+  const fraudCheck = await fraudService.assessOrder({
+    userId: user.id,
+    ipAddress,
+    playerId,
+    amount: Number(req.body?.amount || 0),
+    paymentAmount: Number(req.body?.amount || 0),
+    paymentCountry: req.body?.country ? String(req.body.country) : null,
+  });
+
+  if (fraudCheck.blocked) {
+    throw new ApiError(403, 'Order blocked by fraud protection rules', 'ORDER_BLOCKED_FRAUD', {
+      riskScore: fraudCheck.riskScore,
+      reasons: fraudCheck.reasons,
+    });
   }
 
   const { order, price } = await ordersService.createOrder({
@@ -34,14 +51,31 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
     playerId,
     server,
     quantity,
-    paymentProvider,
     legacyAmount: Number(req.body?.amount || 0),
-    paymentDetails: req.body?.paymentDetails && typeof req.body.paymentDetails === 'object' ? req.body.paymentDetails : {},
+    ipAddress,
+    country: fraudCheck.country,
+    fraudRiskScore: fraudCheck.riskScore,
+    paymentDetails:
+      req.body?.paymentDetails && typeof req.body.paymentDetails === 'object'
+        ? {
+            ...(req.body.paymentDetails as Record<string, unknown>),
+            fraud: {
+              riskScore: fraudCheck.riskScore,
+              reasons: fraudCheck.reasons,
+              country: fraudCheck.country,
+            },
+          }
+        : {
+            fraud: {
+              riskScore: fraudCheck.riskScore,
+              reasons: fraudCheck.reasons,
+              country: fraudCheck.country,
+            },
+          },
   });
 
   const paymentInit = await ordersService.initiatePayment({
     orderId: String(order.id),
-    provider: paymentProvider,
     amount: price,
   });
 

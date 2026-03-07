@@ -6,11 +6,10 @@
     "dev": "next dev",
     "start": "next start",
     "build": "next build",
-    "dev:legacy": "tsx server.ts",
-    "build:legacy": "vite build",
-    "preview:legacy": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "worker:topup": "tsx workers/topupWorker.ts",
+    "worker:retry": "tsx workers/retryWorker.ts"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

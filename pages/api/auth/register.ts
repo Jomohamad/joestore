@@ -3,11 +3,13 @@ import { ApiError, methodNotAllowed, withErrorHandling } from '../../../src/lib/
 import { supabaseAnon } from '../../../src/lib/server/supabaseAdmin';
 import { serverEnv } from '../../../src/lib/server/env';
 import { buildAppUser, syncPublicUserFromAuth } from '../../../src/lib/server/users';
+import { enforceRateLimit } from '../../../src/lib/server/rateLimit';
 
 const USERNAME_REGEX = /^[A-Za-z0-9._-]{3,30}$/;
 
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+  await enforceRateLimit(req, { key: 'auth:register', windowMs: 60_000, max: 10 });
 
   const email = String(req.body?.email || '').trim().toLowerCase();
   const password = String(req.body?.password || '');

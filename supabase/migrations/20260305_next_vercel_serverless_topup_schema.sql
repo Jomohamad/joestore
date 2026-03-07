@@ -64,6 +64,7 @@ alter table public.orders
   add column if not exists server text,
   add column if not exists package text,
   add column if not exists price numeric(12,2),
+  add column if not exists payment_provider text,
   add column if not exists provider_response jsonb,
   add column if not exists created_at timestamptz not null default now();
 
@@ -97,6 +98,43 @@ alter table public.orders
   add constraint orders_status_check
   check (status in ('pending','paid','processing','completed','failed'));
 
+update public.orders
+set payment_provider = case
+  when coalesce(payment_provider, '') = '' then null
+  else 'fawaterk'
+end;
+
+alter table public.orders
+  add column if not exists provider text;
+
+update public.orders
+set provider = case
+  when lower(coalesce(provider, '')) in ('reloadly', 'gamesdrop') then lower(provider)
+  else 'reloadly'
+end;
+
+DO $$
+DECLARE
+  rec record;
+BEGIN
+  FOR rec IN
+    SELECT c.conname
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public'
+      AND t.relname = 'orders'
+      AND c.contype = 'c'
+      AND pg_get_constraintdef(c.oid) ilike '%payment_provider%'
+  LOOP
+    EXECUTE format('alter table public.orders drop constraint if exists %I', rec.conname);
+  END LOOP;
+END $$;
+
+alter table public.orders
+  add constraint orders_payment_provider_check
+  check (payment_provider is null or payment_provider = 'fawaterk');
+
 -- 4) payments (order_id type mirrors existing orders.id type)
 DO $$
 DECLARE
@@ -121,7 +159,7 @@ BEGIN
     create table if not exists public.payments (
       id uuid primary key default gen_random_uuid(),
       order_id %s not null references public.orders(id) on delete cascade,
-      provider text not null check (provider in ('paymob','fawry')),
+      gateway text not null default 'fawaterk' check (gateway = 'fawaterk'),
       transaction_id text,
       status text not null default 'pending',
       created_at timestamptz not null default now()
@@ -130,7 +168,7 @@ BEGIN
 END $$;
 
 create index if not exists payments_order_id_idx on public.payments(order_id);
-create index if not exists payments_provider_status_idx on public.payments(provider, status);
+create index if not exists payments_gateway_status_idx on public.payments(gateway, status);
 
 -- 5) RLS + policies
 alter table public.users enable row level security;

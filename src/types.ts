@@ -35,18 +35,20 @@ export interface Package {
 export interface Order {
   id: string;
   game_id: string;
-  package_id: number;
+  product_id?: string | null;
+  package_id?: number | null;
   amount: number;
   status: 'pending' | 'paid' | 'processing' | 'completed' | 'failed' | string;
-  payment_method?: string | null;
-  payment_provider?: string | null;
   account_identifier?: string | null;
   player_id?: string | null;
   server?: string | null;
   package?: string | null;
   price?: number | null;
+  provider?: string | null;
+  payment_id?: string | null;
   transaction_id?: string | null;
   provider_order_ref?: string | null;
+  provider_response?: Record<string, unknown> | null;
   payment_details?: Record<string, unknown>;
   quantity?: number;
   created_at: string;

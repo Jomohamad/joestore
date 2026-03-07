@@ -14,6 +14,9 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
     server: req.body?.server ? String(req.body.server) : null,
     packageName: String(req.body?.packageName || ''),
     quantity: Number(req.body?.quantity || 1),
+    providerProductId: req.body?.providerProductId ? String(req.body.providerProductId) : null,
+    amount: Number(req.body?.amount || 0),
+    currency: req.body?.currency ? String(req.body.currency) : 'EGP',
   });
 
   res.status(200).json(result);

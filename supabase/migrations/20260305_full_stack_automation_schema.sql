@@ -37,7 +37,7 @@ alter table public.orders
   add column if not exists price numeric(10,2),
   add column if not exists transaction_id text,
   add column if not exists provider_order_ref text,
-  add column if not exists payment_provider text check (payment_provider in ('paymob', 'fawrypay'));
+  add column if not exists payment_provider text check (payment_provider = 'fawaterk');
 
 update public.orders
 set status = case

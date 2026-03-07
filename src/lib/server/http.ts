@@ -21,13 +21,44 @@ export const methodNotAllowed = (res: NextApiResponse, allowed: string[]) => {
 export const withErrorHandling =
   (handler: (req: NextApiRequest, res: NextApiResponse) => Promise<void>) =>
   async (req: NextApiRequest, res: NextApiResponse) => {
+    const persistError = async (payload: {
+      type: string;
+      message: string;
+      metadata?: Record<string, unknown>;
+    }) => {
+      try {
+        const { logsService } = await import('./services/logs');
+        await logsService.write(payload.type, payload.message, payload.metadata || {});
+      } catch {
+        // Ignore logging failures to avoid recursive API errors.
+      }
+    };
+
     try {
       await handler(req, res);
     } catch (error) {
       if (error instanceof ApiError) {
+        await persistError({
+          type: 'api.error',
+          message: error.message,
+          metadata: {
+            code: error.code,
+            status: error.status,
+            path: req.url || '',
+            method: req.method || '',
+          },
+        });
         return res.status(error.status).json({ error: error.message, code: error.code, details: error.details });
       }
       console.error('[api:error]', error);
+      await persistError({
+        type: 'api.unhandled_error',
+        message: error instanceof Error ? error.message : 'Internal Server Error',
+        metadata: {
+          path: req.url || '',
+          method: req.method || '',
+        },
+      });
       return res.status(500).json({ error: error instanceof Error ? error.message : 'Internal Server Error', code: 'INTERNAL_ERROR' });
     }
   };

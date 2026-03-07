@@ -80,7 +80,10 @@ drop function if exists public.delete_my_account(text);
 drop function if exists public.set_admin_display_name();
 
 drop table if exists public.order_items;
+drop table if exists public.logs;
+drop table if exists public.payments;
 drop table if exists public.orders;
+drop table if exists public.products;
 drop table if exists public.wishlist;
 drop table if exists public.packages;
 drop table if exists public.games;
@@ -102,7 +105,9 @@ create table if not exists public.games (
   provider_game_code text,
   description text,
   release_date date,
-  show_on_home boolean not null default true
+  show_on_home boolean not null default true,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
 );
 
 create index if not exists games_show_on_home_category_idx on public.games (show_on_home, category);
@@ -113,6 +118,7 @@ create table if not exists public.users (
   email text not null unique,
   username text,
   password_hash text,
+  role text not null default 'user' check (role in ('admin', 'user')),
   created_at timestamptz not null default now()
 );
 
@@ -132,29 +138,74 @@ create table if not exists public.packages (
 
 create index if not exists packages_game_id_idx on public.packages(game_id);
 
+-- 3.1) PRODUCTS
+create table if not exists public.products (
+  id uuid primary key default uuid_generate_v4(),
+  game_id text not null references public.games(id) on delete cascade,
+  name text not null,
+  provider_product_id text not null,
+  price numeric(10,2) not null,
+  currency text not null default 'EGP',
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique (game_id, provider_product_id)
+);
+
+create index if not exists products_game_id_idx on public.products(game_id);
+create index if not exists products_active_idx on public.products(active);
+
 -- 4) ORDERS
 create table if not exists public.orders (
   id text primary key,
   user_id uuid references auth.users(id) on delete set null,
   game_id text not null references public.games(id) on delete restrict,
-  package_id integer not null references public.packages(id) on delete restrict,
+  product_id uuid references public.products(id) on delete set null,
+  package_id integer references public.packages(id) on delete restrict,
   amount numeric(10,2) not null,
-  status text not null default 'pending' check (status in ('pending', 'processing', 'completed', 'failed')),
-  payment_method text,
-  payment_provider text check (payment_provider in ('paymob', 'fawrypay')),
+  status text not null default 'pending' check (status in ('pending', 'paid', 'processing', 'completed', 'failed')),
   account_identifier text,
   player_id text,
   server text,
   package text,
   price numeric(10,2),
+  currency text not null default 'EGP',
+  provider text check (provider in ('reloadly', 'gamesdrop')),
+  payment_id uuid,
   transaction_id text,
   provider_order_ref text,
   payment_details jsonb not null default '{}'::jsonb,
+  provider_response jsonb,
   quantity integer not null default 1,
   created_at timestamptz not null default now()
 );
 
 create index if not exists orders_user_id_created_at_idx on public.orders(user_id, created_at desc);
+
+-- 4.1) PAYMENTS
+create table if not exists public.payments (
+  id uuid primary key default uuid_generate_v4(),
+  order_id text not null references public.orders(id) on delete cascade,
+  gateway text not null default 'fawaterk' check (gateway = 'fawaterk'),
+  transaction_id text,
+  amount numeric(10,2) not null default 0,
+  status text not null default 'pending' check (status in ('pending', 'paid', 'failed')),
+  raw_response jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists payments_order_id_idx on public.payments(order_id);
+create index if not exists payments_gateway_status_idx on public.payments(gateway, status);
+
+-- 4.2) LOGS
+create table if not exists public.logs (
+  id uuid primary key default uuid_generate_v4(),
+  type text not null,
+  message text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists logs_type_created_at_idx on public.logs(type, created_at desc);
 
 -- 5) WISHLIST
 create table if not exists public.wishlist (
@@ -258,10 +309,36 @@ set display_name = coalesce(
 from auth.users u
 where u.id = a.user_id;
 
+-- Admin membership helper used by policies and API.
+create or replace function public.is_admin_user(p_user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.admins a
+    where a.user_id = p_user_id
+  )
+  or exists (
+    select 1
+    from public.users u
+    where u.id = p_user_id
+      and u.role = 'admin'
+  );
+$$;
+
+revoke all on function public.is_admin_user(uuid) from public;
+grant execute on function public.is_admin_user(uuid) to anon, authenticated, service_role;
+
 -- 9) RLS
 alter table public.games enable row level security;
+alter table public.products enable row level security;
 alter table public.packages enable row level security;
 alter table public.orders enable row level security;
+alter table public.payments enable row level security;
+alter table public.logs enable row level security;
 alter table public.users enable row level security;
 alter table public.wishlist enable row level security;
 alter table public.coupons enable row level security;
@@ -295,6 +372,32 @@ create policy "Users can view their own orders" on public.orders
 
 create policy "Users can create orders" on public.orders
   for insert with check (auth.uid() = user_id);
+
+create policy "Admins can view all orders" on public.orders
+  for select using (public.is_admin_user(auth.uid()));
+
+create policy "Users can view own payments" on public.payments
+  for select using (
+    exists (
+      select 1
+      from public.orders o
+      where o.id = payments.order_id
+        and o.user_id = auth.uid()
+    )
+  );
+
+create policy "Admins can view all payments" on public.payments
+  for select using (public.is_admin_user(auth.uid()));
+
+create policy "Public active products are viewable by everyone" on public.products
+  for select using (active = true);
+
+create policy "Admins can manage products" on public.products
+  for all using (public.is_admin_user(auth.uid()))
+  with check (public.is_admin_user(auth.uid()));
+
+create policy "Admins can view logs" on public.logs
+  for select using (public.is_admin_user(auth.uid()));
 
 -- Wishlist: user scope
 create policy "Users can view their own wishlist" on public.wishlist
@@ -410,6 +513,12 @@ as $$
     select 1
     from public.admins a
     where a.user_id = p_user_id
+  )
+  or exists (
+    select 1
+    from public.users u
+    where u.id = p_user_id
+      and u.role = 'admin'
   );
 $$;
 
@@ -518,3 +627,155 @@ values
 (2, 'https://picsum.photos/seed/gaming2/1200/600', 2),
 (3, 'https://picsum.photos/seed/gaming3/1200/600', 3)
 on conflict (id) do nothing;
+
+-- 13) AUTOMATION COMPATIBILITY EXTENSIONS
+alter table public.products
+  add column if not exists game text,
+  add column if not exists title text,
+  add column if not exists provider text,
+  add column if not exists image text,
+  add column if not exists updated_at timestamptz not null default now();
+
+update public.products p
+set
+  game = coalesce(p.game, g.name, p.game_id),
+  title = coalesce(p.title, p.name),
+  provider = coalesce(p.provider, g.provider_api, 'reloadly')
+from public.games g
+where g.id = p.game_id;
+
+alter table public.orders
+  add column if not exists payment_invoice_id text,
+  add column if not exists updated_at timestamptz not null default now();
+
+update public.orders
+set payment_invoice_id = coalesce(payment_invoice_id, payment_id::text)
+where payment_invoice_id is null;
+
+alter table public.admins
+  add column if not exists id uuid default uuid_generate_v4(),
+  add column if not exists permissions jsonb not null default '{}'::jsonb;
+
+create table if not exists public.transactions (
+  id uuid primary key default uuid_generate_v4(),
+  order_id text not null references public.orders(id) on delete cascade,
+  provider text not null,
+  provider_tx_id text,
+  provider_transaction_id text,
+  response jsonb not null default '{}'::jsonb,
+  response_data jsonb not null default '{}'::jsonb,
+  status text not null default 'pending',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists transactions_order_id_idx on public.transactions(order_id);
+create index if not exists transactions_provider_idx on public.transactions(provider);
+create index if not exists transactions_status_idx on public.transactions(status);
+
+create or replace function public.set_current_timestamp_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_products_set_updated_at on public.products;
+create trigger trg_products_set_updated_at
+before update on public.products
+for each row execute function public.set_current_timestamp_updated_at();
+
+drop trigger if exists trg_orders_set_updated_at on public.orders;
+create trigger trg_orders_set_updated_at
+before update on public.orders
+for each row execute function public.set_current_timestamp_updated_at();
+
+-- 14) ADVANCED SCALING EXTENSIONS
+alter table public.orders
+  add column if not exists country text,
+  add column if not exists ip_address text,
+  add column if not exists fraud_risk_score numeric(5,2);
+
+do $$
+declare
+  rec record;
+begin
+  for rec in
+    select c.conname
+    from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    join pg_namespace n on n.oid = t.relnamespace
+    where n.nspname = 'public'
+      and t.relname = 'orders'
+      and c.contype = 'c'
+      and pg_get_constraintdef(c.oid) ilike '%provider%'
+  loop
+    execute format('alter table public.orders drop constraint if exists %I', rec.conname);
+  end loop;
+end $$;
+
+alter table public.orders
+  add constraint orders_provider_check
+  check (provider is null or provider in ('reloadly', 'gamesdrop', 'unipin', 'seagm', 'driffle'));
+
+create table if not exists public.provider_prices (
+  id uuid primary key default uuid_generate_v4(),
+  provider text not null,
+  product_id uuid not null references public.products(id) on delete cascade,
+  price numeric(12,2) not null,
+  currency text not null default 'EGP',
+  updated_at timestamptz not null default now(),
+  unique (provider, product_id)
+);
+
+create table if not exists public.pricing_rules (
+  id uuid primary key default uuid_generate_v4(),
+  product_id uuid not null references public.products(id) on delete cascade,
+  margin_percent numeric(6,2) not null default 0,
+  min_profit numeric(12,2) not null default 0,
+  max_profit numeric(12,2) not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (product_id)
+);
+
+create table if not exists public.fraud_logs (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references auth.users(id) on delete set null,
+  ip_address text,
+  country text,
+  risk_score integer not null default 0,
+  reason text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.provider_failures (
+  id uuid primary key default uuid_generate_v4(),
+  provider text not null,
+  product_id uuid references public.products(id) on delete set null,
+  order_id text references public.orders(id) on delete set null,
+  reason text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.provider_health (
+  provider text primary key,
+  success_count integer not null default 0,
+  failure_count integer not null default 0,
+  last_response_ms integer,
+  enabled boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists provider_prices_product_id_idx on public.provider_prices(product_id);
+create index if not exists provider_prices_provider_idx on public.provider_prices(provider);
+create index if not exists fraud_logs_user_id_idx on public.fraud_logs(user_id);
+create index if not exists fraud_logs_risk_score_idx on public.fraud_logs(risk_score desc);
+create index if not exists provider_failures_provider_idx on public.provider_failures(provider);
+create index if not exists provider_health_updated_at_idx on public.provider_health(updated_at desc);
+
+alter table public.orders replica identity full;

@@ -8,8 +8,8 @@ This project is migrated to a **Vercel-compatible architecture** while preservin
 - API: Next.js API Routes (`pages/api/*`)
 - Database: Supabase PostgreSQL
 - Realtime: Supabase Realtime (`orders` table)
-- Payments: Paymob + Fawry (sandbox-first adapters)
-- Top-up Providers: Reloadly + GamesDrop (sandbox-first adapters)
+- Payments: Fawaterk (sandbox-first adapter)
+- Top-up Providers: Reloadly + GamesDrop (live API calls with sandbox fallback)
 
 ## Folder Highlights
 
@@ -33,12 +33,9 @@ RELOADLY_CLIENT_ID=
 RELOADLY_CLIENT_SECRET=
 GAMESDROP_API_KEY=
 
-PAYMOB_API_KEY=
-PAYMOB_INTEGRATION_ID=
-PAYMOB_HMAC_SECRET=
-
-FAWRYPAY_API_KEY=
-FAWRYPAY_SECRET=
+FAWATERK_API_KEY=
+FAWATERK_SECRET_KEY=
+FAWATERK_WEBHOOK_SECRET=
 
 JWT_SECRET=
 APP_BASE_URL=http://localhost:3000
@@ -71,6 +68,14 @@ supabase db push
 Important migration for this architecture:
 
 - `supabase/migrations/20260305_next_vercel_serverless_topup_schema.sql`
+- `supabase/migrations/20260307_fawaterk_admin_panel_schema.sql`
+
+Canonical operational tables:
+
+- `users`
+- `games`
+- `orders` (`pending | paid | processing | completed | failed`)
+- `payments`
 
 ## API Overview
 
@@ -90,6 +95,8 @@ Important migration for this architecture:
 - `POST /api/orders/create`
 - `GET /api/orders/user`
 - `GET /api/orders/[id]`
+- `GET /api/orders/list`
+- `GET|PATCH /api/orders/status`
 
 Compatibility alias:
 
@@ -98,19 +105,36 @@ Compatibility alias:
 
 ### Payment
 
-- `POST /api/payment/paymob/initiate`
-- `POST /api/payment/paymob/verify`
-- `POST /api/payment/fawry/initiate`
-- `POST /api/payment/fawry/verify`
-
-Compatibility alias:
-
-- `POST /api/payment/verify/[provider]`
+- `POST /api/payment/create`
+- `POST /api/payment/webhook`
+- `POST /api/payment/fawaterk/create`
+- `POST /api/payment/fawaterk/verify`
+- `POST /api/payment/fawaterk/webhook`
 
 ### Top-up (internal)
 
 - `POST /api/topup/reloadly`
 - `POST /api/topup/gamesdrop`
+- `POST /api/topup/process`
+
+### Products
+
+- `GET /api/products/list`
+- `POST /api/products/create`
+- `POST|PUT|PATCH /api/products/update`
+- `DELETE|POST /api/products/delete`
+
+### Admin
+
+- `GET /api/admin/orders`
+- `POST /api/admin/orders/retry`
+- `PATCH /api/admin/orders/status`
+- `GET|POST /api/admin/games`
+- `GET|POST|DELETE /api/admin/products`
+- `GET /api/admin/payments`
+- `GET /api/admin/logs`
+- `GET /api/admin/transactions`
+- `GET|PATCH /api/admin/users`
 
 ## Realtime
 
@@ -124,8 +148,7 @@ When status changes (`pending`, `paid`, `processing`, `completed`, `failed`) UI 
 3. Add all environment variables.
 4. Deploy using default Next.js settings.
 5. Configure payment callback URLs to point to your Vercel domain:
-   - `https://<your-domain>/payment/callback/paymob`
-   - `https://<your-domain>/payment/callback/fawry`
+   - `https://<your-domain>/payment/callback/fawaterk`
 
 ## Notes
 
