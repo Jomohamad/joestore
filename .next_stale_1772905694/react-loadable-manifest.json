@@ -1,0 +1,198 @@
+{
+  "pages/[[...slug]].tsx -> ../src/App": {
+    "id": "pages/[[...slug]].tsx -> ../src/App",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_App_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/AppsCatalog": {
+    "id": "src/App.tsx -> ./pages/AppsCatalog",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_AppsCatalog_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/Cart": {
+    "id": "src/App.tsx -> ./pages/Cart",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Cart_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/CompleteProfile": {
+    "id": "src/App.tsx -> ./pages/CompleteProfile",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_CompleteProfile_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/Dashboard": {
+    "id": "src/App.tsx -> ./pages/Dashboard",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Dashboard_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/EditProfile": {
+    "id": "src/App.tsx -> ./pages/EditProfile",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_EditProfile_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/FAQ": {
+    "id": "src/App.tsx -> ./pages/FAQ",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_FAQ_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/GameDetails": {
+    "id": "src/App.tsx -> ./pages/GameDetails",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_GameDetails_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/GamesCatalog": {
+    "id": "src/App.tsx -> ./pages/GamesCatalog",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_GamesCatalog_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/Login": {
+    "id": "src/App.tsx -> ./pages/Login",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Login_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/Orders": {
+    "id": "src/App.tsx -> ./pages/Orders",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Orders_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/PaymentCallback": {
+    "id": "src/App.tsx -> ./pages/PaymentCallback",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_PaymentCallback_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/PaymentMethods": {
+    "id": "src/App.tsx -> ./pages/PaymentMethods",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_PaymentMethods_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/Privacy": {
+    "id": "src/App.tsx -> ./pages/Privacy",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Privacy_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/Refund": {
+    "id": "src/App.tsx -> ./pages/Refund",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Refund_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/SearchPage": {
+    "id": "src/App.tsx -> ./pages/SearchPage",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_SearchPage_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/SignUp": {
+    "id": "src/App.tsx -> ./pages/SignUp",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_SignUp_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/Support": {
+    "id": "src/App.tsx -> ./pages/Support",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Support_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/Terms": {
+    "id": "src/App.tsx -> ./pages/Terms",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Terms_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/WhyChooseUs": {
+    "id": "src/App.tsx -> ./pages/WhyChooseUs",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_WhyChooseUs_tsx.js"
+    ]
+  },
+  "src/App.tsx -> ./pages/Wishlist": {
+    "id": "src/App.tsx -> ./pages/Wishlist",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Wishlist_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/AppsCatalog": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/AppsCatalog",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_AppsCatalog_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/Cart": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/Cart",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Cart_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/Dashboard": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/Dashboard",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Dashboard_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/FAQ": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/FAQ",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_FAQ_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/GameDetails": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/GameDetails",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_GameDetails_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/GamesCatalog": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/GamesCatalog",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_GamesCatalog_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/Home": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/Home",
+    "files": []
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/Orders": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/Orders",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Orders_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/PaymentMethods": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/PaymentMethods",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_PaymentMethods_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/SearchPage": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/SearchPage",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_SearchPage_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/Support": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/Support",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Support_tsx.js"
+    ]
+  },
+  "src/lib/prefetchRoutes.ts -> ../pages/Wishlist": {
+    "id": "src/lib/prefetchRoutes.ts -> ../pages/Wishlist",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_pages_Wishlist_tsx.js"
+    ]
+  }
+}
