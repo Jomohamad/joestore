@@ -79,7 +79,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               exit={{ x: language === 'ar' ? '100%' : '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={cn(
-                'fixed top-0 bottom-0 w-80 bg-creo-card border-r border-creo-border z-50 shadow-2xl flex flex-col',
+                'fixed top-0 bottom-0 w-[min(20rem,92vw)] bg-creo-card border-r border-creo-border z-50 shadow-2xl flex flex-col',
                 language === 'ar' ? 'right-0 border-l border-r-0' : 'left-0',
               )}
             >

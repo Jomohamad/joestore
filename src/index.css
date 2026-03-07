@@ -23,6 +23,10 @@
   --card-min-md: 220px;
   --card-radius: 0.9rem;
   --card-media-ratio: 16 / 9;
+  --fluid-h1: clamp(1.5rem, 4vw, 3rem);
+  --fluid-h2: clamp(1.25rem, 3vw, 2.25rem);
+  --fluid-h3: clamp(1rem, 2.1vw, 1.5rem);
+  --fluid-text: clamp(0.875rem, 1.5vw, 1rem);
 }
 
 .cards-grid-responsive {
@@ -70,6 +74,88 @@
 body {
   background-color: var(--color-creo-bg);
   color: var(--color-creo-text);
+}
+
+* {
+  min-width: 0;
+}
+
+html,
+body,
+#__next {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+h1,
+.fluid-h1 {
+  font-size: var(--fluid-h1);
+}
+
+h2,
+.fluid-h2 {
+  font-size: var(--fluid-h2);
+}
+
+h3,
+.fluid-h3 {
+  font-size: var(--fluid-h3);
+}
+
+p,
+li {
+  font-size: var(--fluid-text);
+}
+
+button,
+[role='button'] {
+  touch-action: manipulation;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-creo-accent);
+  outline-offset: 2px;
+}
+
+.responsive-table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 37%, #1a1a1a 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
 }
 
 @keyframes marquee {
@@ -122,7 +208,7 @@ body {
 
 .home-cards-track {
   --home-cards-gap: clamp(0.5rem, 1vw, 0.85rem);
-  --home-cards-visible: 1.5;
+  --home-cards-visible: 1.2;
   gap: var(--home-cards-gap);
   scroll-padding-inline: 1rem;
   overscroll-behavior-x: contain;
@@ -169,7 +255,38 @@ body {
   }
 }
 
-@media (min-width: 640px) {
+@media (max-width: 480px) {
+  .home-cards-track {
+    --home-cards-visible: 1;
+  }
+
+  .container {
+    padding-inline: 0.875rem;
+  }
+}
+
+@media (max-width: 414px) {
+  .container {
+    padding-inline: 0.75rem;
+  }
+}
+
+@media (max-width: 375px) {
+  :root {
+    --fluid-h1: clamp(1.35rem, 6vw, 2.25rem);
+    --fluid-h2: clamp(1.1rem, 5vw, 1.8rem);
+    --fluid-h3: clamp(0.95rem, 4vw, 1.3rem);
+    --fluid-text: clamp(0.82rem, 3.4vw, 0.95rem);
+  }
+}
+
+@media (max-width: 320px) {
+  .container {
+    padding-inline: 0.625rem;
+  }
+}
+
+@media (min-width: 768px) {
   .home-cards-track {
     --home-cards-visible: 2.3;
   }
@@ -177,6 +294,32 @@ body {
 
 @media (min-width: 1024px) {
   .home-cards-track {
-    --home-cards-visible: 4.5;
+    --home-cards-visible: 3.2;
+  }
+}
+
+@media (min-width: 1280px) {
+  .home-cards-track {
+    --home-cards-visible: 3.6;
+  }
+}
+
+@media (min-width: 1440px) {
+  .home-cards-track {
+    --home-cards-visible: 4.1;
+  }
+}
+
+@media (min-width: 1920px) {
+  .home-cards-track {
+    --home-cards-visible: 4.8;
+  }
+}
+
+@media (max-width: 768px) {
+  input:not([type='checkbox']):not([type='radio']),
+  textarea,
+  select {
+    font-size: 16px;
   }
 }

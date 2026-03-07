@@ -21,6 +21,14 @@ const setMemory = (key: string, value: string, ttlSeconds: number) => {
   });
 };
 
+const deleteMemoryByPrefix = (prefix: string) => {
+  for (const key of memoryCache.keys()) {
+    if (key.startsWith(prefix)) {
+      memoryCache.delete(key);
+    }
+  }
+};
+
 const readJson = async <T>(key: string): Promise<T | null> => {
   const redis = getRedisClient();
   if (redis) {
@@ -52,13 +60,52 @@ const writeJson = async (key: string, value: unknown, ttlSeconds: number) => {
   setMemory(key, json, ttlSeconds);
 };
 
+const deleteByPrefix = async (prefix: string) => {
+  const redis = getRedisClient();
+  if (redis) {
+    let cursor = '0';
+    const pattern = `${prefix}*`;
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+      if (keys.length) {
+        await redis.del(...keys);
+      }
+    } while (cursor !== '0');
+    return;
+  }
+
+  deleteMemoryByPrefix(prefix);
+};
+
 export const cacheManager = {
+  async getCachedJson<T>(key: string) {
+    return readJson<T>(key);
+  },
+
+  async setCachedJson(key: string, value: unknown, ttlSeconds = 60) {
+    await writeJson(key, value, ttlSeconds);
+  },
+
+  async invalidateByPrefix(prefix: string) {
+    await deleteByPrefix(prefix);
+  },
+
   async getCachedProducts(gameId?: string) {
     return readJson<unknown[]>(`cache:products:${gameId || 'all'}`);
   },
 
   async setCachedProducts(products: unknown[], gameId?: string, ttlSeconds = 90) {
     await writeJson(`cache:products:${gameId || 'all'}`, products, ttlSeconds);
+  },
+
+  async invalidateCachedProducts(gameId?: string) {
+    if (gameId) {
+      await deleteByPrefix(`cache:products:${gameId}`);
+      await deleteByPrefix('cache:products:all');
+      return;
+    }
+    await deleteByPrefix('cache:products:');
   },
 
   async cacheProviderPrices(productId: string, prices: unknown, ttlSeconds = 180) {

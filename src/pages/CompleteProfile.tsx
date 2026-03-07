@@ -233,7 +233,7 @@ export default function CompleteProfile() {
     <div className="flex-1 bg-creo-bg flex items-center justify-center py-10 px-4 sm:px-6">
       <div className="w-full max-w-md rounded-2xl border border-creo-border bg-creo-card shadow-2xl">
         <div className="p-7 border-b border-creo-border">
-          <h2 className="text-3xl font-display font-bold text-white">{language === 'ar' ? 'إكمال البيانات' : 'Complete Your Profile'}</h2>
+          <h2 className="text-[clamp(1.4rem,3.8vw,2rem)] font-display font-bold text-white">{language === 'ar' ? 'إكمال البيانات' : 'Complete Your Profile'}</h2>
           <p className="mt-2 text-sm text-creo-text-sec">{language === 'ar' ? 'خطوة أخيرة للبدء' : 'Just a few more details to get started'}</p>
         </div>
 

@@ -14,9 +14,10 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   if (req.method === 'PATCH' || req.method === 'POST' || req.method === 'PUT') {
     const provider = String(req.body?.provider || '').trim().toLowerCase();
     const enabled = req.body?.enabled !== false;
+    const priority = req.body?.priority !== undefined ? Number(req.body.priority) : undefined;
     if (!provider) throw new ApiError(400, 'provider is required', 'VALIDATION_ERROR');
 
-    const row = await ordersService.setProviderEnabled(provider, enabled);
+    const row = await ordersService.setProviderEnabled(provider, enabled, priority);
     return res.status(200).json(row);
   }
 

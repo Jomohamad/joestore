@@ -220,9 +220,17 @@ const safeGetProductById = async (productId: string) => {
 
 export const ordersService = {
   async listGames() {
+    const cacheKey = 'cache:games:list';
+    const cached = await cacheManager.getCachedJson<Record<string, unknown>[]>(cacheKey);
+    if (Array.isArray(cached)) {
+      return cached;
+    }
+
     const { data, error } = await supabaseAdmin.from('games').select('*').order('name', { ascending: true });
     if (error) throw new ApiError(500, error.message, 'GAMES_FETCH_FAILED');
-    return (data || []).filter((game) => (game as Record<string, unknown>).active !== false);
+    const filtered = (data || []).filter((game) => (game as Record<string, unknown>).active !== false);
+    await cacheManager.setCachedJson(cacheKey, filtered, 90);
+    return filtered;
   },
 
   async getGameByIdentifier(identifier: string) {
@@ -713,6 +721,7 @@ export const ordersService = {
   },
 
   async deleteAdminProduct(productId: string) {
+    const existing = await supabaseAdmin.from('products').select('id, game_id').eq('id', productId).maybeSingle();
     const result = await supabaseAdmin.from('products').delete().eq('id', productId).select('id').maybeSingle();
     if (result.error) {
       if (tableOrColumnMissing(result.error.code)) {
@@ -720,6 +729,14 @@ export const ordersService = {
       }
       throw new ApiError(500, result.error.message, 'ADMIN_PRODUCT_DELETE_FAILED');
     }
+
+    if (existing.data?.game_id) {
+      await cacheManager.invalidateCachedProducts(String(existing.data.game_id));
+    } else {
+      await cacheManager.invalidateCachedProducts();
+    }
+    await cacheManager.invalidateByPrefix('cache:api:public-products');
+
     await logsService.write('admin.product.delete', 'Admin deleted product', { productId });
     return Boolean(result.data?.id);
   },
@@ -728,7 +745,7 @@ export const ordersService = {
     const offset = Math.max(0, (page - 1) * limit);
     const rows = await supabaseAdmin
       .from('users')
-      .select('id, email, username, role, created_at')
+      .select('id, email, username, role, is_blocked, fraud_risk_score, created_at')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -741,7 +758,9 @@ export const ordersService = {
     if (!q) return rows.data || [];
 
     return (rows.data || []).filter((row) => {
-      const haystack = [row.id, row.email, row.username, row.role].map((v) => String(v || '').toLowerCase()).join(' ');
+      const haystack = [row.id, row.email, row.username, row.role, row.is_blocked]
+        .map((v) => String(v || '').toLowerCase())
+        .join(' ');
       return haystack.includes(q);
     });
   },
@@ -799,6 +818,9 @@ export const ordersService = {
       throw new ApiError(500, result.error.message, 'ADMIN_GAME_UPSERT_FAILED');
     }
 
+    await cacheManager.invalidateByPrefix('cache:games:');
+    await cacheManager.invalidateByPrefix('cache:api:public-games');
+
     await logsService.write('admin.game.upsert', 'Admin upserted game', { id, name: input.name });
     return result.data;
   },
@@ -843,6 +865,9 @@ export const ordersService = {
       }
       throw new ApiError(500, result.error.message, 'ADMIN_PRODUCT_UPSERT_FAILED');
     }
+
+    await cacheManager.invalidateCachedProducts(payload.game_id);
+    await cacheManager.invalidateByPrefix('cache:api:public-products');
 
     await logsService.write('admin.product.upsert', 'Admin upserted product', {
       id: payload.id,
@@ -945,12 +970,29 @@ export const ordersService = {
     return payload;
   },
 
-  async setProviderEnabled(provider: string, enabled: boolean) {
+  async listAdminPricingRules(page = 1, limit = 300) {
+    const offset = Math.max(0, (page - 1) * limit);
+    const rows = await supabaseAdmin
+      .from('pricing_rules')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (rows.error) {
+      if (tableOrColumnMissing(rows.error.code)) return [];
+      throw new ApiError(500, rows.error.message, 'ADMIN_PRICING_RULES_FETCH_FAILED');
+    }
+
+    return rows.data || [];
+  },
+
+  async setProviderEnabled(provider: string, enabled: boolean, priority?: number) {
     const normalized = String(provider || '').trim().toLowerCase();
     const result = await supabaseAdmin.from('provider_health').upsert(
       {
         provider: normalized,
         enabled,
+        priority: Number.isFinite(Number(priority)) ? Number(priority) : undefined,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'provider' },
@@ -963,11 +1005,250 @@ export const ordersService = {
       throw new ApiError(500, result.error.message, 'ADMIN_PROVIDER_HEALTH_UPDATE_FAILED');
     }
 
+    await cacheManager.invalidateByPrefix('cache:api:public-providers');
+
     await logsService.write('admin.provider.enabled', 'Admin changed provider enabled flag', {
       provider: normalized,
       enabled,
+      priority: Number.isFinite(Number(priority)) ? Number(priority) : null,
     });
 
-    return { provider: normalized, enabled };
+    return { provider: normalized, enabled, priority: Number.isFinite(Number(priority)) ? Number(priority) : null };
+  },
+
+  async setUserBlocked(userId: string, blocked: boolean) {
+    const result = await supabaseAdmin
+      .from('users')
+      .update({ is_blocked: blocked })
+      .eq('id', userId)
+      .select('id, email, username, role, is_blocked, fraud_risk_score, created_at')
+      .maybeSingle();
+
+    if (result.error || !result.data) {
+      throw new ApiError(500, result.error?.message || 'Failed to update user block status', 'ADMIN_USER_BLOCK_UPDATE_FAILED');
+    }
+
+    await logsService.write('admin.user.block', 'Admin updated user block status', {
+      userId,
+      blocked,
+    });
+
+    return result.data;
+  },
+
+  async adjustUserFraudRisk(userId: string, delta: number) {
+    const current = await supabaseAdmin.from('users').select('fraud_risk_score').eq('id', userId).maybeSingle();
+    if (current.error || !current.data) {
+      throw new ApiError(500, current.error?.message || 'User not found', 'ADMIN_USER_FRAUD_USER_NOT_FOUND');
+    }
+
+    const nextScore = Math.max(0, Number(current.data.fraud_risk_score || 0) + Number(delta || 0));
+    const updated = await supabaseAdmin
+      .from('users')
+      .update({ fraud_risk_score: nextScore })
+      .eq('id', userId)
+      .select('id, email, username, role, is_blocked, fraud_risk_score, created_at')
+      .maybeSingle();
+
+    if (updated.error || !updated.data) {
+      throw new ApiError(500, updated.error?.message || 'Failed to update user risk', 'ADMIN_USER_FRAUD_UPDATE_FAILED');
+    }
+
+    await logsService.write('admin.user.risk', 'Admin adjusted user fraud risk', {
+      userId,
+      delta,
+      risk_score: nextScore,
+    });
+
+    return updated.data;
+  },
+
+  async listAdminSettings() {
+    const rows = await supabaseAdmin.from('settings').select('*').order('key', { ascending: true });
+    if (rows.error) {
+      if (tableOrColumnMissing(rows.error.code)) return [];
+      throw new ApiError(500, rows.error.message, 'ADMIN_SETTINGS_FETCH_FAILED');
+    }
+    return rows.data || [];
+  },
+
+  async upsertAdminSetting(input: {
+    key: string;
+    value: unknown;
+    description?: string | null;
+  }) {
+    const payload = {
+      key: String(input.key || '').trim(),
+      value: input.value ?? {},
+      description: input.description || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (!payload.key) {
+      throw new ApiError(400, 'key is required', 'ADMIN_SETTING_KEY_REQUIRED');
+    }
+
+    const result = await supabaseAdmin.from('settings').upsert(payload, {
+      onConflict: 'key',
+      ignoreDuplicates: false,
+    }).select('*').maybeSingle();
+
+    if (result.error || !result.data) {
+      if (tableOrColumnMissing(result.error?.code)) {
+        throw new ApiError(500, 'settings table is missing. Run latest migration.', 'SETTINGS_TABLE_MISSING');
+      }
+      throw new ApiError(500, result.error?.message || 'Failed to update setting', 'ADMIN_SETTINGS_UPDATE_FAILED');
+    }
+
+    await logsService.write('admin.settings.update', 'Admin updated system setting', {
+      key: payload.key,
+    });
+
+    return result.data;
+  },
+
+  async listAdminApiMonitor() {
+    const [health, failures, transactions] = await Promise.all([
+      this.listAdminProviderHealth(),
+      supabaseAdmin.from('provider_failures').select('provider, created_at').order('created_at', { ascending: false }).limit(500),
+      supabaseAdmin.from('transactions').select('provider, status, created_at').order('created_at', { ascending: false }).limit(1000),
+    ]);
+
+    const failureRows = failures.error ? [] : failures.data || [];
+    const transactionRows = transactions.error ? [] : transactions.data || [];
+
+    const byProvider = new Map<string, {
+      provider: string;
+      success: number;
+      failed: number;
+      total: number;
+      responseTimeMs: number;
+      lastFailureAt?: string | null;
+      enabled?: boolean;
+      priority?: number | null;
+    }>();
+
+    for (const row of health as Array<Record<string, unknown>>) {
+      const provider = String(row.provider || '').toLowerCase();
+      byProvider.set(provider, {
+        provider,
+        success: 0,
+        failed: 0,
+        total: 0,
+        responseTimeMs: Number(row.last_response_ms || 0),
+        lastFailureAt: null,
+        enabled: row.enabled !== false,
+        priority: Number.isFinite(Number(row.priority)) ? Number(row.priority) : null,
+      });
+    }
+
+    for (const row of transactionRows as Array<Record<string, unknown>>) {
+      const provider = String(row.provider || '').toLowerCase();
+      const current = byProvider.get(provider) || {
+        provider,
+        success: 0,
+        failed: 0,
+        total: 0,
+        responseTimeMs: 0,
+        lastFailureAt: null,
+        enabled: true,
+        priority: null,
+      };
+
+      current.total += 1;
+      if (String(row.status || '').toLowerCase().includes('fail')) {
+        current.failed += 1;
+      } else {
+        current.success += 1;
+      }
+
+      byProvider.set(provider, current);
+    }
+
+    for (const row of failureRows as Array<Record<string, unknown>>) {
+      const provider = String(row.provider || '').toLowerCase();
+      const current = byProvider.get(provider) || {
+        provider,
+        success: 0,
+        failed: 0,
+        total: 0,
+        responseTimeMs: 0,
+        lastFailureAt: null,
+        enabled: true,
+        priority: null,
+      };
+      current.lastFailureAt = String(row.created_at || current.lastFailureAt || '');
+      byProvider.set(provider, current);
+    }
+
+    return {
+      providers: Array.from(byProvider.values()).map((item) => ({
+        ...item,
+        successRate: item.total > 0 ? Number(((item.success / item.total) * 100).toFixed(2)) : 0,
+        errorRate: item.total > 0 ? Number(((item.failed / item.total) * 100).toFixed(2)) : 0,
+      })),
+    };
+  },
+
+  async adminRefundOrder(orderId: string) {
+    const order = await this.getOrder(orderId);
+    await this.setOrderStatus(orderId, 'failed', {
+      provider_response: {
+        refund_requested_at: new Date().toISOString(),
+      },
+    });
+
+    const paymentId = String(order.payment_id || '').trim();
+    if (paymentId) {
+      await safeUpdatePaymentById(paymentId, {
+        status: 'failed',
+        raw_response: {
+          refunded_at: new Date().toISOString(),
+          source: 'admin',
+          refunded: true,
+        },
+      });
+    }
+
+    await logsService.write('admin.order.refund', 'Admin refunded order', { orderId });
+    return this.getOrder(orderId);
+  },
+
+  async adminCancelOrder(orderId: string) {
+    const updated = await this.setOrderStatus(orderId, 'failed', {
+      provider_response: {
+        canceled_at: new Date().toISOString(),
+        source: 'admin',
+      },
+    });
+    await logsService.write('admin.order.cancel', 'Admin canceled order', { orderId });
+    return updated;
+  },
+
+  async adminVerifyPayment(paymentId: string) {
+    const updated = await safeUpdatePaymentById(paymentId, {
+      status: 'paid',
+      raw_response: {
+        verified_at: new Date().toISOString(),
+        source: 'admin',
+      },
+    });
+    if (!updated) throw new ApiError(404, 'Payment not found', 'PAYMENT_NOT_FOUND');
+    await logsService.write('admin.payment.verify', 'Admin verified payment', { paymentId });
+    return updated;
+  },
+
+  async adminRefundPayment(paymentId: string) {
+    const updated = await safeUpdatePaymentById(paymentId, {
+      status: 'failed',
+      raw_response: {
+        refunded_at: new Date().toISOString(),
+        source: 'admin',
+        refunded: true,
+      },
+    });
+    if (!updated) throw new ApiError(404, 'Payment not found', 'PAYMENT_NOT_FOUND');
+    await logsService.write('admin.payment.refund', 'Admin refunded payment', { paymentId });
+    return updated;
   },
 };

@@ -145,7 +145,7 @@ export default function SignUp() {
         className="w-full max-w-md rounded-2xl border border-creo-border bg-creo-card shadow-2xl"
       >
         <div className="p-7 border-b border-creo-border">
-          <h1 className="text-3xl font-display font-bold text-white mb-2">{t('signup')}</h1>
+          <h1 className="text-[clamp(1.5rem,4vw,2rem)] font-display font-bold text-white mb-2">{t('signup')}</h1>
           <p className="text-sm text-creo-text-sec">{language === 'ar' ? 'أنشئ حسابك الآن' : 'Please fill this form to create an account'}</p>
         </div>
 

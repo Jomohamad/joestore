@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Trash2, ShoppingCart, ArrowRight, Tag, AlertCircle, Minus, Plus, CreditCard, Wallet, CircleDollarSign } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { cn } from '../lib/utils';
+import { cn, responsiveImageProps } from '../lib/utils';
 import { completeHostedCheckoutInSandbox, createOrder, validateCoupon } from '../services/api';
 
 type PaymentMethod = 'fawaterk' | 'wallet' | 'card' | 'paypal';
@@ -205,9 +205,9 @@ export default function Cart() {
   }
 
   return (
-    <div className="flex-1 bg-creo-bg py-12 md:py-16">
+    <div className="flex-1 bg-creo-bg py-12 md:py-16 pb-32 lg:pb-16">
       <div className="container mx-auto px-4 max-w-6xl">
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-8">{t('shopping_cart')}</h1>
+        <h1 className="text-[clamp(1.5rem,4vw,2.4rem)] font-display font-bold text-white mb-8">{t('shopping_cart')}</h1>
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 space-y-4">
@@ -222,7 +222,7 @@ export default function Cart() {
               <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-creo-card border border-creo-border rounded-2xl p-4 flex flex-col md:flex-row gap-4 md:gap-6 relative">
                 <div className="flex gap-4 flex-1">
                   <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden bg-creo-bg shrink-0 border border-creo-border">
-                    <img src={item.packageImage || item.gameImage} alt={item.gameName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <img {...responsiveImageProps(item.packageImage || item.gameImage, { kind: 'cover' })} alt={item.gameName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -239,7 +239,7 @@ export default function Cart() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setCartQuantity(item.gameId, item.packageId, item.accountIdentifier, item.quantity - 1)}
-                      className="w-8 h-8 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
+                      className="w-11 h-11 md:w-8 md:h-8 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
                       aria-label="Decrease quantity"
                     >
                       <Minus className="w-4 h-4" />
@@ -247,7 +247,7 @@ export default function Cart() {
                     <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
                     <button
                       onClick={() => setCartQuantity(item.gameId, item.packageId, item.accountIdentifier, item.quantity + 1)}
-                      className="w-8 h-8 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
+                      className="w-11 h-11 md:w-8 md:h-8 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
                       aria-label="Increase quantity"
                     >
                       <Plus className="w-4 h-4" />
@@ -263,7 +263,7 @@ export default function Cart() {
           </div>
 
           <div className="w-full lg:w-96 shrink-0">
-            <div className="bg-creo-card border border-creo-border rounded-2xl p-6 sticky top-24 space-y-6">
+            <div className="bg-creo-card border border-creo-border rounded-2xl p-4 sm:p-6 lg:sticky lg:top-24 space-y-6">
               <div>
                 <h3 className="text-sm font-bold text-white mb-3">{t('payment_method')}</h3>
                 <div className="space-y-2">
@@ -342,6 +342,8 @@ export default function Cart() {
                     value={walletPhone}
                     onChange={(e) => setWalletPhone(e.target.value)}
                     placeholder={language === 'ar' ? 'رقم هاتف المحفظة الإلكترونية' : 'Wallet phone number'}
+                    inputMode="tel"
+                    autoComplete="tel"
                     className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
                   />
                   <input
@@ -356,13 +358,14 @@ export default function Cart() {
 
               {selectedPayment === 'paypal' && (
                 <div className="rounded-xl border border-creo-border bg-creo-bg p-4 space-y-3">
-                  <input
-                    type="text"
-                    value={paypalId}
-                    onChange={(e) => setPaypalId(e.target.value)}
-                    placeholder={language === 'ar' ? 'PayPal ID' : 'PayPal account ID'}
-                    className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
-                  />
+                    <input
+                      type="text"
+                      value={paypalId}
+                      onChange={(e) => setPaypalId(e.target.value)}
+                      placeholder={language === 'ar' ? 'PayPal ID' : 'PayPal account ID'}
+                      autoComplete="email"
+                      className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
+                    />
                 </div>
               )}
 
@@ -385,6 +388,8 @@ export default function Cart() {
                         setCardNumber(chunks.join(' '));
                       }}
                       placeholder={language === 'ar' ? 'رقم البطاقة' : 'Card number'}
+                      inputMode="numeric"
+                      autoComplete="cc-number"
                       className="w-full bg-creo-bg-sec border border-creo-border rounded-md px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
                     />
 
@@ -401,6 +406,8 @@ export default function Cart() {
                           }
                         }}
                         placeholder={language === 'ar' ? 'MM/YY' : 'MM/YY'}
+                        inputMode="numeric"
+                        autoComplete="cc-exp"
                         className="w-full bg-creo-bg-sec border border-creo-border rounded-md px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
                       />
                       <input
@@ -408,6 +415,8 @@ export default function Cart() {
                         value={cardCvv}
                         onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
                         placeholder="CVV"
+                        inputMode="numeric"
+                        autoComplete="cc-csc"
                         className="w-full bg-creo-bg-sec border border-creo-border rounded-md px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
                       />
                     </div>
@@ -417,6 +426,7 @@ export default function Cart() {
                       value={cardHolder}
                       onChange={(e) => setCardHolder(e.target.value)}
                       placeholder={language === 'ar' ? 'اسم صاحب البطاقة' : 'Name on card'}
+                      autoComplete="cc-name"
                       className="w-full bg-creo-bg-sec border border-creo-border rounded-md px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
                     />
                   </div>
@@ -445,7 +455,7 @@ export default function Cart() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <input
                             type="text"
                             value={couponCode}
@@ -459,7 +469,7 @@ export default function Cart() {
                             placeholder={language === 'ar' ? 'أدخل الكود' : 'Enter code'}
                             className={cn('flex-1 bg-creo-bg border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50 transition-all font-mono uppercase', couponError ? 'border-red-500/50' : 'border-creo-border')}
                           />
-                          <button onClick={handleApplyCoupon} disabled={!couponCode || isValidatingCoupon} className="bg-creo-bg-sec hover:bg-creo-border text-white px-4 rounded-xl font-medium text-sm transition-colors disabled:opacity-50">
+                          <button onClick={handleApplyCoupon} disabled={!couponCode || isValidatingCoupon} className="min-h-11 w-full sm:w-auto bg-creo-bg-sec hover:bg-creo-border text-white px-4 rounded-xl font-medium text-sm transition-colors disabled:opacity-50">
                             {isValidatingCoupon ? '...' : language === 'ar' ? 'تطبيق' : 'Apply'}
                           </button>
                         </div>
@@ -503,7 +513,7 @@ export default function Cart() {
                 <button
                   onClick={handleCheckout}
                   disabled={isCheckingOut}
-                  className={cn('w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2', isCheckingOut ? 'bg-creo-accent/50 text-black cursor-wait' : 'bg-creo-accent hover:bg-white text-black')}
+                  className={cn('hidden lg:flex w-full py-4 rounded-xl font-bold transition-all items-center justify-center gap-2', isCheckingOut ? 'bg-creo-accent/50 text-black cursor-wait' : 'bg-creo-accent hover:bg-white text-black')}
                 >
                   {isCheckingOut ? (
                     <>
@@ -519,6 +529,25 @@ export default function Cart() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-creo-border bg-creo-card/95 backdrop-blur-md px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="container mx-auto flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-creo-text-sec">{t('total')}</p>
+            <p className="text-lg font-bold text-creo-accent">{formatPrice(total)}</p>
+          </div>
+          <button
+            onClick={handleCheckout}
+            disabled={isCheckingOut}
+            className={cn(
+              'min-h-11 px-5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap',
+              isCheckingOut ? 'bg-creo-accent/50 text-black cursor-wait' : 'bg-creo-accent hover:bg-white text-black',
+            )}
+          >
+            {isCheckingOut ? t('processing') : t('checkout')}
+          </button>
         </div>
       </div>
     </div>

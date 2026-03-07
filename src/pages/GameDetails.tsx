@@ -4,9 +4,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages } from '../services/api';
 import { Game, Package } from '../types';
 import { ShieldCheck, CheckCircle2, X, Minus, Plus, Heart, BadgeCheck } from 'lucide-react';
-import { cn, imgSrc } from '../lib/utils';
+import { cn, responsiveImageProps } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
+import { useSsrData } from '../context/SsrDataContext';
 
 const getDiscountedPrice = (pkg: Package) => {
   const basePrice = Number(pkg.price || 0);
@@ -34,39 +35,78 @@ const getDiscountedPrice = (pkg: Package) => {
   };
 };
 
-export default function GameDetails() {
+type GameDetailsProps = {
+  initialGame?: Game | null;
+  initialPackages?: Package[];
+  initialGameIdentifier?: string;
+};
+
+export default function GameDetails({ initialGame, initialPackages, initialGameIdentifier }: GameDetailsProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addToCart, t, language, formatPrice, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+  const { gameDetails } = useSsrData();
 
-  const [game, setGame] = useState<Game | null>(null);
-  const [packages, setPackages] = useState<Package[]>([]);
-  const [loading, setLoading] = useState(true);
+  const requestedId = String(initialGameIdentifier || id || '').trim();
+  const preloaded = requestedId ? gameDetails?.[requestedId] : undefined;
+  const effectiveInitialGame = useMemo(() => initialGame || preloaded?.game || null, [initialGame, preloaded]);
+  const effectiveInitialPackages = useMemo(() => initialPackages || preloaded?.packages || [], [initialPackages, preloaded]);
+  const hasInitialData = Boolean(effectiveInitialGame && (initialGame || preloaded));
+
+  const [game, setGame] = useState<Game | null>(hasInitialData ? effectiveInitialGame : null);
+  const [packages, setPackages] = useState<Package[]>(hasInitialData ? effectiveInitialPackages : []);
+  const [loading, setLoading] = useState(!hasInitialData);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showLoginError, setShowLoginError] = useState(false);
-  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
-  const [packageQuantities, setPackageQuantities] = useState<Record<number, number>>({});
+  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(
+    hasInitialData && effectiveInitialPackages.length ? effectiveInitialPackages[0].id : null,
+  );
+  const [packageQuantities, setPackageQuantities] = useState<Record<number, number>>(() => {
+    if (!hasInitialData || !effectiveInitialPackages.length) return {};
+    const seeded: Record<number, number> = {};
+    for (const pkg of effectiveInitialPackages) {
+      seeded[pkg.id] = 1;
+    }
+    return seeded;
+  });
   const [accountIdentifier, setAccountIdentifier] = useState('');
 
   useEffect(() => {
-    if (!id) return;
+    if (!requestedId) return;
+
+    const seedSelection = (rows: Package[]) => {
+      if (rows.length === 0) {
+        setSelectedPackageId(null);
+        setPackageQuantities({});
+        return;
+      }
+
+      setSelectedPackageId((prev) => prev ?? rows[0].id);
+      const initialQuantities: Record<number, number> = {};
+      for (const pkg of rows) {
+        initialQuantities[pkg.id] = 1;
+      }
+      setPackageQuantities(initialQuantities);
+    };
+
+    if (hasInitialData && effectiveInitialGame) {
+      setGame(effectiveInitialGame);
+      setPackages(effectiveInitialPackages);
+      seedSelection(effectiveInitialPackages);
+      setLoading(false);
+      return;
+    }
 
     const loadData = async () => {
       try {
-        const [gameData, packagesData] = await Promise.all([fetchGameDetails(id), fetchGamePackages(id)]);
+        setLoading(true);
+        setError(null);
+        const [gameData, packagesData] = await Promise.all([fetchGameDetails(requestedId), fetchGamePackages(requestedId)]);
         setGame(gameData);
         setPackages(packagesData);
-
-        if (packagesData.length > 0) {
-          setSelectedPackageId(packagesData[0].id);
-          const initialQuantities: Record<number, number> = {};
-          for (const pkg of packagesData) {
-            initialQuantities[pkg.id] = 1;
-          }
-          setPackageQuantities(initialQuantities);
-        }
+        seedSelection(packagesData);
       } catch {
         setError(t('failed_load_details'));
       } finally {
@@ -75,7 +115,7 @@ export default function GameDetails() {
     };
 
     void loadData();
-  }, [id, t]);
+  }, [requestedId, t, hasInitialData, effectiveInitialGame, effectiveInitialPackages]);
 
   const selectedPackage = useMemo(
     () => packages.find((pkg) => pkg.id === selectedPackageId) || null,
@@ -162,7 +202,7 @@ export default function GameDetails() {
   }
 
   return (
-    <div className="flex-1 bg-creo-bg pb-20 md:pb-24 relative">
+    <div className="flex-1 bg-creo-bg pb-32 md:pb-24 relative">
       <AnimatePresence>
         {showSuccess && (
           <motion.div
@@ -207,14 +247,14 @@ export default function GameDetails() {
 
       <div className="relative h-48 md:h-64 lg:h-80 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-creo-bg-sec/50 via-creo-bg/80 to-creo-bg z-10" />
-        <img src={imgSrc(game.image_url)} alt={game.name} className="w-full h-full object-cover opacity-40 blur-sm" referrerPolicy="no-referrer" />
+        <img {...responsiveImageProps(game.image_url, { kind: 'hero', lazy: false })} alt={game.name} className="w-full h-full object-cover opacity-40 blur-sm" referrerPolicy="no-referrer" />
         <div className="absolute bottom-0 left-0 w-full z-20 pb-6 md:pb-8">
           <div className="container mx-auto px-4 flex items-end gap-4 md:gap-6">
             <div className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-xl md:rounded-2xl overflow-hidden border-2 md:border-4 border-creo-bg shadow-2xl shrink-0 bg-creo-bg-sec">
-              <img src={imgSrc(game.image_url)} alt={game.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img {...responsiveImageProps(game.image_url, { kind: 'cover' })} alt={game.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <div className="mb-1 md:mb-2 flex-1">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
+              <h1 className="text-[clamp(1.35rem,3.8vw,2.6rem)] font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
               <div className="flex items-center gap-1.5 text-xs md:text-sm text-creo-text-sec italic">
                 <span>{game.publisher}</span>
                 <BadgeCheck className="w-3.5 h-3.5 md:w-4 md:h-4 text-creo-accent not-italic" />
@@ -262,7 +302,7 @@ export default function GameDetails() {
 
               <button
                 onClick={handleConfirmAddToCart}
-                className="w-full bg-creo-accent hover:bg-white text-black font-bold py-3 rounded-xl transition-colors"
+                className="hidden md:block w-full min-h-12 bg-creo-accent hover:bg-white text-black font-bold py-3 rounded-xl transition-colors"
               >
                 {language === 'ar' ? 'تأكيد الإضافة للسلة' : 'Confirm Add to Cart'}
               </button>
@@ -297,7 +337,7 @@ export default function GameDetails() {
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         <div className="w-24 md:w-28 aspect-video rounded-xl overflow-hidden bg-creo-bg-sec border border-creo-border shrink-0">
-                          <img src={imgSrc(pkg.image_url || game.image_url)} alt={`${game.name} package`} className="w-full h-full object-fill" referrerPolicy="no-referrer" />
+                          <img {...responsiveImageProps(pkg.image_url || game.image_url, { kind: 'card' })} alt={`${game.name} package`} className="w-full h-full object-fill" referrerPolicy="no-referrer" />
                         </div>
 
                         <div className="min-w-0 flex-1">
@@ -326,7 +366,7 @@ export default function GameDetails() {
                                 e.stopPropagation();
                                 handleQuantityChange(pkg.id, -1);
                               }}
-                              className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
+                              className="w-11 h-11 md:w-9 md:h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
                               aria-label="Decrease quantity"
                             >
                               <Minus className="w-4 h-4" />
@@ -340,7 +380,7 @@ export default function GameDetails() {
                                 e.stopPropagation();
                                 handleQuantityChange(pkg.id, 1);
                               }}
-                              className="w-9 h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
+                              className="w-11 h-11 md:w-9 md:h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
                               aria-label="Increase quantity"
                             >
                               <Plus className="w-4 h-4" />
@@ -354,6 +394,23 @@ export default function GameDetails() {
               </div>
             )}
           </section>
+        </div>
+      </div>
+
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-creo-border bg-creo-card/95 backdrop-blur-md px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(0,0,0,0.45)]">
+        <div className="container mx-auto space-y-2">
+          <p className="text-xs text-creo-text-sec">
+            {language === 'ar' ? 'الباقة المختارة' : 'Selected'}:{' '}
+            <span className="text-white font-semibold">
+              {selectedPackage ? `${selectedPackage.amount} ${game.currency_name} x ${selectedQuantity}` : '-'}
+            </span>
+          </p>
+          <button
+            onClick={handleConfirmAddToCart}
+            className="w-full min-h-12 rounded-xl bg-creo-accent hover:bg-white text-black font-bold transition-colors"
+          >
+            {language === 'ar' ? 'اشحن الآن' : 'Top Up Now'}
+          </button>
         </div>
       </div>
     </div>

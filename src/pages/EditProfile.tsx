@@ -214,7 +214,7 @@ export default function EditProfile() {
   return (
     <div className="flex-1 bg-creo-bg py-10 md:py-14">
       <div className="container mx-auto px-4 max-w-3xl">
-        <h1 className="text-2xl md:text-4xl font-display font-bold text-white mb-6">{language === 'ar' ? 'تعديل الملف الشخصي' : 'Edit Profile'}</h1>
+        <h1 className="text-[clamp(1.4rem,4vw,2.4rem)] font-display font-bold text-white mb-6">{language === 'ar' ? 'تعديل الملف الشخصي' : 'Edit Profile'}</h1>
 
         {error && (
           <div className="mb-5 rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-300 flex items-center gap-2">

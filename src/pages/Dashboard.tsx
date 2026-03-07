@@ -16,6 +16,7 @@ import {
   upsertAdminGame,
   upsertAdminProduct,
 } from '../services/api';
+import { DashboardWidgetsSkeleton } from '../components/skeletons';
 
 interface AdminGame {
   id: string;
@@ -265,8 +266,10 @@ export default function Dashboard() {
 
   if (loading || isLoadingPanel) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-creo-accent/20 border-t-creo-accent rounded-full animate-spin" />
+      <div className="flex-1 bg-creo-bg py-12 md:py-16">
+        <div className="container mx-auto px-4">
+          <DashboardWidgetsSkeleton />
+        </div>
       </div>
     );
   }

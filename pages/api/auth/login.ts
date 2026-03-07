@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiError, methodNotAllowed, withErrorHandling } from '../../../src/lib/server/http';
-import { supabaseAnon } from '../../../src/lib/server/supabaseAdmin';
+import { supabaseAdmin, supabaseAnon } from '../../../src/lib/server/supabaseAdmin';
 import { buildAppUser, syncPublicUserFromAuth } from '../../../src/lib/server/users';
 import { enforceRateLimit } from '../../../src/lib/server/rateLimit';
 
@@ -22,6 +22,16 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   }
 
   await syncPublicUserFromAuth(data.user);
+
+  const userFlags = await supabaseAdmin
+    .from('users')
+    .select('is_blocked')
+    .eq('id', data.user.id)
+    .maybeSingle();
+  if (!userFlags.error && userFlags.data?.is_blocked) {
+    await supabaseAnon.auth.signOut({ scope: 'local' });
+    throw new ApiError(403, 'Account is blocked. Please contact support.', 'ACCOUNT_BLOCKED');
+  }
 
   res.status(200).json({
     accessToken: data.session.access_token,

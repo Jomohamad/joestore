@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Heart, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { imgSrc, cn } from '../lib/utils';
+import { responsiveImageProps, cn } from '../lib/utils';
 import { MouseEvent, useState } from 'react';
 import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 
@@ -30,7 +30,7 @@ export default function Wishlist() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
           <div>
-            <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-2 md:mb-4">{t('wishlist') || 'Wishlist'}</h1>
+            <h1 className="text-[clamp(1.6rem,5vw,3rem)] font-display font-bold text-white mb-2 md:mb-4">{t('wishlist') || 'Wishlist'}</h1>
             <p className="text-sm md:text-base text-creo-text-sec max-w-xl">{t('wishlist_desc') || 'Your collection of favorite games and apps.'}</p>
           </div>
         </div>
@@ -62,8 +62,9 @@ export default function Wishlist() {
             {scroll.scrollState.canScrollLeft && (
               <button
                 onClick={() => scroll.scroll(language === 'ar' ? 'right' : 'left')}
+                aria-label="Scroll wishlist left"
                 className={cn(
-                  'absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
+                  'absolute top-1/2 -translate-y-1/2 z-10 w-11 h-11 md:w-10 md:h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
                   language === 'ar' ? 'right-2 md:-right-4' : 'left-2 md:-left-4',
                 )}
               >
@@ -74,8 +75,9 @@ export default function Wishlist() {
             {scroll.scrollState.canScrollRight && (
               <button
                 onClick={() => scroll.scroll(language === 'ar' ? 'left' : 'right')}
+                aria-label="Scroll wishlist right"
                 className={cn(
-                  'absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
+                  'absolute top-1/2 -translate-y-1/2 z-10 w-11 h-11 md:w-10 md:h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
                   language === 'ar' ? 'left-2 md:-left-4' : 'right-2 md:-right-4',
                 )}
               >
@@ -109,11 +111,11 @@ export default function Wishlist() {
                   >
                     <Link
                       to={`/game/${game.id}`}
-                      className="group block relative aspect-video rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.35),inset_0_0_20px_rgba(255,215,0,0.12)]"
+                      className="group block relative aspect-video rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent active:scale-[0.99] transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.35),inset_0_0_20px_rgba(255,215,0,0.12)]"
                     >
                       <div className="absolute inset-0 bg-creo-bg">
                         <img
-                          src={imgSrc(game.image_url)}
+                          {...responsiveImageProps(game.image_url, { kind: 'card' })}
                           alt={game.name}
                           className="w-full h-full object-fill transform group-hover:scale-105 transition-transform duration-500 ease-out"
                           referrerPolicy="no-referrer"
@@ -122,7 +124,8 @@ export default function Wishlist() {
 
                         <button
                           onClick={(e) => handleRemove(e, game.id)}
-                          className={`absolute top-1.5 right-1.5 p-1.5 md:p-2 rounded-full backdrop-blur-md transition-all duration-300 z-30 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 ${
+                          aria-label={isConfirming ? 'Confirm remove from wishlist' : 'Remove from wishlist'}
+                          className={`absolute top-1.5 right-1.5 w-11 h-11 md:w-9 md:h-9 rounded-full backdrop-blur-md transition-all duration-300 z-30 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 ${
                             isConfirming ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-black/40 text-creo-accent hover:bg-red-500/20'
                           }`}
                         >

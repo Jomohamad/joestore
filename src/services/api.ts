@@ -559,7 +559,7 @@ export const upsertAdminProduct = async (payload: {
   price: number;
   currency: string;
   active: boolean;
-  provider?: 'reloadly' | 'gamesdrop';
+  provider?: 'reloadly' | 'gamesdrop' | 'unipin' | 'seagm' | 'driffle';
   image?: string | null;
 }): Promise<Record<string, unknown>> => {
   const headers = await getAuthHeaders();
@@ -657,6 +657,224 @@ export const deleteAdminProduct = async (productId: string): Promise<void> => {
   );
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(String(body?.error || 'Failed to delete product'));
+};
+
+export const fetchAdminProviderPrices = async (): Promise<Array<Record<string, unknown>>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/admin/provider-prices', { headers }, 10000);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch provider prices'));
+  return Array.isArray(body) ? body : [];
+};
+
+export const fetchAdminProviderHealth = async (): Promise<Array<Record<string, unknown>>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/admin/provider-health', { headers }, 10000);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch provider health'));
+  return Array.isArray(body) ? body : [];
+};
+
+export const updateAdminProviderHealth = async (payload: {
+  provider: string;
+  enabled?: boolean;
+  priority?: number;
+}): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/admin/provider-health',
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(payload),
+    },
+    10000,
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to update provider'));
+  return (body || {}) as Record<string, unknown>;
+};
+
+export const fetchAdminFraudAlerts = async (): Promise<Array<Record<string, unknown>>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/admin/fraud', { headers }, 10000);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch fraud alerts'));
+  return Array.isArray(body) ? body : [];
+};
+
+export const runAdminFraudAction = async (payload: {
+  action: 'block_user' | 'flag_order' | 'reduce_risk';
+  userId?: string;
+  orderId?: string;
+  riskDelta?: number;
+}): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/admin/fraud/actions',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(payload),
+    },
+    10000,
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to apply fraud action'));
+  return (body || {}) as Record<string, unknown>;
+};
+
+export const fetchAdminFailedOrders = async (): Promise<Array<Record<string, unknown>>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/admin/orders/failed', { headers }, 10000);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch failed orders'));
+  return Array.isArray(body) ? body : [];
+};
+
+export const upsertAdminPricingRule = async (payload: {
+  productId: string;
+  marginPercent: number;
+  minProfit?: number;
+  maxProfit?: number;
+}): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/admin/pricing-rules',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(payload),
+    },
+    10000,
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to save pricing rule'));
+  return (body || {}) as Record<string, unknown>;
+};
+
+export const fetchAdminPricingRules = async (): Promise<Array<Record<string, unknown>>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/admin/pricing-rules', { headers }, 10000);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch pricing rules'));
+  return Array.isArray(body) ? body : [];
+};
+
+export const fetchAdminApiMonitor = async (): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/admin/api-monitor', { headers }, 10000);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch API monitor'));
+  return (body || {}) as Record<string, unknown>;
+};
+
+export const fetchAdminSettings = async (): Promise<Array<Record<string, unknown>>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/admin/settings', { headers }, 10000);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch settings'));
+  return Array.isArray(body) ? body : [];
+};
+
+export const updateAdminSetting = async (payload: {
+  key: string;
+  value: unknown;
+  description?: string;
+}): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/admin/settings',
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(payload),
+    },
+    10000,
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to update setting'));
+  return (body || {}) as Record<string, unknown>;
+};
+
+export const blockAdminUser = async (payload: { userId: string; blocked: boolean }): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/admin/users/block',
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(payload),
+    },
+    10000,
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to update user block status'));
+  return (body || {}) as Record<string, unknown>;
+};
+
+export const refundAdminOrder = async (orderId: string): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/admin/orders/refund',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ orderId }),
+    },
+    10000,
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to refund order'));
+  return (body || {}) as Record<string, unknown>;
+};
+
+export const cancelAdminOrder = async (orderId: string): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/admin/orders/cancel',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ orderId }),
+    },
+    10000,
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to cancel order'));
+  return (body || {}) as Record<string, unknown>;
+};
+
+export const verifyAdminPayment = async (paymentId: string): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/admin/payments/verify',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ paymentId }),
+    },
+    10000,
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to verify payment'));
+  return (body || {}) as Record<string, unknown>;
+};
+
+export const refundAdminPayment = async (paymentId: string): Promise<Record<string, unknown>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/admin/payments/refund',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ paymentId }),
+    },
+    10000,
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to refund payment'));
+  return (body || {}) as Record<string, unknown>;
 };
 
 export const subscribeToUserOrders = async (

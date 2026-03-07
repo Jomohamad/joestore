@@ -4,6 +4,7 @@ import { Game, Promotion } from '../types';
 import { useStore } from '../context/StoreContext';
 import PromoCarousel from '../components/home/PromoCarousel';
 import HorizontalCatalogSection from '../components/home/HorizontalCatalogSection';
+import { HorizontalCardsSkeleton, SkeletonBlock } from '../components/skeletons';
 
 export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
@@ -58,8 +59,32 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <div className="w-12 h-12 border-4 border-creo-accent/20 border-t-creo-accent rounded-full animate-spin" />
+      <div className="flex-1 bg-creo-bg">
+        <section className="relative pt-4 pb-8 md:pt-8 md:pb-12">
+          <div className="container mx-auto px-4">
+            <SkeletonBlock className="h-[200px] sm:h-[250px] md:h-[360px] lg:h-[400px] rounded-2xl md:rounded-3xl" />
+          </div>
+        </section>
+
+        <section className="py-6 md:py-8">
+          <div className="container mx-auto px-4">
+            <div className="mb-6 md:mb-8 flex items-center justify-between">
+              <SkeletonBlock className="h-7 w-44" />
+              <SkeletonBlock className="h-4 w-20" />
+            </div>
+            <HorizontalCardsSkeleton count={6} />
+          </div>
+        </section>
+
+        <section className="py-6 md:py-8 border-t border-creo-border">
+          <div className="container mx-auto px-4">
+            <div className="mb-6 md:mb-8 flex items-center justify-between">
+              <SkeletonBlock className="h-7 w-44" />
+              <SkeletonBlock className="h-4 w-20" />
+            </div>
+            <HorizontalCardsSkeleton count={6} />
+          </div>
+        </section>
       </div>
     );
   }

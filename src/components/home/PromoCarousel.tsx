@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Promotion } from '../../types';
-import { cn, imgSrc } from '../../lib/utils';
+import { cn, responsiveImageProps } from '../../lib/utils';
 
 interface PromoCarouselProps {
   promotions: Promotion[];
@@ -36,7 +36,7 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
     <section className="relative pt-4 pb-8 md:pt-8 md:pb-12 overflow-hidden bg-creo-bg">
       <div className="container mx-auto px-4">
         <div
-          className="relative h-[250px] md:h-[400px] rounded-2xl md:rounded-3xl overflow-hidden border border-creo-border group"
+          className="relative h-[200px] sm:h-[250px] md:h-[360px] lg:h-[400px] rounded-2xl md:rounded-3xl overflow-hidden border border-creo-border group"
           onTouchStart={(e) => {
             setTouchEnd(null);
             setTouchStart(e.targetTouches[0].clientX);
@@ -61,7 +61,7 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
               className="absolute inset-0 bg-black"
             >
               <img
-                src={imgSrc(promo.image_url)}
+                {...responsiveImageProps(promo.image_url, { kind: 'hero', lazy: index !== activePromo })}
                 alt={`Promotion ${index + 1}`}
                 className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
                 referrerPolicy="no-referrer"
@@ -77,7 +77,8 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
                   e.preventDefault();
                   prevPromo();
                 }}
-                className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 opacity-65 md:opacity-0 md:group-hover:opacity-100"
+                aria-label="Previous promotion"
+                className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-11 h-11 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 opacity-65 md:opacity-0 md:group-hover:opacity-100"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
@@ -86,7 +87,8 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
                   e.preventDefault();
                   nextPromo();
                 }}
-                className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 opacity-65 md:opacity-0 md:group-hover:opacity-100"
+                aria-label="Next promotion"
+                className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-11 h-11 md:w-12 md:h-12 bg-black/30 hover:bg-black/60 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center text-white transition-all z-20 opacity-65 md:opacity-0 md:group-hover:opacity-100"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
@@ -98,6 +100,7 @@ export default function PromoCarousel({ promotions, language }: PromoCarouselPro
               <button
                 key={i}
                 onClick={() => setActivePromo(i)}
+                aria-label={`Go to promotion ${i + 1}`}
                 className={cn(
                   'w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-300',
                   activePromo === i ? 'bg-creo-accent w-6 md:w-8' : 'bg-white/30 hover:bg-white/50'

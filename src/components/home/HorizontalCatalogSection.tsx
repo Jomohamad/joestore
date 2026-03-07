@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { ShoppingCart, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { Game } from '../../types';
 import { useHorizontalScroll } from '../../hooks/useHorizontalScroll';
-import { cn, imgSrc } from '../../lib/utils';
+import { cn, responsiveImageProps } from '../../lib/utils';
 
 interface HorizontalCatalogSectionProps {
   id: string;
@@ -47,7 +47,7 @@ export default function HorizontalCatalogSection({
           transition={{ duration: 0.6, ease: 'easeOut' }}
           className="mb-6 md:mb-8 flex items-center justify-between gap-3"
         >
-          <h2 className="text-xl md:text-2xl font-display font-bold text-white">{title}</h2>
+          <h2 className="text-[clamp(1.1rem,2.6vw,1.5rem)] font-display font-bold text-white">{title}</h2>
           {viewMoreTo && (
             <Link
               to={viewMoreTo}
@@ -63,7 +63,7 @@ export default function HorizontalCatalogSection({
             <button
               onClick={() => scroll.scroll(language === 'ar' ? 'right' : 'left')}
               className={cn(
-                'absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
+                'absolute top-1/2 -translate-y-1/2 z-20 w-11 h-11 md:w-10 md:h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
                 language === 'ar' ? 'right-2 md:-right-4' : 'left-2 md:-left-4'
               )}
               aria-label="Scroll left"
@@ -76,7 +76,7 @@ export default function HorizontalCatalogSection({
             <button
               onClick={() => scroll.scroll(language === 'ar' ? 'left' : 'right')}
               className={cn(
-                'absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
+                'absolute top-1/2 -translate-y-1/2 z-20 w-11 h-11 md:w-10 md:h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
                 language === 'ar' ? 'left-2 md:-left-4' : 'right-2 md:-right-4'
               )}
               aria-label="Scroll right"
@@ -122,22 +122,21 @@ export default function HorizontalCatalogSection({
               >
                 <Link
                   to={`/game/${item.id}`}
-                  className="group block relative aspect-video rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.35),inset_0_0_20px_rgba(255,215,0,0.12)]"
+                  className="group block relative aspect-video rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent active:scale-[0.99] transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.35),inset_0_0_20px_rgba(255,215,0,0.12)]"
                   draggable={false}
                 >
                   <div className="absolute inset-0 bg-creo-bg">
                     <img
-                      src={imgSrc(item.image_url)}
+                      {...responsiveImageProps(item.image_url, { kind: 'card' })}
                       alt={item.name}
                       className="w-full h-full object-fill transform group-hover:scale-105 transition-transform duration-500 ease-out"
-                      loading="lazy"
                       referrerPolicy="no-referrer"
                       draggable={false}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <button
                       onClick={(e) => onToggleWishlist(e, item)}
-                      className="absolute top-1.5 right-1.5 z-20 p-1.5 md:p-2 rounded-full bg-black/40 text-white hover:bg-creo-accent transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                      className="absolute top-1.5 right-1.5 z-20 w-11 h-11 md:w-9 md:h-9 rounded-full bg-black/40 text-white hover:bg-creo-accent transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center justify-center"
                     >
                       <Heart className={isInWishlist(item.id) ? 'w-4 h-4 md:w-5 md:h-5 fill-creo-accent' : 'w-4 h-4 md:w-5 md:h-5'} />
                     </button>

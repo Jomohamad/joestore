@@ -785,3 +785,10 @@ create index if not exists provider_failures_provider_idx on public.provider_fai
 create index if not exists provider_health_updated_at_idx on public.provider_health(updated_at desc);
 
 alter table public.orders replica identity full;
+
+-- FK coverage indexes (lint/performance)
+create index if not exists orders_game_id_idx on public.orders(game_id);
+create index if not exists orders_package_id_idx on public.orders(package_id);
+create index if not exists provider_failures_order_id_idx on public.provider_failures(order_id);
+create index if not exists provider_failures_product_id_idx on public.provider_failures(product_id);
+create index if not exists wishlist_game_id_idx on public.wishlist(game_id);

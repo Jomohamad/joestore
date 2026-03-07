@@ -4,10 +4,19 @@ import { requireAdminUser } from '../../../../src/lib/server/auth';
 import { ordersService } from '../../../../src/lib/server/services/orders';
 
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'PATCH') {
-    return methodNotAllowed(res, ['POST', 'PUT', 'PATCH']);
-  }
   await requireAdminUser(req);
+
+  if (req.method === 'GET') {
+    const page = Number(req.query.page || 1);
+    const limit = Number(req.query.limit || 300);
+    const rows = await ordersService.listAdminPricingRules(page, limit);
+    res.status(200).json(rows);
+    return;
+  }
+
+  if (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'PATCH') {
+    return methodNotAllowed(res, ['GET', 'POST', 'PUT', 'PATCH']);
+  }
 
   const productId = String(req.body?.productId || req.body?.product_id || '').trim();
   const marginPercent = Number(req.body?.marginPercent ?? req.body?.margin_percent ?? 0);

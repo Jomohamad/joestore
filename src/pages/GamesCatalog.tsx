@@ -5,7 +5,8 @@ import { Heart, ShoppingCart } from 'lucide-react';
 import { fetchGames } from '../services/api';
 import { Game } from '../types';
 import { useStore } from '../context/StoreContext';
-import { imgSrc } from '../lib/utils';
+import { responsiveImageProps } from '../lib/utils';
+import { ProductGridSkeleton, SkeletonBlock } from '../components/skeletons';
 
 export default function GamesCatalog() {
   const { t, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
@@ -41,8 +42,13 @@ export default function GamesCatalog() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <div className="w-12 h-12 border-4 border-creo-accent/20 border-t-creo-accent rounded-full animate-spin" />
+      <div className="flex-1 bg-creo-bg py-10 md:py-14">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-6 md:mb-8">
+            <SkeletonBlock className="h-10 w-52" />
+          </div>
+          <ProductGridSkeleton count={8} />
+        </div>
       </div>
     );
   }
@@ -51,10 +57,10 @@ export default function GamesCatalog() {
     <div className="flex-1 bg-creo-bg py-10 md:py-14">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-4xl font-display font-bold text-white">{t('popular_games')}</h1>
+          <h1 className="text-[clamp(1.4rem,4vw,2.4rem)] font-display font-bold text-white">{t('popular_games')}</h1>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 md:gap-4">
           {items.map((item, index) => (
             <motion.div
               key={item.id}
@@ -65,11 +71,11 @@ export default function GamesCatalog() {
             >
               <Link
                 to={`/game/${item.id}`}
-                className="group block relative aspect-video rounded-xl overflow-hidden border border-creo-border bg-creo-card hover:border-creo-accent transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.35),inset_0_0_20px_rgba(255,215,0,0.12)]"
+                className="group block relative aspect-video rounded-xl overflow-hidden border border-creo-border bg-creo-card hover:border-creo-accent active:scale-[0.99] transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.35),inset_0_0_20px_rgba(255,215,0,0.12)]"
               >
                 <div className="absolute inset-0 bg-creo-bg">
                   <img
-                    src={imgSrc(item.image_url)}
+                    {...responsiveImageProps(item.image_url, { kind: 'card' })}
                     alt={item.name}
                     className="w-full h-full object-fill transform group-hover:scale-105 transition-transform duration-500 ease-out"
                     referrerPolicy="no-referrer"
@@ -77,7 +83,8 @@ export default function GamesCatalog() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300" />
                   <button
                     onClick={(e) => toggleWishlist(e, item)}
-                    className="absolute top-1.5 right-1.5 z-20 p-1.5 md:p-2 rounded-full bg-black/40 text-white hover:bg-creo-accent transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                    aria-label={isInWishlist(item.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                    className="absolute top-1.5 right-1.5 z-20 w-11 h-11 md:w-9 md:h-9 rounded-full bg-black/40 text-white hover:bg-creo-accent transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center justify-center"
                   >
                     <Heart className={isInWishlist(item.id) ? 'w-4 h-4 md:w-5 md:h-5 fill-creo-accent' : 'w-4 h-4 md:w-5 md:h-5'} />
                   </button>
