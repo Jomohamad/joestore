@@ -2,6 +2,46 @@
 
 create extension if not exists pgcrypto;
 
+-- Bootstrap products table if prior migrations were skipped
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'products'
+  ) THEN
+    CREATE TABLE public.products (
+      id uuid primary key default gen_random_uuid(),
+      game_id text,
+      name text not null default 'Product',
+      provider_product_id text not null default (gen_random_uuid())::text,
+      price numeric(12,2) not null default 0,
+      currency text not null default 'EGP',
+      active boolean not null default true,
+      created_at timestamptz not null default now()
+    );
+  END IF;
+END $$;
+
+-- Bootstrap orders table if prior migrations were skipped
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'orders'
+  ) THEN
+    CREATE TABLE public.orders (
+      id text primary key,
+      status text not null default 'pending',
+      provider text,
+      created_at timestamptz not null default now()
+    );
+  END IF;
+END $$;
+
 -- Orders geo + fraud fields
 alter table public.orders
   add column if not exists country text,
@@ -34,32 +74,76 @@ create index if not exists orders_status_created_at_idx on public.orders(status,
 create index if not exists orders_ip_address_idx on public.orders(ip_address);
 create index if not exists orders_country_idx on public.orders(country);
 
--- Provider prices
-create table if not exists public.provider_prices (
-  id uuid primary key default gen_random_uuid(),
-  provider text not null,
-  product_id uuid not null references public.products(id) on delete cascade,
-  price numeric(12,2) not null,
-  currency text not null default 'EGP',
-  updated_at timestamptz not null default now(),
-  unique (provider, product_id)
-);
+-- Provider prices (product_id type follows products.id)
+DO $$
+DECLARE
+  product_id_type text;
+BEGIN
+  SELECT format_type(a.atttypid, a.atttypmod)
+  INTO product_id_type
+  FROM pg_attribute a
+  JOIN pg_class t ON t.oid = a.attrelid
+  JOIN pg_namespace n ON n.oid = t.relnamespace
+  WHERE n.nspname = 'public'
+    AND t.relname = 'products'
+    AND a.attname = 'id'
+    AND a.attnum > 0
+    AND NOT a.attisdropped;
+
+  IF product_id_type IS NULL THEN
+    RAISE EXCEPTION 'products.id column not found';
+  END IF;
+
+  EXECUTE format($f$
+    create table if not exists public.provider_prices (
+      id uuid primary key default gen_random_uuid(),
+      provider text not null,
+      product_id %s not null references public.products(id) on delete cascade,
+      price numeric(12,2) not null,
+      currency text not null default 'EGP',
+      updated_at timestamptz not null default now(),
+      unique (provider, product_id)
+    )
+  $f$, product_id_type);
+END $$;
 
 create index if not exists provider_prices_product_id_idx on public.provider_prices(product_id);
 create index if not exists provider_prices_provider_idx on public.provider_prices(provider);
 create index if not exists provider_prices_updated_at_idx on public.provider_prices(updated_at desc);
 
--- Pricing rules
-create table if not exists public.pricing_rules (
-  id uuid primary key default gen_random_uuid(),
-  product_id uuid not null references public.products(id) on delete cascade,
-  margin_percent numeric(6,2) not null default 0,
-  min_profit numeric(12,2) not null default 0,
-  max_profit numeric(12,2) not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(product_id)
-);
+-- Pricing rules (product_id type follows products.id)
+DO $$
+DECLARE
+  product_id_type text;
+BEGIN
+  SELECT format_type(a.atttypid, a.atttypmod)
+  INTO product_id_type
+  FROM pg_attribute a
+  JOIN pg_class t ON t.oid = a.attrelid
+  JOIN pg_namespace n ON n.oid = t.relnamespace
+  WHERE n.nspname = 'public'
+    AND t.relname = 'products'
+    AND a.attname = 'id'
+    AND a.attnum > 0
+    AND NOT a.attisdropped;
+
+  IF product_id_type IS NULL THEN
+    RAISE EXCEPTION 'products.id column not found';
+  END IF;
+
+  EXECUTE format($f$
+    create table if not exists public.pricing_rules (
+      id uuid primary key default gen_random_uuid(),
+      product_id %s not null references public.products(id) on delete cascade,
+      margin_percent numeric(6,2) not null default 0,
+      min_profit numeric(12,2) not null default 0,
+      max_profit numeric(12,2) not null default 0,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now(),
+      unique(product_id)
+    )
+  $f$, product_id_type);
+END $$;
 
 create index if not exists pricing_rules_product_id_idx on public.pricing_rules(product_id);
 
@@ -82,8 +166,20 @@ create index if not exists fraud_logs_created_at_idx on public.fraud_logs(create
 -- Provider failures
 DO $$
 DECLARE
+  product_id_type text;
   order_id_type text;
 BEGIN
+  SELECT format_type(a.atttypid, a.atttypmod)
+  INTO product_id_type
+  FROM pg_attribute a
+  JOIN pg_class t ON t.oid = a.attrelid
+  JOIN pg_namespace n ON n.oid = t.relnamespace
+  WHERE n.nspname = 'public'
+    AND t.relname = 'products'
+    AND a.attname = 'id'
+    AND a.attnum > 0
+    AND NOT a.attisdropped;
+
   SELECT format_type(a.atttypid, a.atttypmod)
   INTO order_id_type
   FROM pg_attribute a
@@ -95,6 +191,10 @@ BEGIN
     AND a.attnum > 0
     AND NOT a.attisdropped;
 
+  IF product_id_type IS NULL THEN
+    RAISE EXCEPTION 'products.id column not found';
+  END IF;
+
   IF order_id_type IS NULL THEN
     RAISE EXCEPTION 'orders.id column not found';
   END IF;
@@ -103,13 +203,13 @@ BEGIN
     create table if not exists public.provider_failures (
       id uuid primary key default gen_random_uuid(),
       provider text not null,
-      product_id uuid references public.products(id) on delete set null,
+      product_id %s references public.products(id) on delete set null,
       order_id %s references public.orders(id) on delete set null,
       reason text not null,
       metadata jsonb not null default '{}'::jsonb,
       created_at timestamptz not null default now()
     )
-  $f$, order_id_type);
+  $f$, product_id_type, order_id_type);
 END $$;
 
 create index if not exists provider_failures_provider_idx on public.provider_failures(provider);
@@ -131,6 +231,7 @@ create index if not exists provider_health_updated_at_idx on public.provider_hea
 create or replace function public.set_current_timestamp_updated_at()
 returns trigger
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
   new.updated_at = now();

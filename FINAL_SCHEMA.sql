@@ -368,10 +368,10 @@ create policy "Users can update own mirror user" on public.users
 
 -- Orders: user sees/creates own orders only
 create policy "Users can view their own orders" on public.orders
-  for select using (auth.uid() = user_id);
+  for select using ((select auth.uid()) = user_id);
 
 create policy "Users can create orders" on public.orders
-  for insert with check (auth.uid() = user_id);
+  for insert with check ((select auth.uid()) = user_id);
 
 create policy "Admins can view all orders" on public.orders
   for select using (public.is_admin_user(auth.uid()));
@@ -399,19 +399,24 @@ create policy "Admins can manage products" on public.products
 create policy "Admins can view logs" on public.logs
   for select using (public.is_admin_user(auth.uid()));
 
+create policy "Service role manages logs" on public.logs
+  for all
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
+
 -- Wishlist: user scope
 create policy "Users can view their own wishlist" on public.wishlist
-  for select using (auth.uid() = user_id);
+  for select using ((select auth.uid()) = user_id);
 
 create policy "Users can insert into their own wishlist" on public.wishlist
-  for insert with check (auth.uid() = user_id);
+  for insert with check ((select auth.uid()) = user_id);
 
 create policy "Users can delete from their own wishlist" on public.wishlist
-  for delete using (auth.uid() = user_id);
+  for delete using ((select auth.uid()) = user_id);
 
 -- Admin row visibility (minimal)
 create policy "Users can view own admin membership" on public.admins
-  for select using (auth.uid() = user_id);
+  for select using ((select auth.uid()) = user_id);
 
 -- 10) AUTH USERS METADATA SUPPORT (instead of profiles table)
 -- Attempt username uniqueness index on auth.users metadata.
@@ -675,6 +680,7 @@ create index if not exists transactions_status_idx on public.transactions(status
 create or replace function public.set_current_timestamp_updated_at()
 returns trigger
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
   new.updated_at = now();

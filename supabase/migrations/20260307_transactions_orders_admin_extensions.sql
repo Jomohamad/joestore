@@ -76,6 +76,7 @@ create index if not exists transactions_status_idx on public.transactions(status
 create or replace function public.set_current_timestamp_updated_at()
 returns trigger
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
   new.updated_at = now();
@@ -120,4 +121,3 @@ create policy "Admins can manage transactions"
 on public.transactions for all
 using (public.is_admin_user(auth.uid()))
 with check (public.is_admin_user(auth.uid()));
-

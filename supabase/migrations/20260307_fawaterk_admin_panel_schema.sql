@@ -255,7 +255,7 @@ alter table public.logs enable row level security;
 drop policy if exists "Users can view own orders" on public.orders;
 create policy "Users can view own orders"
 on public.orders for select
-using (auth.uid() = user_id);
+using ((select auth.uid()) = user_id);
 
 drop policy if exists "Admins can view all orders" on public.orders;
 create policy "Admins can view all orders"
@@ -265,7 +265,7 @@ using (public.is_admin_user(auth.uid()));
 drop policy if exists "Users can create own orders" on public.orders;
 create policy "Users can create own orders"
 on public.orders for insert
-with check (auth.uid() = user_id);
+with check ((select auth.uid()) = user_id);
 
 drop policy if exists "Admins can manage orders" on public.orders;
 create policy "Admins can manage orders"
@@ -308,7 +308,7 @@ using (public.is_admin_user(auth.uid()));
 drop policy if exists "Service role inserts logs" on public.logs;
 create policy "Service role inserts logs"
 on public.logs for insert
-with check (true);
+with check (auth.role() = 'service_role');
 
 -- realtime publication
 DO $$

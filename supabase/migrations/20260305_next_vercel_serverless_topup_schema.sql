@@ -187,11 +187,11 @@ with check (auth.uid() = id);
 
 drop policy if exists "Users can view own orders" on public.orders;
 create policy "Users can view own orders" on public.orders
-for select using (auth.uid() = user_id);
+for select using ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can create own orders" on public.orders;
 create policy "Users can create own orders" on public.orders
-for insert with check (auth.uid() = user_id);
+for insert with check ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can view own payments" on public.payments;
 create policy "Users can view own payments" on public.payments
