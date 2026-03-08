@@ -51,7 +51,7 @@ export default function DeleteAccountModal({ isOpen, onClose, username }: Delete
         const serverError = payload?.error || 'Failed to delete account';
 
         // Fallback: self-delete via SQL RPC (works even when server admin key is unavailable).
-        const { error: rpcError } = await supabase.rpc('delete_my_account', {
+        const { error: rpcError } = await (supabase as any).rpc('delete_my_account', {
           p_username: input,
         });
 

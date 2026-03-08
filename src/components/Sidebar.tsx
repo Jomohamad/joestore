@@ -51,7 +51,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         setIsAdminByTable(false);
         return;
       }
-      setIsAdminByTable(Boolean(data?.user_id));
+      setIsAdminByTable(Boolean((data as { user_id?: string } | null)?.user_id));
     };
 
     void checkAdminMembership();

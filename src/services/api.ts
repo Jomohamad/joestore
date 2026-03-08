@@ -118,13 +118,13 @@ export const fetchGamePackages = async (id: string): Promise<Package[]> => {
 
 export const fetchWishlist = async (userId: string): Promise<{ game_id: string }[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('wishlist')
       .select('game_id')
       .eq('user_id', userId);
 
     if (error) throw error;
-    return data || [];
+    return (data as { game_id: string }[] | null) || [];
   } catch (error) {
     console.error('Error fetching wishlist:', error);
     return [];
@@ -133,7 +133,7 @@ export const fetchWishlist = async (userId: string): Promise<{ game_id: string }
 
 export const addToWishlistApi = async (userId: string, gameId: string): Promise<void> => {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('wishlist')
       .insert([{ user_id: userId, game_id: gameId }]);
 
@@ -146,7 +146,7 @@ export const addToWishlistApi = async (userId: string, gameId: string): Promise<
 
 export const removeFromWishlistApi = async (userId: string, gameId: string): Promise<void> => {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('wishlist')
       .delete()
       .eq('user_id', userId)
@@ -161,28 +161,37 @@ export const removeFromWishlistApi = async (userId: string, gameId: string): Pro
 
 export const validateCoupon = async (code: string): Promise<{ valid: boolean; discountType?: 'percent' | 'fixed'; value?: number; error?: string }> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('coupons')
       .select('*')
       .eq('code', code)
       .single();
 
-    if (error || !data) {
+    const coupon = data as
+      | {
+          active?: boolean;
+          expires_at?: string | null;
+          discount_type?: 'percent' | 'fixed';
+          value?: number;
+        }
+      | null;
+
+    if (error || !coupon) {
       return { valid: false, error: 'Invalid coupon code' };
     }
 
-    if (!data.active) {
+    if (!coupon.active) {
       return { valid: false, error: 'Coupon is expired or inactive' };
     }
 
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
       return { valid: false, error: 'Coupon is expired' };
     }
 
     return { 
       valid: true, 
-      discountType: data.discount_type, 
-      value: data.value 
+      discountType: coupon.discount_type, 
+      value: coupon.value 
     };
   } catch (error) {
     console.error('Error validating coupon:', error);
