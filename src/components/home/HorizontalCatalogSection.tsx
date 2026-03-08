@@ -30,6 +30,10 @@ export default function HorizontalCatalogSection({
   isInWishlist,
 }: HorizontalCatalogSectionProps) {
   const scroll = useHorizontalScroll<HTMLDivElement>(language);
+  const isAtFirstCard = scroll.scrollState.activeDot <= 0;
+  const isAtLastCard = scroll.scrollState.activeDot >= scroll.scrollState.dotCount - 1;
+  const showLeftControls = scroll.scrollState.dotCount > 1 && !isAtFirstCard;
+  const showRightControls = scroll.scrollState.dotCount > 1 && !isAtLastCard;
 
   return (
     <section
@@ -59,7 +63,7 @@ export default function HorizontalCatalogSection({
         </motion.div>
 
         <div className="relative">
-          {scroll.scrollState.canScrollLeft && (
+          {showLeftControls && (
             <button
               type="button"
               onClick={() => scroll.scroll(language === 'ar' ? 'right' : 'left')}
@@ -73,7 +77,7 @@ export default function HorizontalCatalogSection({
             </button>
           )}
 
-          {scroll.scrollState.canScrollRight && (
+          {showRightControls && (
             <button
               type="button"
               onClick={() => scroll.scroll(language === 'ar' ? 'left' : 'right')}
@@ -90,14 +94,14 @@ export default function HorizontalCatalogSection({
           <div
             className={cn(
               'home-cards-edge left transition-opacity duration-200',
-              scroll.scrollState.canScrollLeft ? 'opacity-100' : 'opacity-0'
+              showLeftControls ? 'opacity-100' : 'opacity-0'
             )}
             aria-hidden="true"
           />
           <div
             className={cn(
               'home-cards-edge right transition-opacity duration-200',
-              scroll.scrollState.canScrollRight ? 'opacity-100' : 'opacity-0'
+              showRightControls ? 'opacity-100' : 'opacity-0'
             )}
             aria-hidden="true"
           />

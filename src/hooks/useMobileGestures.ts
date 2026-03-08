@@ -1,22 +1,10 @@
 import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const HORIZONTAL_THRESHOLD = 70;
 const HORIZONTAL_SLOPE_FACTOR = 1.35;
 const VERTICAL_REFRESH_THRESHOLD = 95;
-const EDGE_BACK_ZONE = 28;
 const MAX_GESTURE_DURATION_MS = 750;
-
-const MOBILE_ROUTE_ORDER = ['/', '/games', '/apps', '/orders', '/dashboard'];
-
-const resolveBasePath = (pathname: string) => {
-  if (pathname === '/') return '/';
-  if (pathname.startsWith('/games') || pathname.startsWith('/game/')) return '/games';
-  if (pathname.startsWith('/apps')) return '/apps';
-  if (pathname.startsWith('/orders') || pathname.startsWith('/order/')) return '/orders';
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/edit-profile')) return '/dashboard';
-  return pathname;
-};
 
 const findHorizontalScrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
   let current: HTMLElement | null = node;
@@ -45,7 +33,6 @@ const scrollHorizontalContainer = (container: HTMLElement, direction: 'next' | '
 };
 
 export function useMobileGestures(enabled: boolean) {
-  const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
@@ -96,17 +83,8 @@ export function useMobileGestures(enabled: boolean) {
       }
 
       if (absX > HORIZONTAL_THRESHOLD && absX > absY * HORIZONTAL_SLOPE_FACTOR) {
-        if (deltaX > 0 && startX <= EDGE_BACK_ZONE && window.history.length > 1) {
-          navigate(-1);
-          return;
-        }
-
-        if (deltaX < 0) {
-          const currentBase = resolveBasePath(location.pathname);
-          const index = MOBILE_ROUTE_ORDER.indexOf(currentBase);
-          const nextPath = index >= 0 ? MOBILE_ROUTE_ORDER[index + 1] : null;
-          if (nextPath) navigate(nextPath);
-        }
+        // Intentionally disabled: do not navigate pages on horizontal swipes.
+        return;
       }
     };
 
@@ -117,6 +95,5 @@ export function useMobileGestures(enabled: boolean) {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [enabled, location.pathname, navigate]);
+  }, [enabled, location.pathname]);
 }
-
