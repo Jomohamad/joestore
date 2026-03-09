@@ -1,14 +1,44 @@
 /** @type {import('next').NextConfig} */
+const isProduction = process.env.NODE_ENV === 'production';
+
 const nextConfig = {
   reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL:
+      process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      process.env.NEXT_VITE_SUPABASE_URL ||
+      '',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.NEXT_VITE_SUPABASE_ANON_KEY ||
+      '',
+  },
   async headers() {
-    return [
-      {
-        source: '/_next/static/:path*',
-        headers: [
+    const staticHeaders = isProduction
+      ? [
           {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
+          },
+        ]
+      : [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, max-age=0',
+          },
+        ];
+
+    return [
+      {
+        source: '/_next/static/:path*',
+        headers: staticHeaders,
+      },
+      {
+        source: '/_next/static/webpack/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, max-age=0',
           },
         ],
       },

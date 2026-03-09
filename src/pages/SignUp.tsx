@@ -2,7 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { isSupabaseConfigured, supabase, supabaseConfigErrorMessage } from '../lib/supabase';
 import { useStore } from '../context/StoreContext';
 import { registerWithBackendApi } from '../services/api';
 
@@ -33,6 +33,10 @@ export default function SignUp() {
   const handleSocialSignUp = async (provider: 'google' | 'discord') => {
     try {
       setError(null);
+      if (!isSupabaseConfigured) {
+        setError(supabaseConfigErrorMessage);
+        return;
+      }
       localStorage.setItem('auth_intent', 'signup');
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
@@ -82,6 +86,9 @@ export default function SignUp() {
       });
 
       if (!result.requiresEmailConfirmation && result.accessToken && result.refreshToken) {
+        if (!isSupabaseConfigured) {
+          throw new Error(supabaseConfigErrorMessage);
+        }
         const { error: setSessionError } = await supabase.auth.setSession({
           access_token: result.accessToken,
           refresh_token: result.refreshToken,
@@ -116,6 +123,9 @@ export default function SignUp() {
     setInfo(null);
     setResendingConfirmation(true);
     try {
+      if (!isSupabaseConfigured) {
+        throw new Error(supabaseConfigErrorMessage);
+      }
       const { error: resendError } = await supabase.auth.resend({
         type: 'signup',
         email: targetEmail,

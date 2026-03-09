@@ -7,8 +7,22 @@ import '../src/index.css';
 export default function MyApp({ Component, pageProps }: AppProps) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (process.env.NODE_ENV !== 'production') return;
     if (!('serviceWorker' in navigator)) return;
+
+    if (process.env.NODE_ENV !== 'production') {
+      // Avoid stale SW cache interfering with HMR during local development.
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .catch(() => undefined);
+      if ('caches' in window) {
+        void caches
+          .keys()
+          .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+          .catch(() => undefined);
+      }
+      return;
+    }
 
     const onLoad = async () => {
       try {

@@ -1,17 +1,35 @@
 import { Game, Package, Promotion, Order } from '../types';
 import { supabase } from '../lib/supabase';
 
-const API_TIMEOUT_MS = 2500;
+const API_TIMEOUT_MS = 8000;
+const isAbortLikeError = (error: unknown): boolean => {
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    return error.name === 'AbortError';
+  }
+  if (error instanceof Error) {
+    return error.name === 'AbortError' || /aborted/i.test(error.message);
+  }
+  return false;
+};
 
 const fetchWithTimeout = async (url: string, init?: RequestInit, timeoutMs = API_TIMEOUT_MS): Promise<Response> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let didTimeout = false;
+  const timeoutId = setTimeout(() => {
+    didTimeout = true;
+    controller.abort();
+  }, timeoutMs);
 
   try {
     return await fetch(url, {
       ...init,
       signal: controller.signal,
     });
+  } catch (error) {
+    if (didTimeout && isAbortLikeError(error)) {
+      throw new Error(`Request timeout after ${timeoutMs}ms`);
+    }
+    throw error;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -49,7 +67,9 @@ export const fetchPromotions = async (): Promise<Promotion[]> => {
     const data = await fetchJsonWithTimeout<Promotion[]>('/api/promotions');
     return data && data.length > 0 ? data : getFallbackPromotions();
   } catch (error) {
-    console.warn('Error fetching promotions from API (using fallback):', error);
+    if (!isAbortLikeError(error) && !(error instanceof Error && /timeout/i.test(error.message))) {
+      console.warn('Error fetching promotions from API (using fallback):', error);
+    }
     return getFallbackPromotions();
   }
 };
@@ -89,7 +109,9 @@ export const fetchGames = async (): Promise<Game[]> => {
     const data = await fetchJsonWithTimeout<Game[]>('/api/games');
     return data && data.length > 0 ? data : getFallbackGames();
   } catch (error) {
-    console.warn('Error fetching games from API (using fallback):', error);
+    if (!isAbortLikeError(error) && !(error instanceof Error && /timeout/i.test(error.message))) {
+      console.warn('Error fetching games from API (using fallback):', error);
+    }
     return getFallbackGames();
   }
 };
@@ -99,7 +121,9 @@ export const fetchGameDetails = async (id: string): Promise<Game> => {
     const data = await fetchJsonWithTimeout<Game>(`/api/games/${encodeURIComponent(id)}`);
     return data;
   } catch (error) {
-    console.warn('Error fetching game details from API (using fallback):', error);
+    if (!isAbortLikeError(error) && !(error instanceof Error && /timeout/i.test(error.message))) {
+      console.warn('Error fetching game details from API (using fallback):', error);
+    }
     const game = getFallbackGames().find(g => g.id === id);
     if (game) return game;
     throw error;
@@ -111,7 +135,9 @@ export const fetchGamePackages = async (id: string): Promise<Package[]> => {
     const data = await fetchJsonWithTimeout<Package[]>(`/api/games/${encodeURIComponent(id)}/packages`);
     return data || [];
   } catch (error) {
-    console.warn('Error fetching packages from API:', error);
+    if (!isAbortLikeError(error) && !(error instanceof Error && /timeout/i.test(error.message))) {
+      console.warn('Error fetching packages from API:', error);
+    }
     return [];
   }
 };
@@ -126,7 +152,9 @@ export const fetchWishlist = async (userId: string): Promise<{ game_id: string }
     if (error) throw error;
     return (data as { game_id: string }[] | null) || [];
   } catch (error) {
-    console.error('Error fetching wishlist:', error);
+    if (!isAbortLikeError(error) && !(error instanceof Error && /timeout/i.test(error.message))) {
+      console.error('Error fetching wishlist:', error);
+    }
     return [];
   }
 };
@@ -440,7 +468,9 @@ export const fetchOrders = async (_userId?: string): Promise<Order[]> => {
     const data = (await response.json()) as Order[];
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('Error fetching orders from API, fallback to Supabase:', error);
+    if (!isAbortLikeError(error) && !(error instanceof Error && /timeout/i.test(error.message))) {
+      console.error('Error fetching orders from API, fallback to Supabase:', error);
+    }
     const {
       data: { user },
     } = await supabase.auth.getUser();

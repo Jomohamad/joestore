@@ -79,6 +79,15 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+  const isNextInternalAsset =
+    url.pathname.startsWith('/_next/') ||
+    url.pathname.includes('.hot-update.') ||
+    url.pathname.endsWith('/webpack-hmr');
+
+  // Never cache or rewrite Next.js internals; HMR relies on fresh network responses.
+  if (isNextInternalAsset) {
+    return;
+  }
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstPage(request));

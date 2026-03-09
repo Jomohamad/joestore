@@ -11,6 +11,8 @@ const supabaseAnonKey =
 const hasValidUrl = Boolean(supabaseUrl && supabaseUrl !== 'https://your-project-id.supabase.co');
 const hasValidAnonKey = Boolean(supabaseAnonKey && supabaseAnonKey !== 'INSERT_YOUR_SUPABASE_ANON_KEY_HERE');
 const hasValidConfig = hasValidUrl && hasValidAnonKey;
+const SUPABASE_CONFIG_ERROR =
+  'Supabase env vars are missing/invalid. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel.';
 
 type SupabaseClientInstance = ReturnType<typeof createClient>;
 const scope = globalThis as typeof globalThis & {
@@ -23,9 +25,7 @@ if (!hasValidConfig && process.env.NODE_ENV === 'production' && !scope.__SUPABAS
   // API calls will fail with clear network/auth errors until proper env vars are set.
   scope.__SUPABASE_ENV_WARNED__ = true;
   // eslint-disable-next-line no-console
-  console.error(
-    'Supabase env vars are missing/invalid. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel.',
-  );
+  console.error(SUPABASE_CONFIG_ERROR);
 }
 
 if (!scope.__JOESTORE_SUPABASE_CLIENT__) {
@@ -47,3 +47,5 @@ if (!scope.__JOESTORE_SUPABASE_CLIENT__) {
 }
 
 export const supabase = scope.__JOESTORE_SUPABASE_CLIENT__;
+export const isSupabaseConfigured = hasValidConfig;
+export const supabaseConfigErrorMessage = SUPABASE_CONFIG_ERROR;
