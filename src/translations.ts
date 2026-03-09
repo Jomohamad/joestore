@@ -9,7 +9,6 @@ export const translations = {
     main_menu: 'Main Menu',
     my_account: 'My Account',
     settings: 'Settings',
-    more: 'More',
     
     // Hero
     hero_badge: 'The Ultimate Gaming Hub',
@@ -154,8 +153,6 @@ export const translations = {
     privacy: 'Privacy Policy',
     refund: 'Refund Policy',
     rights_reserved: 'All rights reserved.',
-    follow_us: 'Follow Us',
-    order_placed: 'Order {id} placed successfully!',
     
     // General
     egp: 'EGP',
@@ -163,7 +160,6 @@ export const translations = {
     currency: 'Currency',
     language: 'Language',
     order_history: 'Order History',
-    dashboard: 'Dashboard',
     welcome_back: 'Welcome back',
     guest: 'Guest',
     
@@ -193,32 +189,13 @@ export const translations = {
     
     // Auth
     login: 'Login',
-    signup: 'Sign up',
-    login_required: 'You need to login to continue',
     login_desc: 'Sign in with your social account to continue',
-    signup_desc: 'Create a new account with your social provider',
     login_with_google: 'Continue with Google',
     login_with_apple: 'Continue with Apple',
     login_with_discord: 'Continue with Discord',
     login_success: 'Logged in successfully!',
-    account_not_found: 'This account is not registered. Please use Sign up first.',
-    account_exists: 'This account already exists. Please log in.',
-    complete_profile_required: 'Please complete your profile first.',
-    dont_have_account: "Don't have an account?",
-    already_have_account: 'Already have an account?',
-    go_to_signup: "Don't have an account? Sign up",
-    go_to_login: 'Already have an account? Log in',
     logout: 'Logout',
     profile: 'Profile',
-    edit_profile: 'Edit Profile',
-    delete_account: 'Delete Account',
-    danger_zone: 'Danger Zone',
-    delete_account_warning: 'This action permanently deletes your account and cannot be undone.',
-    delete_account_confirm: 'To confirm deletion, type your username:',
-    enter_username: 'Enter your username',
-    cancel: 'Cancel',
-    delete_permanently: 'Delete Permanently',
-    username_mismatch: 'Username does not match.',
     search_results: 'Search Results for "{query}"',
     no_results: 'No results found for "{query}"',
     
@@ -226,7 +203,6 @@ export const translations = {
     wishlist: 'Wishlist',
     wishlist_desc: 'Your collection of favorite games and apps.',
     wishlist_empty: 'Your wishlist is empty.',
-    from: 'From',
     add_to_wishlist: 'Add to Wishlist',
     remove_from_wishlist: 'Remove from Wishlist',
     
@@ -244,7 +220,6 @@ export const translations = {
     main_menu: 'القائمة الرئيسية',
     my_account: 'حسابي',
     settings: 'الإعدادات',
-    more: 'المزيد',
     
     // Hero
     hero_badge: 'المركز الأول للاعبين',
@@ -389,8 +364,6 @@ export const translations = {
     privacy: 'سياسة الخصوصية',
     refund: 'سياسة الاسترجاع',
     rights_reserved: 'جميع الحقوق محفوظة.',
-    follow_us: 'تابعنا',
-    order_placed: 'تم إرسال الطلب {id} بنجاح!',
     
     // General
     egp: 'EGP',
@@ -398,7 +371,6 @@ export const translations = {
     currency: 'العملة',
     language: 'اللغة',
     order_history: 'سجل الطلبات',
-    dashboard: 'لوحة التحكم',
     welcome_back: 'مرحباً بعودتك',
     guest: 'زائر',
     
@@ -428,32 +400,13 @@ export const translations = {
     
     // Auth
     login: 'تسجيل الدخول',
-    signup: 'إنشاء حساب',
-    login_required: 'يجب تسجيل الدخول للمتابعة',
     login_desc: 'سجل الدخول باستخدام حسابك الاجتماعي للمتابعة',
-    signup_desc: 'أنشئ حسابًا جديدًا باستخدام مزودك الاجتماعي',
     login_with_google: 'المتابعة باستخدام جوجل',
     login_with_apple: 'المتابعة باستخدام أبل',
     login_with_discord: 'المتابعة باستخدام ديسكورد',
     login_success: 'تم تسجيل الدخول بنجاح!',
-    account_not_found: 'هذا الحساب غير مسجل. استخدم إنشاء حساب أولاً.',
-    account_exists: 'هذا الحساب موجود بالفعل. يرجى تسجيل الدخول.',
-    complete_profile_required: 'يرجى إكمال بيانات حسابك أولاً.',
-    dont_have_account: 'ليس لديك حساب؟',
-    already_have_account: 'لديك حساب بالفعل؟',
-    go_to_signup: 'ليس لديك حساب؟ أنشئ حسابًا',
-    go_to_login: 'لديك حساب بالفعل؟ سجل الدخول',
     logout: 'تسجيل الخروج',
     profile: 'الملف الشخصي',
-    edit_profile: 'تعديل الملف الشخصي',
-    delete_account: 'حذف الحساب',
-    danger_zone: 'منطقة خطرة',
-    delete_account_warning: 'هذا الإجراء يحذف حسابك نهائيًا ولا يمكن التراجع عنه.',
-    delete_account_confirm: 'لتأكيد الحذف، اكتب اسم المستخدم الخاص بك:',
-    enter_username: 'اكتب اسم المستخدم',
-    cancel: 'إلغاء',
-    delete_permanently: 'حذف نهائي',
-    username_mismatch: 'اسم المستخدم غير مطابق.',
     search_results: 'نتائج البحث عن "{query}"',
     no_results: 'لا توجد نتائج لـ "{query}"',
     
@@ -461,7 +414,6 @@ export const translations = {
     wishlist: 'قائمة الرغبات',
     wishlist_desc: 'مجموعتك من الألعاب والتطبيقات المفضلة.',
     wishlist_empty: 'قائمة رغباتك فارغة.',
-    from: 'يبدأ من',
     add_to_wishlist: 'أضف إلى قائمة الرغبات',
     remove_from_wishlist: 'إزالة من قائمة الرغبات',
     

@@ -1,20 +1,13 @@
 {
-  "framework": "nextjs",
-  "functions": {
-    "pages/api/payment/webhook.ts": {
-      "maxDuration": 60
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
     },
-    "pages/api/payment/fawaterk/webhook.ts": {
-      "maxDuration": 60
-    },
-    "pages/api/payment/fawaterk/verify.ts": {
-      "maxDuration": 30
-    },
-    "pages/api/payment/create.ts": {
-      "maxDuration": 30
-    },
-    "pages/api/topup/process.ts": {
-      "maxDuration": 60
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
-  }
+  ]
 }

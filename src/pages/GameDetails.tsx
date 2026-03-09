@@ -1,189 +1,96 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages } from '../services/api';
 import { Game, Package } from '../types';
-import { ShieldCheck, CheckCircle2, X, Minus, Plus, Heart, BadgeCheck } from 'lucide-react';
-import { cn, responsiveImageProps } from '../lib/utils';
+import { ShieldCheck, ShoppingCart, Heart, CheckCircle2, X } from 'lucide-react';
+import { cn } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
-import { useSsrData } from '../context/SsrDataContext';
 
-const getDiscountedPrice = (pkg: Package) => {
-  const basePrice = Number(pkg.price || 0);
-  const hasDiscountWindow = !pkg.discount_ends_at || new Date(pkg.discount_ends_at).getTime() > Date.now();
-  const discountActive = Boolean(pkg.discount_active) && Number(pkg.discount_value || 0) > 0 && hasDiscountWindow;
-
-  if (!discountActive) {
-    return {
-      hasDiscount: false,
-      original: basePrice,
-      final: basePrice,
-    };
-  }
-
-  const discountValue = Number(pkg.discount_value || 0);
-  const finalPrice =
-    pkg.discount_type === 'percent'
-      ? Math.max(0, basePrice - basePrice * (discountValue / 100))
-      : Math.max(0, basePrice - discountValue);
-
-  return {
-    hasDiscount: finalPrice < basePrice,
-    original: basePrice,
-    final: finalPrice,
-  };
-};
-
-type GameDetailsProps = {
-  initialGame?: Game | null;
-  initialPackages?: Package[];
-  initialGameIdentifier?: string;
-};
-
-export default function GameDetails({ initialGame, initialPackages, initialGameIdentifier }: GameDetailsProps) {
+export default function GameDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToCart, t, language, formatPrice, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
-  const { gameDetails } = useSsrData();
-
-  const requestedId = String(initialGameIdentifier || id || '').trim();
-  const preloaded = requestedId ? gameDetails?.[requestedId] : undefined;
-  const effectiveInitialGame = useMemo(() => initialGame || preloaded?.game || null, [initialGame, preloaded]);
-  const effectiveInitialPackages = useMemo(() => initialPackages || preloaded?.packages || [], [initialPackages, preloaded]);
-  const hasInitialData = Boolean(effectiveInitialGame && (initialGame || preloaded));
-
-  const [game, setGame] = useState<Game | null>(hasInitialData ? effectiveInitialGame : null);
-  const [packages, setPackages] = useState<Package[]>(hasInitialData ? effectiveInitialPackages : []);
-  const [loading, setLoading] = useState(!hasInitialData);
+  const { addToCart, t, language, isInWishlist, addToWishlist, removeFromWishlist, formatPrice } = useStore();
+  
+  const [game, setGame] = useState<Game | null>(null);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [addingToCartId, setAddingToCartId] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showLoginError, setShowLoginError] = useState(false);
-  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(
-    hasInitialData && effectiveInitialPackages.length ? effectiveInitialPackages[0].id : null,
-  );
-  const [packageQuantities, setPackageQuantities] = useState<Record<number, number>>(() => {
-    if (!hasInitialData || !effectiveInitialPackages.length) return {};
-    const seeded: Record<number, number> = {};
-    for (const pkg of effectiveInitialPackages) {
-      seeded[pkg.id] = 1;
-    }
-    return seeded;
-  });
-  const [accountIdentifier, setAccountIdentifier] = useState('');
+  const [lastAddedPkg, setLastAddedPkg] = useState<Package | null>(null);
 
   useEffect(() => {
-    if (!requestedId) return;
-
-    const seedSelection = (rows: Package[]) => {
-      if (rows.length === 0) {
-        setSelectedPackageId(null);
-        setPackageQuantities({});
-        return;
-      }
-
-      setSelectedPackageId((prev) => prev ?? rows[0].id);
-      const initialQuantities: Record<number, number> = {};
-      for (const pkg of rows) {
-        initialQuantities[pkg.id] = 1;
-      }
-      setPackageQuantities(initialQuantities);
-    };
-
-    if (hasInitialData && effectiveInitialGame) {
-      setGame(effectiveInitialGame);
-      setPackages(effectiveInitialPackages);
-      seedSelection(effectiveInitialPackages);
-      setLoading(false);
-      return;
-    }
+    if (!id) return;
 
     const loadData = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        const [gameData, packagesData] = await Promise.all([fetchGameDetails(requestedId), fetchGamePackages(requestedId)]);
+        const [gameData, packagesData] = await Promise.all([
+          fetchGameDetails(id),
+          fetchGamePackages(id)
+        ]);
         setGame(gameData);
         setPackages(packagesData);
-        seedSelection(packagesData);
-      } catch {
+      } catch (err) {
         setError(t('failed_load_details'));
       } finally {
         setLoading(false);
       }
     };
 
-    void loadData();
-  }, [requestedId, t, hasInitialData, effectiveInitialGame, effectiveInitialPackages]);
+    loadData();
+  }, [id, t]);
 
-  const selectedPackage = useMemo(
-    () => packages.find((pkg) => pkg.id === selectedPackageId) || null,
-    [packages, selectedPackageId],
-  );
-
-  const selectedQuantity = selectedPackage ? packageQuantities[selectedPackage.id] ?? 1 : 1;
-
-  const handleQuantityChange = (pkgId: number, delta: number) => {
-    setPackageQuantities((prev) => {
-      const current = prev[pkgId] ?? 1;
-      return {
-        ...prev,
-        [pkgId]: Math.max(1, current + delta),
-      };
-    });
-  };
-
-  const handleConfirmAddToCart = () => {
-    if (!game || !selectedPackage) {
-      return;
-    }
-
+  const handleAddToCart = async (pkg: Package) => {
+    if (!game) return;
+    
     if (!user) {
       setShowLoginError(true);
-      setTimeout(() => setShowLoginError(false), 3500);
+      setTimeout(() => setShowLoginError(false), 4000);
       return;
     }
-
-    if (!accountIdentifier.trim()) {
-      alert(language === 'ar' ? 'من فضلك أدخل الـ ID أولاً' : 'Please enter account ID first');
-      return;
-    }
-
-    const pricing = getDiscountedPrice(selectedPackage);
+    
+    setAddingToCartId(pkg.id);
+    
+    // Simulate a small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 600));
 
     addToCart({
+      id: Math.random().toString(36).substr(2, 9),
       gameId: game.id,
       gameName: game.name,
       gameImage: game.image_url,
-      packageId: selectedPackage.id,
-      packageName: `${selectedPackage.amount} ${game.currency_name}`,
-      packageAmount: selectedPackage.amount,
+      packageId: pkg.id.toString(),
+      packageName: `${pkg.amount} ${game.currency_name}`,
+      amount: pkg.amount,
       currency: game.currency_name,
-      unitPrice: pricing.final,
-      originalUnitPrice: pricing.original,
-      accountIdentifier: accountIdentifier.trim(),
-      packageImage: selectedPackage.image_url || null,
-      quantity: selectedQuantity,
+      price: pkg.price,
     });
-
+    
+    setAddingToCartId(null);
+    setLastAddedPkg(pkg);
     setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 1600);
+    
+    // Hide toast after 3 seconds
+    setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const toggleWishlist = () => {
+  const toggleWishlist = (pkg: Package) => {
     if (!game) return;
-    if (isInWishlist(game.id)) {
-      removeFromWishlist(game.id);
+    if (isInWishlist(game.id, pkg.id)) {
+      removeFromWishlist(game.id, pkg.id);
     } else {
-      addToWishlist(game);
+      addToWishlist(game, pkg);
     }
   };
 
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <div className="w-12 h-12 border-4 border-creo-accent/20 border-t-creo-accent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-creo-accent/20 border-t-creo-accent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -193,7 +100,10 @@ export default function GameDetails({ initialGame, initialPackages, initialGameI
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <p className="text-red-400 mb-4">{error || t('game_not_found')}</p>
-          <button onClick={() => navigate('/')} className="px-6 py-2 bg-creo-bg-sec hover:bg-creo-border text-white rounded-lg transition-colors">
+          <button 
+            onClick={() => navigate('/')}
+            className="px-6 py-2 bg-creo-bg-sec hover:bg-creo-border text-white rounded-lg transition-colors"
+          >
             {t('back_to_home')}
           </button>
         </div>
@@ -202,215 +112,174 @@ export default function GameDetails({ initialGame, initialPackages, initialGameI
   }
 
   return (
-    <div className="flex-1 bg-creo-bg pb-32 md:pb-24 relative">
+    <div className="flex-1 bg-creo-bg pb-20 md:pb-24 relative">
+      {/* Success Toast */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div
-            initial={{ opacity: 0, y: 40, x: '-50%' }}
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 20, x: '-50%' }}
             className="fixed bottom-8 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md"
           >
-            <div className="bg-creo-card border border-creo-accent/50 rounded-2xl p-4 shadow-2xl shadow-creo-accent/20 flex items-center gap-3">
-              <div className="w-9 h-9 bg-creo-accent rounded-full flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-black" />
+            <div className="bg-creo-card border border-creo-accent/50 rounded-2xl p-4 shadow-2xl shadow-creo-accent/20 flex items-center gap-4 backdrop-blur-xl">
+              <div className="w-10 h-10 bg-creo-accent rounded-full flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-6 h-6 text-black" />
               </div>
-              <p className="text-sm text-white font-semibold">{t('added_to_cart')}</p>
-              <button onClick={() => setShowSuccess(false)} className="ml-auto text-creo-muted hover:text-white">
-                <X className="w-4 h-4" />
+              <div className="flex-1">
+                <h4 className="text-white font-bold text-sm">
+                  {t('added_to_cart') || 'Added to Cart!'}
+                </h4>
+                <p className="text-creo-text-sec text-xs">
+                  {lastAddedPkg?.amount} {game.currency_name} {t('has_been_added') || 'has been added to your cart.'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowSuccess(false)}
+                className="p-1 text-creo-muted hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Login Error Toast */}
       <AnimatePresence>
         {showLoginError && (
           <motion.div
-            initial={{ opacity: 0, y: 40, x: '-50%' }}
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 20, x: '-50%' }}
             className="fixed bottom-8 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md"
           >
-            <div className="bg-creo-card border border-red-500/50 rounded-2xl p-4 shadow-2xl shadow-red-500/10 flex items-center gap-3">
-              <div className="w-9 h-9 bg-red-500 rounded-full flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5 text-white" />
+            <div className="bg-creo-card border border-red-500/50 rounded-2xl p-4 shadow-2xl shadow-red-500/10 flex items-center gap-4 backdrop-blur-xl">
+              <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6 text-white" />
               </div>
-              <p className="text-sm text-white">{language === 'ar' ? 'يجب تسجيل الدخول أولاً' : 'Please login first'}</p>
-              <button onClick={() => setShowLoginError(false)} className="ml-auto text-creo-muted hover:text-white">
-                <X className="w-4 h-4" />
+              <div className="flex-1">
+                <h4 className="text-white font-bold text-sm">
+                  {language === 'ar' ? 'تسجيل الدخول مطلوب' : 'Login Required'}
+                </h4>
+                <p className="text-creo-text-sec text-xs">
+                  {language === 'ar' 
+                    ? 'يجب عليك تسجيل الدخول أولاً لتتمكن من إضافة منتجات إلى السلة.' 
+                    : 'You must log in first to be able to add items to your cart.'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowLoginError(false)}
+                className="p-1 text-creo-muted hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Game Header */}
       <div className="relative h-48 md:h-64 lg:h-80 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-creo-bg-sec/50 via-creo-bg/80 to-creo-bg z-10" />
-        <img {...responsiveImageProps(game.image_url, { kind: 'hero', lazy: false })} alt={game.name} className="w-full h-full object-cover opacity-40 blur-sm" referrerPolicy="no-referrer" />
+        <div className="absolute inset-0 bg-gradient-to-b from-creo-bg-sec/50 via-creo-bg/80 to-creo-bg z-10"></div>
+        <img 
+          src={game.image_url} 
+          alt={game.name} 
+          className="w-full h-full object-cover opacity-40 blur-sm"
+          referrerPolicy="no-referrer"
+        />
         <div className="absolute bottom-0 left-0 w-full z-20 pb-6 md:pb-8">
           <div className="container mx-auto px-4 flex items-end gap-4 md:gap-6">
             <div className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-xl md:rounded-2xl overflow-hidden border-2 md:border-4 border-creo-bg shadow-2xl shrink-0 bg-creo-bg-sec">
-              <img {...responsiveImageProps(game.image_url, { kind: 'cover' })} alt={game.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img 
+                src={game.image_url} 
+                alt={game.name} 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div className="mb-1 md:mb-2 flex-1">
-              <h1 className="text-[clamp(1.35rem,3.8vw,2.6rem)] font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
-              <div className="flex items-center gap-1.5 text-xs md:text-sm text-creo-text-sec italic">
-                <span>{game.publisher}</span>
-                <BadgeCheck className="w-3.5 h-3.5 md:w-4 md:h-4 text-creo-accent not-italic" />
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold text-white mb-1 md:mb-2">{game.name}</h1>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-creo-text-sec">
+                {/* Publisher name removed */}
               </div>
             </div>
-            <button
-              onClick={toggleWishlist}
-              className="mb-1 md:mb-2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/45 border border-creo-border text-white flex items-center justify-center hover:border-creo-accent hover:bg-creo-accent/20 transition-colors shrink-0"
-              aria-label={isInWishlist(game.id) ? t('remove_from_wishlist') : t('add_to_wishlist')}
-            >
-              <Heart className={isInWishlist(game.id) ? 'w-5 h-5 fill-creo-accent text-creo-accent' : 'w-5 h-5'} />
-            </button>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 mt-8 md:mt-12">
-        <div className="lg:grid lg:grid-cols-3 lg:gap-8 xl:gap-10 items-start">
-          <aside className="lg:sticky lg:top-5 self-start mb-8 lg:mb-0 space-y-4">
-            <div className="rounded-2xl border border-creo-border bg-creo-card p-4 md:p-5">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">{game.name}</h2>
-              <p className="text-sm md:text-base text-creo-text-sec">
-                {game.description || (language === 'ar' ? 'لا يوجد وصف متاح حالياً.' : 'No description available right now.')}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-creo-border bg-creo-card p-4 md:p-5 space-y-3">
-              <label className="block text-sm font-semibold text-white">{language === 'ar' ? 'ID' : 'ID'}</label>
-              <input
-                type="text"
-                value={accountIdentifier}
-                onChange={(e) => setAccountIdentifier(e.target.value)}
-                placeholder={language === 'ar' ? 'اكتب ID الحساب' : 'Enter account/player ID'}
-                className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-creo-accent"
-              />
-
-              {selectedPackage && (
-                <div className="text-xs text-creo-text-sec">
-                  {language === 'ar' ? 'الباقة المختارة:' : 'Selected package:'}{' '}
-                  <span className="text-white">{selectedPackage.amount} {game.currency_name}</span>
-                  <span className="mx-1">x</span>
-                  <span className="text-white">{selectedQuantity}</span>
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">{t('select_package')}</h2>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+          {packages.map((pkg) => (
+            <motion.div
+              key={pkg.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-creo-card border border-creo-border rounded-xl overflow-hidden hover:border-creo-accent transition-all duration-300 group relative flex flex-col h-full hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,215,0,0.15)]"
+            >
+              <div className="aspect-video relative overflow-hidden bg-creo-bg-sec/30 flex items-center justify-center group-hover:bg-creo-bg-sec/50 transition-colors">
+                {/* Background Accent - Large faded amount */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] select-none pointer-events-none group-hover:opacity-[0.05] transition-opacity">
+                  <span className="text-7xl font-bold text-white transform -rotate-12">{pkg.amount}</span>
                 </div>
-              )}
 
-              <button
-                onClick={handleConfirmAddToCart}
-                className="hidden md:block w-full min-h-12 bg-creo-accent hover:bg-white text-black font-bold py-3 rounded-xl transition-colors"
-              >
-                {language === 'ar' ? 'تأكيد الإضافة للسلة' : 'Confirm Add to Cart'}
-              </button>
-            </div>
-          </aside>
+                {/* Main Display in Aspect Area */}
+                <div className="relative z-10 flex flex-col items-center">
+                  <span className="text-2xl md:text-3xl font-bold text-white group-hover:text-creo-accent transition-colors">{pkg.amount}</span>
+                  <span className="text-[10px] uppercase tracking-widest text-creo-muted font-bold">{game.currency_name}</span>
+                </div>
 
-          <section className="lg:col-span-2">
-            <h3 className="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8">{t('select_package')}</h3>
+                {/* Wishlist Heart Icon - Top Right */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleWishlist(pkg);
+                  }}
+                  className={cn(
+                    "absolute top-1.5 right-1.5 z-30 p-1.5 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110",
+                    isInWishlist(game.id, pkg.id)
+                      ? "bg-creo-accent/20 text-creo-accent"
+                      : "bg-black/40 text-creo-muted hover:text-white"
+                  )}
+                  title={isInWishlist(game.id, pkg.id) ? t('remove_from_wishlist') : t('add_to_wishlist')}
+                >
+                  <Heart className={cn("w-3 h-3", isInWishlist(game.id, pkg.id) && "fill-current")} />
+                </button>
 
-            {packages.length === 0 ? (
-              <div className="rounded-2xl border border-creo-border bg-creo-card px-4 py-6 text-center text-creo-text-sec">
-                {language === 'ar' ? 'لا توجد باقات متاحة لهذا المنتج حالياً.' : 'No packages available for this product right now.'}
+                {pkg.bonus > 0 && (
+                  <div className="absolute top-1.5 left-1.5 bg-creo-accent text-black text-[8px] font-bold px-1.5 py-0.5 rounded uppercase border border-white/10 z-10">
+                    +{pkg.bonus} {t('bonus')}
+                  </div>
+                )}
+
+                {/* Hover Overlay with Action */}
+                <button
+                  onClick={() => handleAddToCart(pkg)}
+                  disabled={addingToCartId === pkg.id}
+                  className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] z-10"
+                >
+                  <div className="w-8 h-8 bg-creo-accent rounded-full flex items-center justify-center shadow-lg transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                    {addingToCartId === pkg.id ? (
+                      <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    ) : (
+                      <ShoppingCart className="w-4 h-4 text-black" />
+                    )}
+                  </div>
+                </button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                {packages.map((pkg) => {
-                  const quantity = packageQuantities[pkg.id] ?? 1;
-                  const pricing = getDiscountedPrice(pkg);
-                  const selected = selectedPackageId === pkg.id;
 
-                  return (
-                    <motion.button
-                      key={pkg.id}
-                      type="button"
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      onClick={() => setSelectedPackageId(pkg.id)}
-                      className={cn(
-                        'text-left bg-creo-card border rounded-2xl p-3 md:p-4 hover:border-creo-accent/70 transition-colors',
-                        selected ? 'border-creo-accent shadow-[0_0_0_1px_rgba(255,215,0,0.35)]' : 'border-creo-border',
-                      )}
-                    >
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div className="w-24 md:w-28 aspect-video rounded-xl overflow-hidden bg-creo-bg-sec border border-creo-border shrink-0">
-                          <img {...responsiveImageProps(pkg.image_url || game.image_url, { kind: 'card' })} alt={`${game.name} package`} className="w-full h-full object-fill" referrerPolicy="no-referrer" />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-white font-bold text-sm md:text-base line-clamp-1">
-                            {pkg.amount} {game.currency_name}{' '}
-                            {pkg.bonus > 0 && (
-                              <span className="text-creo-accent">+ {pkg.bonus} {t('bonus')}</span>
-                            )}
-                          </h4>
-
-                          <div className="mt-2 flex items-center justify-between gap-3">
-                            {pricing.hasDiscount ? (
-                              <>
-                                <span className="text-creo-accent text-sm md:text-base font-bold">{formatPrice(pricing.final)}</span>
-                                <span className="text-white/80 text-xs md:text-sm line-through">{formatPrice(pricing.original)}</span>
-                              </>
-                            ) : (
-                              <span className="text-creo-accent text-sm md:text-base font-bold">{formatPrice(pricing.final)}</span>
-                            )}
-                          </div>
-
-                          <div className="mt-3 flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleQuantityChange(pkg.id, -1);
-                              }}
-                              className="w-11 h-11 md:w-9 md:h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
-                              aria-label="Decrease quantity"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </button>
-
-                            <span className="w-8 text-center font-bold text-white">{quantity}</span>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleQuantityChange(pkg.id, 1);
-                              }}
-                              className="w-11 h-11 md:w-9 md:h-9 rounded-lg border border-creo-border flex items-center justify-center hover:border-creo-accent"
-                              aria-label="Increase quantity"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.button>
-                  );
-                })}
+              <div className="p-2 flex flex-col items-center justify-center text-center bg-creo-card flex-1 relative z-20 -mt-0.5 border-t border-creo-border/50">
+                <p className="text-[11px] font-bold text-creo-accent">
+                  {formatPrice(pkg.price)}
+                </p>
               </div>
-            )}
-          </section>
-        </div>
-      </div>
-
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-creo-border bg-creo-card/95 backdrop-blur-md px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(0,0,0,0.45)]">
-        <div className="container mx-auto space-y-2">
-          <p className="text-xs text-creo-text-sec">
-            {language === 'ar' ? 'الباقة المختارة' : 'Selected'}:{' '}
-            <span className="text-white font-semibold">
-              {selectedPackage ? `${selectedPackage.amount} ${game.currency_name} x ${selectedQuantity}` : '-'}
-            </span>
-          </p>
-          <button
-            onClick={handleConfirmAddToCart}
-            className="w-full min-h-12 rounded-xl bg-creo-accent hover:bg-white text-black font-bold transition-colors"
-          >
-            {language === 'ar' ? 'اشحن الآن' : 'Top Up Now'}
-          </button>
+            </motion.div>
+          ))}
         </div>
       </div>
     </div>

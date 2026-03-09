@@ -6,8 +6,7 @@ import { useStore } from '../context/StoreContext';
 import { fetchOrders } from '../services/api';
 import { Order } from '../types';
 import { Link } from 'react-router-dom';
-import { cn, responsiveImageProps } from '../lib/utils';
-import { OrdersListSkeleton, SkeletonBlock } from '../components/skeletons';
+import { cn } from '../lib/utils';
 
 export default function Orders() {
   const { t, language, allGames } = useStore();
@@ -34,37 +33,6 @@ export default function Orders() {
 
     loadOrders();
   }, [user]);
-
-  useEffect(() => {
-    const onOrderUpdated = (event: Event) => {
-      const custom = event as CustomEvent<{
-        orderId: string;
-        status: 'pending' | 'processing' | 'completed' | 'failed';
-        transactionId?: string | null;
-      }>;
-      const payload = custom.detail;
-      if (!payload?.orderId) return;
-
-      setOrders((prev) => {
-        const hasOrder = prev.some((order) => order.id === payload.orderId);
-        if (!hasOrder) return prev;
-        return prev.map((order) =>
-          order.id === payload.orderId
-            ? {
-                ...order,
-                status: payload.status,
-                transaction_id: payload.transactionId || order.transaction_id || null,
-              }
-            : order,
-        );
-      });
-    };
-
-    window.addEventListener('order-status-updated', onOrderUpdated as EventListener);
-    return () => {
-      window.removeEventListener('order-status-updated', onOrderUpdated as EventListener);
-    };
-  }, []);
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
@@ -94,17 +62,8 @@ export default function Orders() {
 
   if (loading) {
     return (
-      <div className="flex-1 bg-creo-bg pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="flex items-center gap-3 mb-8">
-            <SkeletonBlock className="w-12 h-12 rounded-xl" />
-            <div className="space-y-2">
-              <SkeletonBlock className="h-7 w-52" />
-              <SkeletonBlock className="h-4 w-40" />
-            </div>
-          </div>
-          <OrdersListSkeleton count={5} />
-        </div>
+      <div className="flex-1 flex items-center justify-center bg-creo-bg">
+        <div className="w-8 h-8 border-4 border-creo-accent border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -139,7 +98,7 @@ export default function Orders() {
             <History className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-[clamp(1.3rem,3.5vw,2rem)] font-display font-bold text-white">{t('order_history')}</h1>
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-white">{t('order_history')}</h1>
             <p className="text-sm text-creo-text-sec">View your past purchases</p>
           </div>
         </motion.div>
@@ -177,7 +136,7 @@ export default function Orders() {
                   <div className="flex items-center gap-4">
                     {game ? (
                       <img 
-                        {...responsiveImageProps(game.image_url, { kind: 'cover' })}
+                        src={game.image_url} 
                         alt={game.name}
                         className="w-16 h-16 rounded-xl object-cover border border-creo-border"
                       />

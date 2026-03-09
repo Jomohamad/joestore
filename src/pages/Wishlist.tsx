@@ -1,27 +1,26 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { Heart, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Game } from '../types';
+import { Heart, Trash2, AlertCircle, X, Check } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { responsiveImageProps, cn } from '../lib/utils';
-import { MouseEvent, useState } from 'react';
-import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
+import React, { useState } from 'react';
 
 export default function Wishlist() {
-  const { wishlist, removeFromWishlist, t, language } = useStore();
+  const { wishlist, removeFromWishlist, t, formatPrice } = useStore();
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
-  const scroll = useHorizontalScroll<HTMLDivElement>(language);
 
-  const handleRemove = (e: MouseEvent, gameId: string) => {
+  const handleRemove = (e: React.MouseEvent, gameId: string, pkgId?: number) => {
     e.preventDefault();
     e.stopPropagation();
-    const uniqueId = gameId;
-
+    const uniqueId = `${gameId}-${pkgId || 'base'}`;
+    
     if (confirmRemoveId === uniqueId) {
-      removeFromWishlist(gameId);
+      removeFromWishlist(gameId, pkgId);
       setConfirmRemoveId(null);
     } else {
       setConfirmRemoveId(uniqueId);
-      setTimeout(() => setConfirmRemoveId((prev) => (prev === uniqueId ? null : prev)), 3000);
+      // Auto-reset confirmation after 3 seconds
+      setTimeout(() => setConfirmRemoveId(prev => prev === uniqueId ? null : prev), 3000);
     }
   };
 
@@ -30,117 +29,111 @@ export default function Wishlist() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
           <div>
-            <h1 className="text-[clamp(1.6rem,5vw,3rem)] font-display font-bold text-white mb-2 md:mb-4">{t('wishlist') || 'Wishlist'}</h1>
-            <p className="text-sm md:text-base text-creo-text-sec max-w-xl">{t('wishlist_desc') || 'Your collection of favorite games and apps.'}</p>
+            <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-2 md:mb-4">
+              {t('wishlist') || 'Wishlist'}
+            </h1>
+            <p className="text-sm md:text-base text-creo-text-sec max-w-xl">
+              {t('wishlist_desc') || 'Your collection of favorite games and apps.'}
+            </p>
           </div>
         </div>
 
         {wishlist.length === 0 ? (
           <div className="text-center py-20 bg-creo-bg-sec/50 rounded-2xl border border-creo-border border-dashed">
             <Heart className="w-16 h-16 text-creo-muted mx-auto mb-4" />
-            <p className="text-creo-text-sec text-lg mb-6">{t('wishlist_empty') || 'Your wishlist is empty.'}</p>
-            <Link to="/" className="px-6 py-3 bg-creo-accent hover:bg-creo-accent-hover text-black font-bold rounded-xl transition-colors inline-block">
+            <p className="text-creo-text-sec text-lg mb-6">
+              {t('wishlist_empty') || 'Your wishlist is empty.'}
+            </p>
+            <Link 
+              to="/"
+              className="px-6 py-3 bg-creo-accent hover:bg-creo-accent-hover text-black font-bold rounded-xl transition-colors inline-block"
+            >
               {t('browse_games') || 'Browse Games'}
             </Link>
           </div>
         ) : (
-          <div className="relative group/section">
-            <div
-              className={cn(
-                'home-cards-edge left transition-opacity duration-200',
-                scroll.scrollState.canScrollLeft ? 'opacity-100' : 'opacity-0',
-              )}
-              aria-hidden="true"
-            />
-            <div
-              className={cn(
-                'home-cards-edge right transition-opacity duration-200',
-                scroll.scrollState.canScrollRight ? 'opacity-100' : 'opacity-0',
-              )}
-              aria-hidden="true"
-            />
-            {scroll.scrollState.canScrollLeft && (
-              <button
-                onClick={() => scroll.scroll(language === 'ar' ? 'right' : 'left')}
-                aria-label="Scroll wishlist left"
-                className={cn(
-                  'absolute top-1/2 -translate-y-1/2 z-10 w-11 h-11 md:w-10 md:h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
-                  language === 'ar' ? 'right-2 md:-right-4' : 'left-2 md:-left-4',
-                )}
-              >
-                <ChevronLeft className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
-              </button>
-            )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
+            {wishlist.map((item, index) => {
+              const game = item.game;
+              const pkg = item.package;
+              const uniqueKey = `${game.id}-${pkg?.id || 'base'}`;
 
-            {scroll.scrollState.canScrollRight && (
-              <button
-                onClick={() => scroll.scroll(language === 'ar' ? 'left' : 'right')}
-                aria-label="Scroll wishlist right"
-                className={cn(
-                  'absolute top-1/2 -translate-y-1/2 z-10 w-11 h-11 md:w-10 md:h-10 rounded-full bg-creo-card/80 backdrop-blur-sm border border-creo-border flex items-center justify-center hover:bg-creo-accent hover:text-black transition-all opacity-65 md:opacity-0 md:group-hover/section:opacity-100 disabled:opacity-0',
-                  language === 'ar' ? 'left-2 md:-left-4' : 'right-2 md:-right-4',
-                )}
-              >
-                <ChevronRight className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
-              </button>
-            )}
-
-            <div
-              ref={scroll.ref}
-              {...scroll.events}
-              className={cn(
-                'home-cards-track flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-auto',
-                scroll.isDragging ? 'cursor-grabbing snap-none scroll-auto' : 'cursor-grab',
-              )}
-            >
-              {wishlist.map((item, index) => {
-                const game = item.game;
-                const uniqueKey = game.id;
-                const isConfirming = confirmRemoveId === uniqueKey;
-
-                return (
-                  <motion.div
-                    key={uniqueKey}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: index * 0.03 }}
-                    className={cn(
-                      'home-cards-item shrink-0',
-                      index === 0 ? 'snap-start' : index === wishlist.length - 1 ? 'snap-end' : 'snap-center',
-                    )}
+              return (
+                <motion.div
+                  key={uniqueKey}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                >
+                  <Link 
+                    to={`/game/${game.id}`}
+                    className="group block relative rounded-2xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] flex flex-col h-full"
                   >
-                    <Link
-                      to={`/game/${game.id}`}
-                      className="group block relative aspect-video rounded-xl overflow-hidden bg-creo-card border border-creo-border hover:border-creo-accent active:scale-[0.99] transition-all duration-300 shadow-lg group-hover:shadow-[0_0_30px_rgba(255,215,0,0.35),inset_0_0_20px_rgba(255,215,0,0.12)]"
-                    >
-                      <div className="absolute inset-0 bg-creo-bg">
-                        <img
-                          {...responsiveImageProps(game.image_url, { kind: 'card' })}
-                          alt={game.name}
-                          className="w-full h-full object-fill transform group-hover:scale-105 transition-transform duration-500 ease-out"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="aspect-video relative overflow-hidden bg-creo-bg">
+                      <img 
+                        src={game.image_url} 
+                        alt={game.name}
+                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-creo-card via-transparent to-transparent opacity-80"></div>
+                      
+                      {/* Genre Badge */}
+                      {game.genre && (
+                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white/80 border border-white/10">
+                          {game.genre}
+                        </div>
+                      )}
 
-                        <button
-                          onClick={(e) => handleRemove(e, game.id)}
-                          aria-label={isConfirming ? 'Confirm remove from wishlist' : 'Remove from wishlist'}
-                          className={`absolute top-1.5 right-1.5 w-11 h-11 md:w-9 md:h-9 rounded-full backdrop-blur-md transition-all duration-300 z-30 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 ${
-                            isConfirming ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-black/40 text-creo-accent hover:bg-red-500/20'
-                          }`}
-                        >
-                          {isConfirming ? <AlertCircle className="w-4 h-4 animate-pulse" /> : <Heart className="w-4 h-4 fill-creo-accent" />}
-                        </button>
-                      </div>
+                      {/* Package Badge */}
+                      {pkg && (
+                        <div className="absolute bottom-2 right-2 bg-creo-accent text-black px-2 py-1 rounded text-xs font-bold shadow-lg">
+                          {pkg.amount} {game.currency_name}
+                        </div>
+                      )}
 
-                      <div className="absolute bottom-0 left-0 right-0 p-2 z-20 flex flex-col items-center justify-end text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <h3 className="text-[11px] md:text-xs font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">{game.name}</h3>
+                      {/* Remove Button (Heart) */}
+                      <button
+                        onClick={(e) => handleRemove(e, game.id, pkg?.id)}
+                        className={`absolute top-1.5 right-1.5 p-1.5 rounded-full backdrop-blur-md transition-all duration-300 z-30 flex items-center gap-1.5 ${
+                          confirmRemoveId === uniqueKey 
+                            ? "bg-red-500 text-white px-2.5 shadow-lg shadow-red-500/20" 
+                            : "bg-black/40 text-creo-accent hover:bg-red-500/20"
+                        }`}
+                        title={confirmRemoveId === uniqueKey ? "Confirm removal" : "Remove from wishlist"}
+                      >
+                        {confirmRemoveId === uniqueKey ? (
+                          <>
+                            <AlertCircle className="w-3 h-3 animate-pulse" />
+                            <span className="text-[8px] font-bold uppercase tracking-wider">Remove?</span>
+                          </>
+                        ) : (
+                          <Heart className="w-3.5 h-3.5 fill-creo-accent" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="p-3 flex flex-col items-start justify-center bg-creo-card flex-1 relative z-20 -mt-1">
+                      <h3 className="text-sm font-bold text-white group-hover:text-creo-accent transition-colors line-clamp-1">
+                        {game.name}
+                      </h3>
+                      <div className="flex items-center justify-between w-full mt-1">
+                        {pkg ? (
+                          <p className="text-xs font-bold text-creo-accent">
+                            {formatPrice(pkg.price)}
+                          </p>
+                        ) : (
+                          game.min_price && (
+                            <p className="text-[10px] font-bold text-creo-accent">
+                              {t('from') || 'From'} {formatPrice(game.min_price)}
+                            </p>
+                          )
+                        )}
                       </div>
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
