@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Joestore Offline</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #000;
+        color: #fff;
+        font-family: Manrope, system-ui, sans-serif;
+        padding: 1rem;
+      }
+      .card {
+        width: min(420px, 100%);
+        border: 1px solid #27272a;
+        background: #111;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+      }
+      .muted {
+        color: #a1a1aa;
+        font-size: 0.92rem;
+      }
+      .btn {
+        margin-top: 14px;
+        display: inline-block;
+        min-height: 44px;
+        line-height: 44px;
+        padding: 0 18px;
+        background: #ffd700;
+        color: #000;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card" aria-live="polite">
+      <h1>You are offline</h1>
+      <p class="muted">Cached content is available, but live requests need an internet connection.</p>
+      <a class="btn" href="/">Try Again</a>
+    </main>
+  </body>
+</html>

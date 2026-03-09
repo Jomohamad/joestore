@@ -1,25 +1,22 @@
 export interface Promotion {
   id: number;
-  subtitle_en: string;
-  subtitle_ar: string;
   image_url: string;
   link_url?: string;
   is_active: boolean;
   sort_order: number;
+  font_size_scale?: number;
 }
 
 export interface Game {
   id: string;
+  slug?: string | null;
   name: string;
   publisher: string;
   image_url: string;
   currency_name: string;
-  currency_icon: string;
-  color_theme: string;
   category: 'game' | 'app';
-  genre?: string;
-  popularity?: number;
-  min_price?: number;
+  description?: string | null;
+  show_on_home?: boolean;
 }
 
 export interface Package {
@@ -28,13 +25,31 @@ export interface Package {
   amount: number;
   bonus: number;
   price: number;
+  image_url?: string | null;
+  discount_type?: 'percent' | 'fixed' | null;
+  discount_value?: number;
+  discount_active?: boolean;
+  discount_ends_at?: string | null;
 }
 
 export interface Order {
   id: string;
   game_id: string;
-  package_id: number;
+  product_id?: string | null;
+  package_id?: number | null;
   amount: number;
-  status: string;
+  status: 'pending' | 'paid' | 'processing' | 'completed' | 'failed' | string;
+  account_identifier?: string | null;
+  player_id?: string | null;
+  server?: string | null;
+  package?: string | null;
+  price?: number | null;
+  provider?: string | null;
+  payment_id?: string | null;
+  transaction_id?: string | null;
+  provider_order_ref?: string | null;
+  provider_response?: Record<string, unknown> | null;
+  payment_details?: Record<string, unknown>;
+  quantity?: number;
   created_at: string;
 }
