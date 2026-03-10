@@ -875,6 +875,14 @@ export const fetchAdminFraudAlerts = async (): Promise<Array<Record<string, unkn
   return Array.isArray(body) ? body : [];
 };
 
+export const fetchAdminFraudSignals = async (): Promise<Array<Record<string, unknown>>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/admin/fraud/signals', { headers }, 10000);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch fraud signals'));
+  return Array.isArray(body) ? body : [];
+};
+
 export const runAdminFraudAction = async (payload: {
   action: 'block_user' | 'flag_order' | 'reduce_risk';
   userId?: string;
@@ -1070,6 +1078,14 @@ export const fetchAdminAlerts = async (): Promise<Array<Record<string, unknown>>
   const response = await fetchWithTimeout('/api/admin/alerts', { headers }, 10000);
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch alerts'));
+  return Array.isArray(body) ? body : [];
+};
+
+export const fetchAdminWorkers = async (): Promise<Array<Record<string, unknown>>> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout('/api/admin/workers', { headers }, 10000);
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(String(body?.error || 'Failed to fetch workers'));
   return Array.isArray(body) ? body : [];
 };
 

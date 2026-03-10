@@ -17,7 +17,9 @@ import {
   fetchAdminUsers,
   fetchAdminMetrics,
   fetchAdminAlerts,
+  fetchAdminWorkers,
   fetchAdminProviderSla,
+  fetchAdminFraudSignals,
   retryAdminOrder,
   runAdminFraudAction,
   sendAdminTestAlert,
@@ -105,11 +107,13 @@ export default function Dashboard() {
   const [providerHealth, setProviderHealth] = useState<Array<Record<string, unknown>>>([]);
   const [providerPrices, setProviderPrices] = useState<Array<Record<string, unknown>>>([]);
   const [fraudAlerts, setFraudAlerts] = useState<Array<Record<string, unknown>>>([]);
+  const [fraudSignals, setFraudSignals] = useState<Array<Record<string, unknown>>>([]);
   const [pricingRules, setPricingRules] = useState<Array<Record<string, unknown>>>([]);
   const [discountRules, setDiscountRules] = useState<Array<Record<string, unknown>>>([]);
   const [metrics, setMetrics] = useState<Record<string, unknown>>({});
   const [providerSla, setProviderSla] = useState<Array<Record<string, unknown>>>([]);
   const [alerts, setAlerts] = useState<Array<Record<string, unknown>>>([]);
+  const [workers, setWorkers] = useState<Array<Record<string, unknown>>>([]);
 
   const [orderSearch, setOrderSearch] = useState('');
   const [retryingId, setRetryingId] = useState<string | null>(null);
@@ -154,7 +158,7 @@ export default function Dashboard() {
 
   const refreshAll = async (search = orderSearch, usersSearch = userSearch) => {
     setError(null);
-    const [ordersData, gamesData, productsData, paymentsData, logsData, transactionsData, usersData, providerHealthData, providerPricesData, fraudAlertsData, pricingRulesData, discountRulesData, metricsData, slaData, alertsData] =
+    const [ordersData, gamesData, productsData, paymentsData, logsData, transactionsData, usersData, providerHealthData, providerPricesData, fraudAlertsData, pricingRulesData, discountRulesData, metricsData, slaData, alertsData, fraudSignalsData, workersData] =
       await Promise.all([
         fetchAdminOrders(search),
         fetchAdminGames(),
@@ -171,6 +175,8 @@ export default function Dashboard() {
         fetchAdminMetrics(),
         fetchAdminProviderSla(),
         fetchAdminAlerts(),
+        fetchAdminFraudSignals(),
+        fetchAdminWorkers(),
       ]);
 
     setOrders(ordersData as AdminOrder[]);
@@ -188,6 +194,8 @@ export default function Dashboard() {
     setMetrics(metricsData);
     setProviderSla(slaData);
     setAlerts(alertsData);
+    setFraudSignals(fraudSignalsData);
+    setWorkers(workersData);
   };
 
   useEffect(() => {
@@ -1076,6 +1084,30 @@ export default function Dashboard() {
                 Export Orders CSV
               </a>
             </div>
+
+            <div className="rounded-2xl border border-creo-border bg-creo-card p-5 space-y-3 md:col-span-2">
+              <h3 className="text-lg font-bold text-white">Worker Health</h3>
+              <div className="overflow-x-auto max-h-72">
+                <table className="w-full text-sm min-w-[520px]">
+                  <thead>
+                    <tr className="text-creo-text-sec border-b border-creo-border">
+                      <th className="text-left py-2">Worker</th>
+                      <th className="text-left py-2">Status</th>
+                      <th className="text-left py-2">Last Seen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workers.map((row) => (
+                      <tr key={String(row.id || row.worker_name)} className="border-b border-creo-border/60 text-white">
+                        <td className="py-2 pr-3">{String(row.worker_name || '')}</td>
+                        <td className="py-2 pr-3">{String(row.status || 'ok')}</td>
+                        <td className="py-2 pr-3">{String(row.last_seen_at || '')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1141,6 +1173,34 @@ export default function Dashboard() {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            <div className="border-t border-creo-border/60 pt-4">
+              <h3 className="text-lg font-bold text-white mb-3">ML Fraud Signals</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[760px]">
+                  <thead>
+                    <tr className="text-creo-text-sec border-b border-creo-border">
+                      <th className="text-left py-2">User</th>
+                      <th className="text-left py-2">Order</th>
+                      <th className="text-left py-2">Signal</th>
+                      <th className="text-left py-2">Score</th>
+                      <th className="text-left py-2">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fraudSignals.map((row) => (
+                      <tr key={String(row.id)} className="border-b border-creo-border/60 text-white">
+                        <td className="py-2 pr-3">{String(row.user_id || '-')}</td>
+                        <td className="py-2 pr-3">{String(row.order_id || '-')}</td>
+                        <td className="py-2 pr-3">{String(row.signal_type || '-')}</td>
+                        <td className="py-2 pr-3">{String(row.score || '0')}</td>
+                        <td className="py-2 pr-3">{String(row.created_at || '-')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

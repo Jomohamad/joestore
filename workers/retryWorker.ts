@@ -1,5 +1,6 @@
 import { enqueueTopupRequest } from '../src/lib/server/queue/topupQueue';
 import { supabaseAdmin } from '../src/lib/server/supabaseAdmin';
+import { heartbeatService } from '../src/lib/server/services/heartbeat';
 
 const runRetrySweep = async () => {
   const rows = await supabaseAdmin
@@ -32,6 +33,9 @@ const boot = async () => {
   setInterval(() => {
     void runRetrySweep();
   }, 60_000);
+  setInterval(() => {
+    void heartbeatService.beat('retryWorker', { intervalMs: 60000 });
+  }, 30_000);
 };
 
 void boot();

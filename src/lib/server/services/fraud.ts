@@ -3,6 +3,7 @@ import { serverEnv } from '../env';
 import { supabaseAdmin } from '../supabaseAdmin';
 import { logsService } from './logs';
 import { cacheManager } from './cache/cacheManager';
+import { queueJobService } from './queueJobs';
 
 const tableOrColumnMissing = (code: string | undefined) => code === '42P01' || code === '42703' || code === '42883';
 
@@ -162,6 +163,18 @@ export const fraudService = {
         reasons,
         riskScore,
       });
+    }
+
+    try {
+      await queueJobService.enqueue('fraud.ml_score', {
+        userId: input.userId,
+        orderId: null,
+        score: riskScore,
+        reasons,
+        country,
+      });
+    } catch {
+      // ignore queue failures
     }
 
     return {

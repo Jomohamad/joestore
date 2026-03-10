@@ -9,7 +9,8 @@
     "clean": "rimraf dist",
     "lint": "tsc --noEmit",
     "worker:topup": "tsx workers/topupWorker.ts",
-    "worker:retry": "tsx workers/retryWorker.ts"
+    "worker:retry": "tsx workers/retryWorker.ts",
+    "worker:queue": "tsx workers/queueJobWorker.ts"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

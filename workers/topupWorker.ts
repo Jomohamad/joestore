@@ -3,6 +3,7 @@ import { getRedisConnectionForBull } from '../src/lib/server/services/cache/redi
 import { serverEnv } from '../src/lib/server/env';
 import { topupEngine } from '../src/lib/server/services/topupEngine';
 import { publishTopupResult } from '../src/lib/server/queue/topupQueue';
+import { heartbeatService } from '../src/lib/server/services/heartbeat';
 
 const boot = async () => {
   const connection = getRedisConnectionForBull();
@@ -34,6 +35,10 @@ const boot = async () => {
       concurrency: 5,
     },
   );
+
+  setInterval(() => {
+    void heartbeatService.beat('topupWorker', { concurrency: 5 });
+  }, 30_000);
 
   worker.on('failed', async (job, error) => {
     await publishTopupResult({
