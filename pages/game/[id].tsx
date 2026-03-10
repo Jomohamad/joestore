@@ -1,22 +1,28 @@
-import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
-import { ServerRenderedApp } from '../../src/App';
+import type { GetServerSideProps } from 'next';
+import GameDetails from '../../src/pages/GameDetails';
 import { ordersService } from '../../src/lib/server/services/orders';
 import type { SsrDataPayload } from '../../src/context/SsrDataContext';
 
 type Props = {
-  ssrLocation: string;
-  ssrData: SsrDataPayload;
+  initialGame?: Record<string, unknown> | null;
+  initialPackages?: Array<Record<string, unknown>>;
+  initialGameIdentifier?: string;
+  ssrData?: SsrDataPayload;
 };
 
-export default function GameSsrPage({ ssrLocation, ssrData }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  return <ServerRenderedApp ssrLocation={ssrLocation} ssrData={ssrData} />;
+export default function Page({ initialGame, initialPackages, initialGameIdentifier }: Props) {
+  return (
+    <GameDetails
+      initialGame={initialGame as any}
+      initialPackages={initialPackages as any}
+      initialGameIdentifier={initialGameIdentifier}
+    />
+  );
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
   const identifier = String(context.params?.id || '').trim();
-  if (!identifier) {
-    return { notFound: true };
-  }
+  if (!identifier) return { notFound: true };
 
   try {
     const [game, { packages }] = await Promise.all([
@@ -44,7 +50,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
 
     return {
       props: {
-        ssrLocation: `/game/${encodeURIComponent(identifier)}`,
+        initialGame: game as Record<string, unknown>,
+        initialPackages: packages as Array<Record<string, unknown>>,
+        initialGameIdentifier: identifier,
         ssrData: {
           gameDetails,
         },
@@ -54,4 +62,3 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     return { notFound: true };
   }
 };
-

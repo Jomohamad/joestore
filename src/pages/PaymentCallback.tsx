@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from '../lib/router';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { verifyPaymentCallbackApi } from '../services/api';
 import { useStore } from '../context/StoreContext';
@@ -7,7 +7,7 @@ import { useStore } from '../context/StoreContext';
 type ViewState = 'processing' | 'success' | 'error';
 
 export default function PaymentCallback() {
-  const { provider } = useParams<{ provider: string }>();
+  const { provider } = useParams<{ provider: string | string[] }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { language } = useStore();
@@ -15,7 +15,8 @@ export default function PaymentCallback() {
   const [message, setMessage] = useState('');
 
   const normalizedProvider = useMemo(() => {
-    const value = String(provider || '').trim().toLowerCase();
+    const normalized = Array.isArray(provider) ? provider[0] : provider;
+    const value = String(normalized || '').trim().toLowerCase();
     return value === 'fawaterk' ? ('fawaterk' as const) : null;
   }, [provider]);
 

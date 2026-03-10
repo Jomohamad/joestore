@@ -1,8 +1,8 @@
 import type { GetServerSideProps } from 'next';
-import Orders from '../src/pages/Orders';
+import Dashboard from '../src/pages/Dashboard';
 
 export default function Page() {
-  return <Orders />;
+  return <Dashboard />;
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {

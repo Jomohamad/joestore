@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from '../lib/router';
 
 const HORIZONTAL_THRESHOLD = 70;
 const HORIZONTAL_SLOPE_FACTOR = 1.35;

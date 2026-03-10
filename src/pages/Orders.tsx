@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStore } from '../context/StoreContext';
 import { fetchOrders } from '../services/api';
 import { Order } from '../types';
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router';
 import { cn, responsiveImageProps } from '../lib/utils';
 import { OrdersListSkeleton, SkeletonBlock } from '../components/skeletons';
 

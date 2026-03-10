@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from '../lib/router';
 import { useAuth } from '../context/AuthContext';
 import {
   deleteAdminProduct,

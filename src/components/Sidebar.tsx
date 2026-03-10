@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../lib/router';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Heart, Globe, History, LogOut, User, DollarSign, LogIn, ShieldCheck, Edit, Trash2, UserPlus, Headset, LayoutDashboard } from 'lucide-react';
 import { useStore } from '../context/StoreContext';

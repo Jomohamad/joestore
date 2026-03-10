@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from '../lib/router';
 import { AnimatePresence, motion } from 'motion/react';
 import { fetchGameDetails, fetchGamePackages } from '../services/api';
 import { Game, Package } from '../types';
@@ -42,13 +42,14 @@ type GameDetailsProps = {
 };
 
 export default function GameDetails({ initialGame, initialPackages, initialGameIdentifier }: GameDetailsProps) {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string | string[] }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToCart, t, language, formatPrice, isInWishlist, addToWishlist, removeFromWishlist } = useStore();
+  const { addToCart, t, language, formatPrice, isInWishlist, addToWishlist, removeFromWishlist, notifyMessage } = useStore();
   const { gameDetails } = useSsrData();
 
-  const requestedId = String(initialGameIdentifier || id || '').trim();
+  const rawId = Array.isArray(id) ? id[0] : id;
+  const requestedId = String(initialGameIdentifier || rawId || '').trim();
   const preloaded = requestedId ? gameDetails?.[requestedId] : undefined;
   const effectiveInitialGame = useMemo(() => initialGame || preloaded?.game || null, [initialGame, preloaded]);
   const effectiveInitialPackages = useMemo(() => initialPackages || preloaded?.packages || [], [initialPackages, preloaded]);
@@ -146,7 +147,7 @@ export default function GameDetails({ initialGame, initialPackages, initialGameI
     }
 
     if (!accountIdentifier.trim()) {
-      alert(language === 'ar' ? 'من فضلك أدخل الـ ID أولاً' : 'Please enter account ID first');
+      notifyMessage(language === 'ar' ? 'من فضلك أدخل الـ ID أولاً' : 'Please enter account ID first');
       return;
     }
 

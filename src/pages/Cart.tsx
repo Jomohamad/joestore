@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router';
 import { motion } from 'motion/react';
 import { Trash2, ShoppingCart, ArrowRight, Tag, AlertCircle, Minus, Plus, CircleDollarSign } from 'lucide-react';
 import { useStore } from '../context/StoreContext';

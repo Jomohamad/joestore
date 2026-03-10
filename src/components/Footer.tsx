@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router';
 import { Twitter, Facebook, Instagram } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import BrandWordmark from './BrandWordmark';

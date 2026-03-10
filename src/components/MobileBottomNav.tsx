@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import { Gamepad2, Grid3X3, Home, ShoppingBag, User } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from '../lib/router';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
 
