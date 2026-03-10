@@ -10,6 +10,9 @@ import { fraudService } from './fraud';
 import { logsService } from './logs';
 import { providerRouter } from './providerRouter';
 import { topupEngine } from './topupEngine';
+import { discountService } from './discounts';
+import { referralService } from './referrals';
+import { analyticsService } from './analytics';
 
 export type CanonicalOrderStatus = 'pending' | 'paid' | 'processing' | 'completed' | 'failed';
 export type PaymentGateway = 'fawaterk';
@@ -210,6 +213,23 @@ const safeUpdateLatestTransaction = async (
   return latest.data.id;
 };
 
+const insertOrderEvent = async (payload: {
+  orderId: string;
+  status: string;
+  message?: string;
+  metadata?: Record<string, unknown>;
+}) => {
+  const result = await supabaseAdmin.from('order_events').insert({
+    order_id: payload.orderId,
+    status: payload.status,
+    message: payload.message || null,
+    metadata: payload.metadata || {},
+  });
+  if (result.error && !tableOrColumnMissing(result.error.code)) {
+    throw result.error;
+  }
+};
+
 const safeGetProductById = async (productId: string) => {
   const result = await supabaseAdmin.from('products').select('*').eq('id', productId).maybeSingle();
   if (result.error) {
@@ -265,6 +285,7 @@ export const ordersService = {
     ipAddress?: string | null;
     country?: string | null;
     fraudRiskScore?: number | null;
+    couponCode?: string | null;
   }) {
     if (!input.userId || !input.gameIdentifier || !input.playerId || Number(input.quantity || 0) <= 0) {
       throw new ApiError(400, 'Invalid order payload', 'INVALID_ORDER_PAYLOAD');
@@ -348,8 +369,75 @@ export const ordersService = {
     }
 
     const quantity = Math.max(1, Number(input.quantity || 1));
-    const totalPrice = Number((unitPrice * quantity).toFixed(2));
+    let totalPrice = Number((unitPrice * quantity).toFixed(2));
     const orderId = randomUUID();
+
+    let discountCode: string | null = null;
+    let discountType: 'percent' | 'fixed' | null = null;
+    let discountValue = 0;
+    let discountAmount = 0;
+    let discountSource: 'coupon' | 'auto_rule' | 'none' = 'none';
+    let discountRule: Record<string, unknown> | null = null;
+
+    if (input.couponCode) {
+      const code = String(input.couponCode || '').trim().toUpperCase();
+      if (code) {
+        const { data, error } = await supabaseAdmin
+          .from('coupons')
+          .select('code, discount_type, value, active, expires_at')
+          .eq('code', code)
+          .maybeSingle();
+
+        if (error || !data) {
+          throw new ApiError(400, 'Invalid coupon code', 'COUPON_INVALID');
+        }
+
+        const active = data.active !== false;
+        const expiresAt = data.expires_at ? new Date(data.expires_at) : null;
+        if (!active || (expiresAt && expiresAt.getTime() < Date.now())) {
+          throw new ApiError(400, 'Coupon is expired or inactive', 'COUPON_EXPIRED');
+        }
+
+        discountCode = String(data.code || code);
+        discountType = data.discount_type === 'percent' ? 'percent' : 'fixed';
+        discountValue = Number(data.value || 0);
+        if (discountType === 'percent') {
+          discountAmount = Math.max(0, totalPrice * (discountValue / 100));
+        } else {
+          discountAmount = Math.max(0, discountValue);
+        }
+        discountSource = 'coupon';
+      }
+    }
+
+    const autoDiscount = await discountService.evaluate({
+      userId: input.userId,
+      gameId,
+      category: String((game as Record<string, unknown>).category || ''),
+      subtotal: totalPrice,
+    });
+
+    if (autoDiscount.amount > discountAmount) {
+      discountAmount = autoDiscount.amount;
+      discountSource = autoDiscount.source;
+      discountRule = autoDiscount.rule || null;
+      discountCode = null;
+      discountType = null;
+      discountValue = 0;
+    }
+
+    totalPrice = Number(Math.max(0, totalPrice - discountAmount).toFixed(2));
+
+    if (discountRule && discountRule.id) {
+      try {
+        await supabaseAdmin
+          .from('discount_rules')
+          .update({ used_count: Number(discountRule.used_count || 0) + 1 })
+          .eq('id', discountRule.id as string);
+      } catch {
+        // ignore discount rule counter failures
+      }
+    }
 
     const sanitizePaymentDetails = (details?: Record<string, unknown>) => {
       const clean = details && typeof details === 'object' ? { ...details } : {};
@@ -381,6 +469,15 @@ export const ordersService = {
       ip_address: input.ipAddress || null,
       country: input.country || null,
       fraud_risk_score: Number(input.fraudRiskScore || 0) || null,
+      discount_code: discountCode,
+      discount_type: discountType,
+      discount_value: discountValue || null,
+      discount_amount: discountAmount || null,
+      order_discounts: {
+        source: discountSource,
+        amount: discountAmount,
+        rule: discountRule,
+      },
     };
 
     let inserted = await supabaseAdmin.from('orders').insert(insertPayload).select('*').single();
@@ -388,6 +485,11 @@ export const ordersService = {
       delete insertPayload.ip_address;
       delete insertPayload.country;
       delete insertPayload.fraud_risk_score;
+      delete insertPayload.discount_code;
+      delete insertPayload.discount_type;
+      delete insertPayload.discount_value;
+      delete insertPayload.discount_amount;
+      delete insertPayload.order_discounts;
       inserted = await supabaseAdmin.from('orders').insert(insertPayload).select('*').single();
     }
 
@@ -401,6 +503,16 @@ export const ordersService = {
       gameId,
       provider: insertPayload.provider,
       amount: totalPrice,
+    });
+    await analyticsService.track({
+      userId: input.userId,
+      eventType: 'order.created',
+      metadata: { orderId, gameId, amount: totalPrice },
+    });
+    await insertOrderEvent({
+      orderId,
+      status: 'pending',
+      message: 'Order created',
     });
 
     return {
@@ -420,6 +532,19 @@ export const ordersService = {
 
     if (error) throw new ApiError(500, error.message, 'ORDERS_FETCH_FAILED');
     return data || [];
+  },
+
+  async listOrderEvents(orderId: string) {
+    const rows = await supabaseAdmin
+      .from('order_events')
+      .select('*')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: true });
+    if (rows.error) {
+      if (tableOrColumnMissing(rows.error.code)) return [];
+      throw new ApiError(500, rows.error.message, 'ORDER_EVENTS_FETCH_FAILED');
+    }
+    return rows.data || [];
   },
 
   async getOrder(orderId: string) {
@@ -445,6 +570,12 @@ export const ordersService = {
       orderId,
       status,
       extra: extra || {},
+    });
+    await insertOrderEvent({
+      orderId,
+      status,
+      message: `Order status updated to ${status}`,
+      metadata: extra || {},
     });
 
     return data as Record<string, unknown>;
@@ -603,6 +734,26 @@ export const ordersService = {
       transaction_id: verification.transactionId || String(order.transaction_id || ''),
       provider_response: payload,
     });
+    await analyticsService.track({
+      userId: String(order.user_id || ''),
+      eventType: 'order.paid',
+      metadata: { orderId, amount: Number(order.price || 0) },
+    });
+
+    if (String(order.user_id || '').trim()) {
+      try {
+        await referralService.applyRewardIfEligible({
+          userId: String(order.user_id),
+          orderId,
+          amount: Number(order.price || 0),
+        });
+      } catch (error) {
+        await logsService.write('referral.reward_failed', 'Referral reward failed', {
+          orderId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
     const queued = await enqueueTopupRequest({
       orderId,
       source: 'payment-webhook',
@@ -1224,11 +1375,12 @@ export const ordersService = {
     };
   },
 
-  async adminRefundOrder(orderId: string) {
+  async adminRefundOrder(orderId: string, options?: { refundMode?: 'wallet' | 'gateway' }) {
     const order = await this.getOrder(orderId);
     await this.setOrderStatus(orderId, 'failed', {
       provider_response: {
         refund_requested_at: new Date().toISOString(),
+        refund_mode: options?.refundMode || 'gateway',
       },
     });
 
@@ -1242,6 +1394,26 @@ export const ordersService = {
           refunded: true,
         },
       });
+    }
+
+    if (options?.refundMode === 'wallet') {
+      try {
+        const { walletService } = await import('./wallet');
+        await walletService.credit({
+          userId: String(order.user_id || ''),
+          amount: Number(order.price || 0),
+          currency: String(order.currency || 'EGP'),
+          source: 'refund',
+          referenceType: 'order_refund',
+          referenceId: String(order.id || orderId),
+          metadata: { orderId },
+        });
+      } catch (error) {
+        await logsService.write('admin.order.refund_failed', 'Wallet refund failed', {
+          orderId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
 
     await logsService.write('admin.order.refund', 'Admin refunded order', { orderId });

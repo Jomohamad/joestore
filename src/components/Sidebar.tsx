@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from '../lib/router';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, Globe, History, LogOut, User, DollarSign, LogIn, ShieldCheck, Edit, Trash2, UserPlus, Headset, LayoutDashboard } from 'lucide-react';
+import { X, Heart, Globe, History, LogOut, User, DollarSign, LogIn, ShieldCheck, Edit, Trash2, UserPlus, Headset, LayoutDashboard, Wallet } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
@@ -143,6 +143,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     >
                       <History className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
                       <span className="font-medium">{t('order_history')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => goTo('/wallet')}
+                      className="w-full text-left flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group"
+                    >
+                      <Wallet className="w-5 h-5 text-creo-muted group-hover:text-creo-accent transition-colors" />
+                      <span className="font-medium">Wallet</span>
                     </button>
 
                     <Link to="/payment-methods" onClick={onClose} className="flex items-center gap-3 px-4 py-3 text-creo-text hover:text-white hover:bg-creo-bg-sec rounded-xl transition-colors group">

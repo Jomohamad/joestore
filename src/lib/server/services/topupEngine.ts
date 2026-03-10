@@ -85,11 +85,19 @@ const buildProvidersSequence = (
 };
 
 export const topupEngine = {
-  async processOrder(orderId: string, context?: { source?: string }) {
+  async processOrder(orderId: string, context?: { source?: string; force?: boolean }) {
     const order = await getOrder(orderId);
     const status = String(order.status || '').toLowerCase();
 
     if (status === 'completed') return order;
+    if (status === 'processing' && !context?.force) return order;
+    if (
+      (status === 'paid' || status === 'processing') &&
+      (order.provider_order_ref || order.transaction_id) &&
+      !context?.force
+    ) {
+      return order;
+    }
     if (status !== 'paid' && status !== 'processing' && status !== 'failed') {
       throw new ApiError(400, 'Order is not ready for processing', 'ORDER_NOT_READY_FOR_TOPUP');
     }

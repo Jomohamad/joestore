@@ -26,6 +26,7 @@ const requiredWhenOrDefault = (
 const nodeEnv = clean(process.env.NODE_ENV) || 'development';
 const isProduction = nodeEnv === 'production';
 const sandboxDisabled = clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false';
+const mustRequireProd = isProduction;
 
 export const serverEnv = {
   nodeEnv,
@@ -49,26 +50,26 @@ export const serverEnv = {
     'JWT_SECRET',
     process.env.JWT_SECRET,
     'dev-insecure-jwt-secret',
-    isProduction && sandboxDisabled,
+    mustRequireProd,
   ),
   internalApiToken: requiredWhenOrDefault(
     'INTERNAL_API_TOKEN',
     process.env.INTERNAL_API_TOKEN,
     'dev-insecure-internal-token',
-    isProduction && sandboxDisabled,
+    mustRequireProd,
   ),
 
   reloadlyClientId: requiredWhenOrDefault(
     'RELOADLY_CLIENT_ID',
     process.env.RELOADLY_CLIENT_ID,
     'sandbox-reloadly-client-id',
-    isProduction && sandboxDisabled,
+    mustRequireProd,
   ),
   reloadlyClientSecret: requiredWhenOrDefault(
     'RELOADLY_CLIENT_SECRET',
     process.env.RELOADLY_CLIENT_SECRET,
     'sandbox-reloadly-client-secret',
-    isProduction && sandboxDisabled,
+    mustRequireProd,
   ),
   reloadlyAuthBase:
     clean(process.env.RELOADLY_AUTH_BASE) ||
@@ -80,7 +81,7 @@ export const serverEnv = {
     'GAMESDROP_API_KEY',
     process.env.GAMESDROP_API_KEY,
     'sandbox-gamesdrop-api-key',
-    isProduction && sandboxDisabled,
+    mustRequireProd,
   ),
   gamesdropApiBase:
     clean(process.env.GAMESDROP_API_BASE) ||
@@ -101,19 +102,19 @@ export const serverEnv = {
     'FAWATERK_API_KEY',
     process.env.FAWATERK_API_KEY,
     'sandbox-fawaterk-api-key',
-    isProduction && sandboxDisabled,
+    mustRequireProd,
   ),
   fawaterkSecretKey: requiredWhenOrDefault(
     'FAWATERK_SECRET_KEY or FAWATERK_SECRET',
     process.env.FAWATERK_SECRET_KEY || process.env.FAWATERK_SECRET,
     'sandbox-fawaterk-secret-key',
-    isProduction && sandboxDisabled,
+    mustRequireProd,
   ),
   fawaterkWebhookSecret: requiredWhenOrDefault(
     'FAWATERK_WEBHOOK_SECRET',
     process.env.FAWATERK_WEBHOOK_SECRET || process.env.FAWATERK_SECRET_KEY || process.env.FAWATERK_SECRET,
     'sandbox-fawaterk-webhook-secret',
-    isProduction && sandboxDisabled,
+    mustRequireProd,
   ),
 
   unipinApiKey: clean(process.env.UNIPIN_API_KEY || ''),
@@ -132,4 +133,5 @@ export const serverEnv = {
   allowSyncTopupFallback: clean(process.env.ALLOW_SYNC_TOPUP_FALLBACK || '').toLowerCase()
     ? clean(process.env.ALLOW_SYNC_TOPUP_FALLBACK || '').toLowerCase() === 'true'
     : !isProduction,
+  alertWebhookUrl: clean(process.env.ALERT_WEBHOOK_URL || ''),
 };

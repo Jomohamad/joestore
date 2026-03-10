@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Trash2, ShoppingCart, ArrowRight, Tag, AlertCircle, Minus, Plus, CircleDollarSign } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { cn, responsiveImageProps } from '../lib/utils';
-import { completeHostedCheckoutInSandbox, createOrder, validateCoupon } from '../services/api';
+import { checkoutCart, completeHostedCheckoutInSandbox, validateCoupon } from '../services/api';
 
 export default function Cart() {
   const { cart, removeFromCart, setCartQuantity, clearCart, t, language, formatPrice, notifyOrder, notifyMessage } = useStore();
@@ -58,10 +58,6 @@ export default function Cart() {
     return null;
   };
 
-  const buildPaymentDetails = (): Record<string, unknown> => {
-    return { channel: 'fawaterk' };
-  };
-
   const handleCheckout = async () => {
     const validationError = getPaymentValidationError();
     if (validationError) {
@@ -71,40 +67,34 @@ export default function Cart() {
 
     setIsCheckingOut(true);
     try {
-      const paymentDetails = buildPaymentDetails();
-      let externalCheckoutUrl: string | null = null;
+      const items = cart.map((item) => ({
+        gameId: item.gameId,
+        packageId: item.packageId,
+        amount: item.packageAmount * item.quantity,
+        quantity: item.quantity,
+        paymentMethod: 'fawaterk' as const,
+        accountIdentifier: item.accountIdentifier,
+        packageName: item.packageName,
+      }));
 
-      for (const item of [...cart]) {
-        const res = await createOrder({
-          gameId: item.gameId,
-          packageId: item.packageId,
-          amount: item.packageAmount * item.quantity,
-          quantity: item.quantity,
-          paymentMethod: 'fawaterk',
-          accountIdentifier: item.accountIdentifier,
-          paymentDetails,
-          packageName: item.packageName,
-        });
-
-        if (res?.orderId) {
-          notifyOrder({ orderId: res.orderId, status: res.status });
-        }
-
-        if (res?.checkoutUrl) {
-          const handled = await completeHostedCheckoutInSandbox(res.checkoutUrl);
-          if (!handled && !externalCheckoutUrl) {
-            externalCheckoutUrl = res.checkoutUrl;
-            break;
-          }
+      const result = await checkoutCart(items, appliedCoupon?.code || null);
+      for (const order of result.orders) {
+        if (order.orderId) {
+          notifyOrder({ orderId: order.orderId, status: order.status });
         }
       }
 
-      if (externalCheckoutUrl) {
-        window.location.assign(externalCheckoutUrl);
-        return;
+      const checkoutUrl = result.checkoutUrl;
+      if (checkoutUrl) {
+        const handled = await completeHostedCheckoutInSandbox(checkoutUrl);
+        clearCart();
+        if (!handled) {
+          window.location.assign(checkoutUrl);
+          return;
+        }
+      } else {
+        clearCart();
       }
-
-      clearCart();
     } catch (error) {
       console.error('Checkout failed', error);
       notifyMessage(language === 'ar' ? 'حدث خطأ أثناء إتمام الطلب' : 'Error during checkout');

@@ -7,6 +7,7 @@ import { unipinProvider } from '../providers/unipin';
 import { supabaseAdmin } from '../supabaseAdmin';
 import { cacheManager } from './cache/cacheManager';
 import { logsService } from './logs';
+import { alertsService } from './alerts';
 import type { TopupProvider } from './topup/topupManager';
 
 export type ExtendedProvider = TopupProvider;
@@ -320,6 +321,16 @@ export const providerRouter = {
       reason: input.reason,
       orderId: input.orderId || null,
     });
+
+    try {
+      await alertsService.notify('provider.failure', `Provider ${input.provider} failure`, {
+        provider: input.provider,
+        reason: input.reason,
+        orderId: input.orderId || null,
+      });
+    } catch {
+      // ignore alert failures
+    }
   },
 
   async recordProviderSuccess(input: {

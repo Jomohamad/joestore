@@ -37,6 +37,7 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   const playerId = String(req.body?.player_id || req.body?.playerId || req.body?.accountIdentifier || '').trim();
   const server = String(req.body?.server || '').trim() || null;
   const quantity = Number(req.body?.quantity || 1);
+  const couponCode = String(req.body?.couponCode || req.body?.coupon_code || '').trim() || null;
 
   if (!gameIdentifier || !playerId || !Number.isFinite(Number(packageId))) {
     throw new ApiError(400, 'game, player_id and package_id are required', 'INVALID_ORDER_PAYLOAD');
@@ -70,6 +71,7 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
     ipAddress,
     country: fraudCheck.country,
     fraudRiskScore: fraudCheck.riskScore,
+    couponCode,
     paymentDetails:
       req.body?.paymentDetails && typeof req.body.paymentDetails === 'object'
         ? {

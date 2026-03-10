@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiError, methodNotAllowed, withErrorHandling } from '../../../../src/lib/server/http';
 import { ordersService } from '../../../../src/lib/server/services/orders';
+import { walletTopupService } from '../../../../src/lib/server/services/walletTopups';
 import { enforceRateLimit } from '../../../../src/lib/server/rateLimit';
 
 export const config = {
@@ -51,12 +52,25 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
     firstHeader(req.headers['x-signature']) ||
     firstHeader(req.headers.signature);
 
+  const walletHandled = await walletTopupService.verifyAndCredit(payload, {
+    signature: signature || null,
+    rawBody: rawText || null,
+  });
+
+  if (walletHandled.handled) {
+    return res.status(200).json({
+      received: true,
+      walletTopupId: walletHandled.topupId,
+      status: walletHandled.status,
+    });
+  }
+
   const order = await ordersService.verifyPaymentAndFulfill(payload, {
     signature: signature || null,
     rawBody: rawText || null,
   });
 
-  res.status(200).json({
+  return res.status(200).json({
     received: true,
     orderId: order.id,
     status: order.status,

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   deleteAdminProduct,
   fetchAdminFraudAlerts,
+  fetchAdminDiscountRules,
   fetchAdminGames,
   fetchAdminLogs,
   fetchAdminOrders,
@@ -14,11 +15,17 @@ import {
   fetchAdminProviderPrices,
   fetchAdminTransactions,
   fetchAdminUsers,
+  fetchAdminMetrics,
+  fetchAdminAlerts,
+  fetchAdminProviderSla,
   retryAdminOrder,
   runAdminFraudAction,
+  sendAdminTestAlert,
   setAdminOrderStatus,
   updateAdminProviderHealth,
+  upsertAdminProviderSla,
   updateAdminUserRole,
+  createAdminDiscountRule,
   upsertAdminGame,
   upsertAdminPricingRule,
   upsertAdminProduct,
@@ -64,7 +71,7 @@ interface AdminUser {
   fraud_risk_score?: number;
 }
 
-type DashboardTab = 'overview' | 'orders' | 'products' | 'users' | 'providers' | 'pricing' | 'fraud' | 'transactions';
+type DashboardTab = 'overview' | 'orders' | 'products' | 'users' | 'providers' | 'pricing' | 'discounts' | 'fraud' | 'transactions' | 'metrics';
 
 const dashboardTabs: Array<{ key: DashboardTab; label: string }> = [
   { key: 'overview', label: 'Overview' },
@@ -73,8 +80,10 @@ const dashboardTabs: Array<{ key: DashboardTab; label: string }> = [
   { key: 'users', label: 'Users' },
   { key: 'providers', label: 'Providers' },
   { key: 'pricing', label: 'Pricing' },
+  { key: 'discounts', label: 'Discounts' },
   { key: 'fraud', label: 'Fraud' },
   { key: 'transactions', label: 'Transactions' },
+  { key: 'metrics', label: 'Metrics' },
 ];
 
 const asRecord = (value: unknown) => (value && typeof value === 'object' ? (value as Record<string, unknown>) : {});
@@ -97,6 +106,10 @@ export default function Dashboard() {
   const [providerPrices, setProviderPrices] = useState<Array<Record<string, unknown>>>([]);
   const [fraudAlerts, setFraudAlerts] = useState<Array<Record<string, unknown>>>([]);
   const [pricingRules, setPricingRules] = useState<Array<Record<string, unknown>>>([]);
+  const [discountRules, setDiscountRules] = useState<Array<Record<string, unknown>>>([]);
+  const [metrics, setMetrics] = useState<Record<string, unknown>>({});
+  const [providerSla, setProviderSla] = useState<Array<Record<string, unknown>>>([]);
+  const [alerts, setAlerts] = useState<Array<Record<string, unknown>>>([]);
 
   const [orderSearch, setOrderSearch] = useState('');
   const [retryingId, setRetryingId] = useState<string | null>(null);
@@ -126,6 +139,14 @@ export default function Dashboard() {
   const [pricingMinProfit, setPricingMinProfit] = useState('0');
   const [pricingMaxProfit, setPricingMaxProfit] = useState('0');
   const [savingPricing, setSavingPricing] = useState(false);
+  const [discountScope, setDiscountScope] = useState('global');
+  const [discountPercent, setDiscountPercent] = useState('0');
+  const [discountFixed, setDiscountFixed] = useState('0');
+  const [discountGameId, setDiscountGameId] = useState('');
+  const [discountCategory, setDiscountCategory] = useState('');
+  const [savingDiscount, setSavingDiscount] = useState(false);
+  const [slaDrafts, setSlaDrafts] = useState<Record<string, { success: string; latency: string; enabled: boolean }>>({});
+  const [savingSla, setSavingSla] = useState(false);
 
   const [runningFraudAction, setRunningFraudAction] = useState<string | null>(null);
 
@@ -133,7 +154,7 @@ export default function Dashboard() {
 
   const refreshAll = async (search = orderSearch, usersSearch = userSearch) => {
     setError(null);
-    const [ordersData, gamesData, productsData, paymentsData, logsData, transactionsData, usersData, providerHealthData, providerPricesData, fraudAlertsData, pricingRulesData] =
+    const [ordersData, gamesData, productsData, paymentsData, logsData, transactionsData, usersData, providerHealthData, providerPricesData, fraudAlertsData, pricingRulesData, discountRulesData, metricsData, slaData, alertsData] =
       await Promise.all([
         fetchAdminOrders(search),
         fetchAdminGames(),
@@ -146,6 +167,10 @@ export default function Dashboard() {
         fetchAdminProviderPrices(),
         fetchAdminFraudAlerts(),
         fetchAdminPricingRules(),
+        fetchAdminDiscountRules(),
+        fetchAdminMetrics(),
+        fetchAdminProviderSla(),
+        fetchAdminAlerts(),
       ]);
 
     setOrders(ordersData as AdminOrder[]);
@@ -159,6 +184,10 @@ export default function Dashboard() {
     setProviderPrices(providerPricesData);
     setFraudAlerts(fraudAlertsData);
     setPricingRules(pricingRulesData);
+    setDiscountRules(discountRulesData);
+    setMetrics(metricsData);
+    setProviderSla(slaData);
+    setAlerts(alertsData);
   };
 
   useEffect(() => {
@@ -199,6 +228,20 @@ export default function Dashboard() {
     setProviderDrafts(next);
   }, [providerHealth]);
 
+  useEffect(() => {
+    const next: Record<string, { success: string; latency: string; enabled: boolean }> = {};
+    for (const row of providerSla) {
+      const provider = String(row.provider || '').toLowerCase();
+      if (!provider) continue;
+      next[provider] = {
+        success: String(row.target_success_rate || '95'),
+        latency: String(row.target_latency_ms || '1500'),
+        enabled: row.enabled !== false,
+      };
+    }
+    setSlaDrafts(next);
+  }, [providerSla]);
+
   const ordersSummary = useMemo(() => {
     const pending = orders.filter((o) => o.status === 'pending').length;
     const processing = orders.filter((o) => o.status === 'processing').length;
@@ -227,6 +270,63 @@ export default function Dashboard() {
       setError(err instanceof Error ? err.message : 'Failed to retry order');
     } finally {
       setRetryingId(null);
+    }
+  };
+
+  const onTrackEvent = async (eventType: string) => {
+    try {
+      await import('../services/api').then(({ trackAnalyticsEvent }) => trackAnalyticsEvent(eventType, { source: 'admin' }));
+    } catch {
+      // ignore
+    }
+  };
+  const onCreateDiscountRule = async () => {
+    try {
+      setSavingDiscount(true);
+      const payload = {
+        scope: discountScope,
+        percent: Number(discountPercent || 0),
+        fixed_amount: Number(discountFixed || 0),
+        game_id: discountGameId || null,
+        category: discountCategory || null,
+        active: true,
+      };
+      await createAdminDiscountRule(payload);
+      const rules = await fetchAdminDiscountRules();
+      setDiscountRules(rules);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create discount rule');
+    } finally {
+      setSavingDiscount(false);
+    }
+  };
+
+  const onSaveSla = async () => {
+    try {
+      setSavingSla(true);
+      const updates = Object.entries(slaDrafts);
+      for (const [provider, draft] of updates) {
+        await upsertAdminProviderSla({
+          provider,
+          target_success_rate: Number(draft.success || '95'),
+          target_latency_ms: Number(draft.latency || '1500'),
+          enabled: draft.enabled !== false,
+        });
+      }
+      const rows = await fetchAdminProviderSla();
+      setProviderSla(rows);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update SLA');
+    } finally {
+      setSavingSla(false);
+    }
+  };
+
+  const onSendTestAlert = async () => {
+    try {
+      await sendAdminTestAlert();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send test alert');
     }
   };
 
@@ -804,6 +904,181 @@ export default function Dashboard() {
           </div>
         )}
 
+        {(activeTab === 'overview' || activeTab === 'discounts') && (
+          <div className="max-w-6xl rounded-2xl border border-creo-border bg-creo-card p-5 space-y-4">
+            <h2 className="text-xl font-bold text-white">Discount Rules</h2>
+            <div className="grid md:grid-cols-5 gap-2">
+              <input
+                value={discountScope}
+                onChange={(e) => setDiscountScope(e.target.value)}
+                className="bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-white"
+                placeholder="scope"
+              />
+              <input
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(e.target.value)}
+                className="bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-white"
+                placeholder="percent"
+              />
+              <input
+                value={discountFixed}
+                onChange={(e) => setDiscountFixed(e.target.value)}
+                className="bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-white"
+                placeholder="fixed"
+              />
+              <input
+                value={discountGameId}
+                onChange={(e) => setDiscountGameId(e.target.value)}
+                className="bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-white"
+                placeholder="game_id"
+              />
+              <input
+                value={discountCategory}
+                onChange={(e) => setDiscountCategory(e.target.value)}
+                className="bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-white"
+                placeholder="category"
+              />
+            </div>
+            <button onClick={onCreateDiscountRule} disabled={savingDiscount} className="px-4 py-2.5 rounded-lg bg-creo-accent text-black font-semibold">
+              {savingDiscount ? 'Saving...' : 'Create Rule'}
+            </button>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[720px]">
+                <thead>
+                  <tr className="text-creo-text-sec border-b border-creo-border">
+                    <th className="text-left py-2">Scope</th>
+                    <th className="text-left py-2">Percent</th>
+                    <th className="text-left py-2">Fixed</th>
+                    <th className="text-left py-2">Game</th>
+                    <th className="text-left py-2">Category</th>
+                    <th className="text-left py-2">Active</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {discountRules.map((row) => (
+                    <tr key={String(row.id)} className="border-b border-creo-border/60 text-white">
+                      <td className="py-2 pr-3">{String(row.scope || '-')}</td>
+                      <td className="py-2 pr-3">{String(row.percent || '0')}</td>
+                      <td className="py-2 pr-3">{String(row.fixed_amount || '0')}</td>
+                      <td className="py-2 pr-3">{String(row.game_id || '-')}</td>
+                      <td className="py-2 pr-3">{String(row.category || '-')}</td>
+                      <td className="py-2 pr-3">{row.active === false ? 'false' : 'true'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {(activeTab === 'overview' || activeTab === 'metrics') && (
+          <div className="max-w-6xl grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="rounded-2xl border border-creo-border bg-creo-card p-5">
+              <p className="text-sm text-creo-text-sec">Total Orders</p>
+              <div className="text-2xl font-bold text-white">{String(metrics.orders || 0)}</div>
+            </div>
+            <div className="rounded-2xl border border-creo-border bg-creo-card p-5">
+              <p className="text-sm text-creo-text-sec">Completed</p>
+              <div className="text-2xl font-bold text-white">{String(metrics.completed || 0)}</div>
+            </div>
+            <div className="rounded-2xl border border-creo-border bg-creo-card p-5">
+              <p className="text-sm text-creo-text-sec">Failed</p>
+              <div className="text-2xl font-bold text-white">{String(metrics.failed || 0)}</div>
+            </div>
+            <div className="rounded-2xl border border-creo-border bg-creo-card p-5">
+              <p className="text-sm text-creo-text-sec">Revenue</p>
+              <div className="text-2xl font-bold text-white">{String(metrics.revenue || 0)}</div>
+            </div>
+
+            <div className="rounded-2xl border border-creo-border bg-creo-card p-5 space-y-3 md:col-span-2">
+              <h3 className="text-lg font-bold text-white">Provider SLA</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[520px]">
+                  <thead>
+                    <tr className="text-creo-text-sec border-b border-creo-border">
+                      <th className="text-left py-2">Provider</th>
+                      <th className="text-left py-2">Target Success %</th>
+                      <th className="text-left py-2">Target Latency</th>
+                      <th className="text-left py-2">Enabled</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {providerSla.map((row) => {
+                      const provider = String(row.provider || '');
+                      const draft = slaDrafts[provider] || { success: '95', latency: '1500', enabled: true };
+                      return (
+                        <tr key={provider} className="border-b border-creo-border/60 text-white">
+                          <td className="py-2 pr-3">{provider}</td>
+                          <td className="py-2 pr-3">
+                            <input
+                              value={draft.success}
+                              onChange={(e) => setSlaDrafts((prev) => ({ ...prev, [provider]: { ...draft, success: e.target.value } }))}
+                              className="w-24 bg-creo-bg-sec border border-creo-border rounded px-2 py-1 text-white"
+                            />
+                          </td>
+                          <td className="py-2 pr-3">
+                            <input
+                              value={draft.latency}
+                              onChange={(e) => setSlaDrafts((prev) => ({ ...prev, [provider]: { ...draft, latency: e.target.value } }))}
+                              className="w-28 bg-creo-bg-sec border border-creo-border rounded px-2 py-1 text-white"
+                            />
+                          </td>
+                          <td className="py-2 pr-3">
+                            <input
+                              type="checkbox"
+                              checked={draft.enabled}
+                              onChange={(e) => setSlaDrafts((prev) => ({ ...prev, [provider]: { ...draft, enabled: e.target.checked } }))}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={onSaveSla} disabled={savingSla} className="px-4 py-2 rounded-lg bg-creo-accent text-black font-semibold">
+                  {savingSla ? 'Saving...' : 'Save SLA'}
+                </button>
+                <button onClick={onSendTestAlert} className="px-4 py-2 rounded-lg border border-creo-border text-creo-text-sec">
+                  Send Test Alert
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-creo-border bg-creo-card p-5 space-y-3 md:col-span-2">
+              <h3 className="text-lg font-bold text-white">Alerts Log</h3>
+              <div className="overflow-x-auto max-h-72">
+                <table className="w-full text-sm min-w-[600px]">
+                  <thead>
+                    <tr className="text-creo-text-sec border-b border-creo-border">
+                      <th className="text-left py-2">Type</th>
+                      <th className="text-left py-2">Message</th>
+                      <th className="text-left py-2">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {alerts.map((row) => (
+                      <tr key={String(row.id)} className="border-b border-creo-border/60 text-white">
+                        <td className="py-2 pr-3">{String(row.type || '')}</td>
+                        <td className="py-2 pr-3">{String(row.message || '')}</td>
+                        <td className="py-2 pr-3">{String(row.created_at || '')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <a
+                href="/api/admin/exports/orders"
+                className="inline-flex px-4 py-2 rounded-lg border border-creo-border text-creo-text-sec hover:text-white"
+              >
+                Export Orders CSV
+              </a>
+            </div>
+          </div>
+        )}
+
         {(activeTab === 'overview' || activeTab === 'fraud') && (
           <div className="max-w-6xl rounded-2xl border border-creo-border bg-creo-card p-5 space-y-4">
             <h2 className="text-xl font-bold text-white">Fraud Monitoring</h2>
@@ -931,4 +1206,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

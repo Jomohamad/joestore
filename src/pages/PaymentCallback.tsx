@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from '../lib/router';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { verifyPaymentCallbackApi } from '../services/api';
+import { fetchOrderStatusApi, fetchWalletTopupStatus } from '../services/api';
 import { useStore } from '../context/StoreContext';
 
 type ViewState = 'processing' | 'success' | 'error';
@@ -27,21 +27,46 @@ export default function PaymentCallback() {
       return;
     }
 
-    const payload: Record<string, unknown> = {};
-    for (const [key, value] of searchParams.entries()) {
-      payload[key] = value;
-    }
+    const orderId =
+      searchParams.get('order_id') ||
+      searchParams.get('orderId') ||
+      searchParams.get('merchant_order_id') ||
+      '';
 
     const verify = async () => {
       try {
-        await verifyPaymentCallbackApi(normalizedProvider, payload);
-        setState('success');
-        setMessage(
-          language === 'ar'
-            ? 'تم تأكيد الدفع بنجاح. سيتم تحويلك إلى الطلبات.'
-            : 'Payment verified successfully. Redirecting to orders.',
-        );
-        setTimeout(() => navigate('/orders'), 1200);
+        if (!orderId) {
+          throw new Error(language === 'ar' ? 'معرف الطلب غير موجود' : 'Order id is missing');
+        }
+
+        const isWalletTopup = orderId.startsWith('wallet_');
+        const startedAt = Date.now();
+        const maxWaitMs = 30_000;
+
+        while (Date.now() - startedAt < maxWaitMs) {
+          const statusPayload = isWalletTopup
+            ? await fetchWalletTopupStatus(orderId)
+            : await fetchOrderStatusApi(orderId);
+          const status = String(statusPayload.status || 'pending').toLowerCase();
+          if (status === 'completed' || status === 'processing' || status === 'paid') {
+            setState('success');
+            setMessage(
+              language === 'ar'
+                ? 'تم تأكيد الدفع بنجاح. سيتم تحويلك إلى الطلبات.'
+                : 'Payment verified successfully. Redirecting to orders.',
+            );
+            setTimeout(() => navigate(isWalletTopup ? '/wallet' : '/orders'), 1200);
+            return;
+          }
+
+          if (status === 'failed') {
+            throw new Error(language === 'ar' ? 'فشل تأكيد الدفع' : 'Payment verification failed');
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+
+        throw new Error(language === 'ar' ? 'انتهت مهلة التحقق من الدفع' : 'Payment verification timed out');
       } catch (error) {
         setState('error');
         setMessage(error instanceof Error ? error.message : language === 'ar' ? 'فشل تأكيد الدفع' : 'Payment verification failed');

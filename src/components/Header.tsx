@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from '../lib/router';
-import { ShoppingCart, User, Search, X, Menu, Home, Gamepad2, Grid3X3, Heart, History, Headset } from 'lucide-react';
+import { ShoppingCart, User, Search, X, Menu, Home, Gamepad2, Grid3X3, Heart, History, Headset, Wallet } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
@@ -41,6 +41,7 @@ export default function Header() {
     { to: '/apps', label: language === 'ar' ? 'التطبيقات' : 'Apps', icon: Grid3X3 },
     { to: '/wishlist', label: t('wishlist'), icon: Heart },
     { to: '/orders', label: t('order_history'), icon: History },
+    { to: '/wallet', label: language === 'ar' ? 'المحفظة' : 'Wallet', icon: Wallet },
     { to: '/support', label: t('support'), icon: Headset },
   ];
 

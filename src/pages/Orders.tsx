@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { History, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useStore } from '../context/StoreContext';
-import { fetchOrders } from '../services/api';
+import { fetchOrderEvents, fetchOrders } from '../services/api';
 import { Order } from '../types';
 import { Link } from '../lib/router';
 import { cn, responsiveImageProps } from '../lib/utils';
@@ -14,6 +14,8 @@ export default function Orders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [eventsByOrder, setEventsByOrder] = useState<Record<string, Array<Record<string, unknown>>>>({});
+  const [loadingEvents, setLoadingEvents] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -89,6 +91,19 @@ export default function Orders() {
         return 'text-red-400 bg-red-400/10 border-red-400/20';
       default:
         return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20';
+    }
+  };
+
+  const loadEvents = async (orderId: string) => {
+    if (loadingEvents[orderId]) return;
+    try {
+      setLoadingEvents((prev) => ({ ...prev, [orderId]: true }));
+      const events = await fetchOrderEvents(orderId);
+      setEventsByOrder((prev) => ({ ...prev, [orderId]: events }));
+    } catch (error) {
+      console.error('Failed to load order events', error);
+    } finally {
+      setLoadingEvents((prev) => ({ ...prev, [orderId]: false }));
     }
   };
 
@@ -216,6 +231,26 @@ export default function Orders() {
                       {getStatusIcon(order.status)}
                       {order.status}
                     </div>
+                  </div>
+
+                  <div className="w-full md:col-span-2 border-t border-creo-border/60 pt-3 mt-2">
+                    <button
+                      onClick={() => loadEvents(order.id)}
+                      className="text-xs text-creo-text-sec hover:text-creo-accent transition-colors"
+                    >
+                      {loadingEvents[order.id] ? 'Loading timeline...' : 'View timeline'}
+                    </button>
+
+                    {eventsByOrder[order.id] && (
+                      <div className="mt-3 space-y-2">
+                        {eventsByOrder[order.id].map((event) => (
+                          <div key={String(event.id || `${event.status}-${event.created_at}`)} className="text-xs text-creo-text-sec flex items-center justify-between">
+                            <span>{String(event.message || event.status || '')}</span>
+                            <span>{String(event.created_at || '')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               );

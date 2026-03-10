@@ -1,0 +1,157 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { ApiError, methodNotAllowed, withErrorHandling } from '../../../src/lib/server/http';
+import { requireAuthUser } from '../../../src/lib/server/auth';
+import { enforceRateLimit, getClientIp } from '../../../src/lib/server/rateLimit';
+import { ordersService } from '../../../src/lib/server/services/orders';
+import { enqueueTopupRequest } from '../../../src/lib/server/queue/topupQueue';
+import { serverEnv } from '../../../src/lib/server/env';
+import { fraudService } from '../../../src/lib/server/services/fraud';
+
+type CheckoutItem = {
+  gameId?: string;
+  game_id?: string;
+  game_slug?: string;
+  packageId?: number;
+  package_id?: number;
+  packageName?: string;
+  package?: string;
+  playerId?: string;
+  player_id?: string;
+  accountIdentifier?: string;
+  server?: string;
+  quantity?: number;
+  paymentMethod?: string;
+  payment_method?: string;
+};
+
+export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+  await enforceRateLimit(req, { key: 'orders:checkout', windowMs: 60_000, max: 20 });
+
+  const { user } = await requireAuthUser(req);
+  const items = Array.isArray(req.body?.items) ? (req.body.items as CheckoutItem[]) : [];
+  const couponCode = String(req.body?.couponCode || req.body?.coupon_code || '').trim() || null;
+
+  if (!items.length) {
+    throw new ApiError(400, 'Checkout items are required', 'INVALID_CHECKOUT_PAYLOAD');
+  }
+
+  const ipAddress = getClientIp(req);
+  const results: Array<Record<string, unknown>> = [];
+
+  for (const item of items) {
+    const gameIdentifier = String(item.game_id || item.game_slug || item.gameId || '').trim();
+    const packageId = item.package_id ?? item.packageId ?? null;
+    const packageName = String(item.package || item.packageName || '').trim() || null;
+    const playerId = String(item.player_id || item.playerId || item.accountIdentifier || '').trim();
+    const server = String(item.server || '').trim() || null;
+    const quantity = Number(item.quantity || 1);
+    const paymentMethod = String(item.paymentMethod || item.payment_method || 'fawaterk').trim().toLowerCase();
+
+    if (!gameIdentifier || !playerId || !Number.isFinite(Number(packageId))) {
+      throw new ApiError(400, 'game, player_id and package_id are required', 'INVALID_ORDER_PAYLOAD');
+    }
+    if (paymentMethod !== 'fawaterk' && paymentMethod !== 'wallet') {
+      throw new ApiError(400, 'Unsupported payment method', 'UNSUPPORTED_PAYMENT_METHOD');
+    }
+
+    const fraudCheck = await fraudService.assessOrder({
+      userId: user.id,
+      ipAddress,
+      playerId,
+      amount: 0,
+      paymentAmount: 0,
+      paymentCountry: req.body?.country ? String(req.body.country) : null,
+    });
+
+    if (fraudCheck.blocked) {
+      throw new ApiError(403, 'Order blocked by fraud protection rules', 'ORDER_BLOCKED_FRAUD', {
+        riskScore: fraudCheck.riskScore,
+        reasons: fraudCheck.reasons,
+      });
+    }
+
+    const { order, price } = await ordersService.createOrder({
+      userId: user.id,
+      gameIdentifier,
+      packageId: Number(packageId),
+      packageName,
+      playerId,
+      server,
+      quantity,
+      ipAddress,
+      country: fraudCheck.country,
+      fraudRiskScore: fraudCheck.riskScore,
+      couponCode,
+      paymentDetails: {
+        fraud: {
+          riskScore: fraudCheck.riskScore,
+          reasons: fraudCheck.reasons,
+          country: fraudCheck.country,
+        },
+      },
+    });
+
+    if (paymentMethod === 'wallet') {
+      const { walletService } = await import('../../../src/lib/server/services/wallet');
+      await walletService.debit({
+        userId: user.id,
+        amount: price,
+        currency: String(order.currency || 'EGP'),
+        source: 'wallet',
+        referenceType: 'order',
+        referenceId: String(order.id),
+        metadata: { orderId: order.id },
+      });
+
+      const paidOrder = await ordersService.setOrderStatus(String(order.id), 'paid', {
+        payment_details: { ...(order.payment_details || {}), wallet: true },
+      });
+
+      const queued = await enqueueTopupRequest({
+        orderId: String(paidOrder.id),
+        source: 'manual',
+        requestedAt: new Date().toISOString(),
+      });
+
+      if (!queued.queued) {
+        if (!serverEnv.allowSyncTopupFallback) {
+          throw new ApiError(503, 'Topup queue unavailable', 'TOPUP_QUEUE_UNAVAILABLE');
+        }
+        const processed = await ordersService.processPaidOrder(String(paidOrder.id));
+        results.push({
+          orderId: processed.id,
+          status: processed.status,
+        });
+        continue;
+      }
+
+      results.push({
+        orderId: paidOrder.id,
+        status: paidOrder.status,
+      });
+      continue;
+    }
+
+    const paymentInit = await ordersService.initiatePayment({
+      orderId: String(order.id),
+      amount: price,
+    });
+
+    results.push({
+      orderId: order.id,
+      status: order.status,
+      checkoutUrl: paymentInit.checkoutUrl,
+      paymentReference: paymentInit.paymentReference,
+    });
+  }
+
+  const primaryCheckoutUrl =
+    results.find((row) => typeof row.checkoutUrl === 'string' && row.checkoutUrl)?.checkoutUrl || null;
+
+  res.status(201).json({
+    orders: results,
+    checkoutUrl: primaryCheckoutUrl,
+    count: results.length,
+  });
+});
