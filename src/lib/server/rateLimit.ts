@@ -10,6 +10,12 @@ interface Bucket {
 const fallbackBuckets = new Map<string, Bucket>();
 
 export const getClientIp = (req: NextApiRequest) => {
+  const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_URL);
+  if (isVercel) {
+    const vercelIp = req.headers['x-vercel-forwarded-for'];
+    if (Array.isArray(vercelIp)) return String(vercelIp[0] || 'unknown').split(',')[0].trim();
+    if (typeof vercelIp === 'string' && vercelIp.trim()) return vercelIp.split(',')[0].trim();
+  }
   const xff = req.headers['x-forwarded-for'];
   if (Array.isArray(xff)) return String(xff[0] || 'unknown').split(',')[0].trim();
   if (typeof xff === 'string') return xff.split(',')[0].trim();

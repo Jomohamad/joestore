@@ -174,8 +174,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void refreshProfile();
 
     const intervalId = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
       void refreshProfile();
-    }, 15000);
+    }, 60000);
 
     return () => {
       window.clearInterval(intervalId);

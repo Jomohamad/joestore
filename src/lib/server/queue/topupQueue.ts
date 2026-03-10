@@ -55,7 +55,7 @@ export const enqueueTopupRequest = async (payload: TopupQueuePayload, options?: 
   const q = getTopupQueue();
   if (!q) {
     await logsService.write('queue.fallback', 'BullMQ queue unavailable, fallback to sync handler', eventPayload);
-    return { queued: false, jobId: null as string | null };
+    return { queued: false, jobId: null as string | null, reason: 'queue_unavailable' as const };
   }
 
   const job = await q.add('topup-request', payload, {
@@ -67,7 +67,7 @@ export const enqueueTopupRequest = async (payload: TopupQueuePayload, options?: 
     ...options,
   });
 
-  return { queued: true, jobId: String(job.id || '') || null };
+  return { queued: true, jobId: String(job.id || '') || null, reason: null as string | null };
 };
 
 export const publishTopupResult = async (payload: Record<string, unknown>) => {

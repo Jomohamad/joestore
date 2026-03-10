@@ -49,6 +49,7 @@ interface StoreContextType {
   isInWishlist: (gameId: string) => boolean;
   orderToast: { orderId: string; status?: string; message?: string } | null;
   notifyOrder: (order: { orderId: string; status?: string; message?: string }) => void;
+  notifyMessage: (message: string) => void;
   clearOrderToast: () => void;
   t: (key: keyof typeof translations['en']) => string;
 }
@@ -139,6 +140,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const notifyOrder = (order: { orderId: string; status?: string; message?: string }) => {
     setOrderToast(order);
     setTimeout(() => setOrderToast(null), 4000);
+  };
+
+  const notifyMessage = (message: string) => {
+    if (!message) return;
+    notifyOrder({ orderId: 'system', message });
   };
 
   const clearOrderToast = () => setOrderToast(null);
@@ -258,7 +264,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (item: Omit<CartItem, 'id' | 'quantity' | 'totalPrice'> & { quantity?: number }) => {
     if (!user) {
-      alert(language === 'ar' ? 'يجب تسجيل الدخول لإضافة منتجات للسلة' : 'You must be logged in to add items to cart');
+      notifyMessage(language === 'ar' ? 'يجب تسجيل الدخول لإضافة منتجات للسلة' : 'You must be logged in to add items to cart');
       return;
     }
 
@@ -313,7 +319,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const addToWishlist = async (game: Game) => {
     if (!user) {
-      alert(language === 'ar' ? 'يجب تسجيل الدخول لإضافة منتجات للمفضلة' : 'You must be logged in to add items to wishlist');
+      notifyMessage(language === 'ar' ? 'يجب تسجيل الدخول لإضافة منتجات للمفضلة' : 'You must be logged in to add items to wishlist');
       return;
     }
 
@@ -373,6 +379,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         isInWishlist,
         orderToast,
         notifyOrder,
+        notifyMessage,
         clearOrderToast,
         t,
       }}

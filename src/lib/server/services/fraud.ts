@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { serverEnv } from '../env';
 import { supabaseAdmin } from '../supabaseAdmin';
 import { logsService } from './logs';
+import { cacheManager } from './cache/cacheManager';
 
 const tableOrColumnMissing = (code: string | undefined) => code === '42P01' || code === '42703' || code === '42883';
 
@@ -24,6 +25,12 @@ const fetchCountryByIp = async (ipAddress: string) => {
   const ip = normalizeIp(ipAddress);
   if (!ip || ip === 'unknown') return null;
 
+  const cacheKey = `cache:geo:${ip}`;
+  const cached = await cacheManager.getCachedJson<Record<string, unknown>>(cacheKey);
+  if (cached) {
+    return cached as { country?: string | null; vpn?: boolean; raw?: Record<string, unknown> };
+  }
+
   const base = serverEnv.geolocationApiBase.replace(/\/$/, '');
   const queryToken = serverEnv.geolocationApiKey ? `?apiKey=${encodeURIComponent(serverEnv.geolocationApiKey)}` : '/json/';
   const url = base.includes('{ip}')
@@ -42,11 +49,13 @@ const fetchCountryByIp = async (ipAddress: string) => {
 
     const country = String(body.country_code || body.country || body.countryCode || '').toUpperCase();
     const vpn = Boolean(body.security && typeof body.security === 'object' ? (body.security as Record<string, unknown>).is_vpn : false);
-    return {
+    const result = {
       country: country || null,
       vpn,
       raw: body,
     };
+    await cacheManager.setCachedJson(cacheKey, result, 3600);
+    return result;
   } catch {
     return null;
   }

@@ -1,6 +1,7 @@
 import { getRedisClient } from './redisClient';
 
 const memoryCache = new Map<string, { value: string; expiresAt: number }>();
+const MAX_MEMORY_ENTRIES = 1000;
 
 const now = () => Date.now();
 
@@ -19,6 +20,16 @@ const setMemory = (key: string, value: string, ttlSeconds: number) => {
     value,
     expiresAt: now() + Math.max(1, ttlSeconds) * 1000,
   });
+
+  if (memoryCache.size > MAX_MEMORY_ENTRIES) {
+    const overflow = memoryCache.size - MAX_MEMORY_ENTRIES;
+    const keys = memoryCache.keys();
+    for (let i = 0; i < overflow; i += 1) {
+      const next = keys.next();
+      if (next.done) break;
+      memoryCache.delete(next.value);
+    }
+  }
 };
 
 const deleteMemoryByPrefix = (prefix: string) => {

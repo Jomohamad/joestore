@@ -1,29 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Trash2, ShoppingCart, ArrowRight, Tag, AlertCircle, Minus, Plus, CreditCard, Wallet, CircleDollarSign } from 'lucide-react';
+import { Trash2, ShoppingCart, ArrowRight, Tag, AlertCircle, Minus, Plus, CircleDollarSign } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { cn, responsiveImageProps } from '../lib/utils';
 import { completeHostedCheckoutInSandbox, createOrder, validateCoupon } from '../services/api';
 
-type PaymentMethod = 'fawaterk' | 'wallet' | 'card' | 'paypal';
-
 export default function Cart() {
-  const { cart, removeFromCart, setCartQuantity, clearCart, t, language, formatPrice, notifyOrder } = useStore();
+  const { cart, removeFromCart, setCartQuantity, clearCart, t, language, formatPrice, notifyOrder, notifyMessage } = useStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; type: 'percent' | 'fixed'; value: number } | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
-
-  const [walletPhone, setWalletPhone] = useState('');
-  const [walletProvider, setWalletProvider] = useState('');
-  const [paypalId, setPaypalId] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-  const [cardHolder, setCardHolder] = useState('');
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -62,78 +51,23 @@ export default function Cart() {
   };
 
   const getPaymentValidationError = (): string | null => {
-    if (!selectedPayment) {
-      return language === 'ar' ? 'الرجاء اختيار طريقة الدفع' : 'Please select a payment method';
-    }
-
     if (cart.some((item) => !item.accountIdentifier?.trim())) {
       return language === 'ar' ? 'كل عنصر في السلة يجب أن يحتوي على ID صالح' : 'Each cart item must have a valid account ID';
-    }
-
-    if (selectedPayment === 'wallet') {
-      if (!/^[0-9+][0-9\s-]{7,19}$/.test(walletPhone.trim())) {
-        return language === 'ar' ? 'أدخل رقم محفظة إلكترونية صحيح' : 'Enter a valid wallet phone number';
-      }
-    }
-
-    if (selectedPayment === 'paypal') {
-      if (paypalId.trim().length < 3) {
-        return language === 'ar' ? 'أدخل ID حساب PayPal صحيح' : 'Enter a valid PayPal account ID';
-      }
-    }
-
-    if (selectedPayment === 'card') {
-      const cardDigits = cardNumber.replace(/\D/g, '');
-      if (!cardHolder.trim()) {
-        return language === 'ar' ? 'اكتب اسم صاحب البطاقة' : 'Enter card holder name';
-      }
-      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry.trim())) {
-        return language === 'ar' ? 'تاريخ الانتهاء يجب أن يكون MM/YY' : 'Expiry date must be MM/YY';
-      }
-      if (cardDigits.length < 12 || cardDigits.length > 19) {
-        return language === 'ar' ? 'رقم البطاقة غير صحيح' : 'Card number is invalid';
-      }
-      if (!/^\d{3,4}$/.test(cardCvv.trim())) {
-        return language === 'ar' ? 'CVV غير صحيح' : 'CVV is invalid';
-      }
     }
 
     return null;
   };
 
   const buildPaymentDetails = (): Record<string, unknown> => {
-    if (selectedPayment === 'wallet') {
-      return {
-        walletPhone: walletPhone.trim(),
-        walletProvider: walletProvider.trim(),
-      };
-    }
-
-    if (selectedPayment === 'paypal') {
-      return {
-        paypalId: paypalId.trim(),
-      };
-    }
-
-    if (selectedPayment === 'card') {
-      return {
-        cardHolder: cardHolder.trim(),
-        expiry: cardExpiry.trim(),
-        cardNumber: cardNumber.trim(),
-      };
-    }
-
     return { channel: 'fawaterk' };
   };
 
   const handleCheckout = async () => {
     const validationError = getPaymentValidationError();
     if (validationError) {
-      alert(validationError);
+      notifyMessage(validationError);
       return;
     }
-
-    if (!selectedPayment) return;
 
     setIsCheckingOut(true);
     try {
@@ -171,17 +105,9 @@ export default function Cart() {
       }
 
       clearCart();
-      setSelectedPayment(null);
-      setWalletPhone('');
-      setWalletProvider('');
-      setPaypalId('');
-      setCardNumber('');
-      setCardExpiry('');
-      setCardCvv('');
-      setCardHolder('');
     } catch (error) {
       console.error('Checkout failed', error);
-      alert(language === 'ar' ? 'حدث خطأ أثناء إتمام الطلب' : 'Error during checkout');
+      notifyMessage(language === 'ar' ? 'حدث خطأ أثناء إتمام الطلب' : 'Error during checkout');
     } finally {
       setIsCheckingOut(false);
     }
@@ -266,172 +192,17 @@ export default function Cart() {
             <div className="bg-creo-card border border-creo-border rounded-2xl p-4 sm:p-6 lg:sticky lg:top-24 space-y-6">
               <div>
                 <h3 className="text-sm font-bold text-white mb-3">{t('payment_method')}</h3>
-                <div className="space-y-2">
-                  {[
-                    {
-                      key: 'fawaterk' as const,
-                      label: 'Fawaterk',
-                      icon: CircleDollarSign,
-                      logos: [],
-                    },
-                    {
-                      key: 'wallet' as const,
-                      label: language === 'ar' ? 'المحافظ الإلكترونية' : 'Electronic Wallets',
-                      icon: Wallet,
-                      logos: ['/VF-Cash.webp', '/We-Pay.webp', '/Orange-Cash.webp', '/e&-Cash.webp'],
-                    },
-                    {
-                      key: 'card' as const,
-                      label: language === 'ar' ? 'بطاقات الخصم/الائتمان' : 'Debit / Credit Cards',
-                      icon: CreditCard,
-                      logos: ['/Visa.webp', '/Mastercard.webp', '/AMEX.webp', '/Meeza-Card.webp'],
-                    },
-                    {
-                      key: 'paypal' as const,
-                      label: 'PayPal',
-                      icon: CircleDollarSign,
-                      logos: ['/Paypal.webp'],
-                      leadingLogo: '/Paypal.webp',
-                    },
-                  ].map((method) => (
-                    <button
-                      key={method.key}
-                      onClick={() => setSelectedPayment(method.key)}
-                      className={cn(
-                        'w-full p-3 rounded-xl border transition-all duration-200 text-sm text-left',
-                        selectedPayment === method.key ? 'bg-creo-accent/10 border-creo-accent' : 'bg-creo-bg border-creo-border hover:border-creo-muted hover:bg-creo-bg-sec',
-                      )}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          {method.leadingLogo ? (
-                            <img src={method.leadingLogo} alt={`${method.label} logo`} className="w-6 h-6 object-contain" />
-                          ) : (
-                            <method.icon className={cn('w-4 h-4', selectedPayment === method.key ? 'text-creo-accent' : 'text-creo-muted')} />
-                          )}
-                          <span className={cn('font-medium', selectedPayment === method.key ? 'text-white' : 'text-creo-text-sec')}>
-                            {method.label}
-                          </span>
-                        </div>
-                      </div>
-
-                      {!method.leadingLogo && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {method.logos.map((logo) => (
-                            <img key={logo} src={logo} alt={`${method.label} brand`} className="h-5 object-contain rounded-sm bg-white/90 px-1 py-0.5" />
-                          ))}
-                        </div>
-                      )}
-                    </button>
-                  ))}
+                <div className="rounded-xl border border-creo-border bg-creo-bg p-4 text-sm text-creo-text-sec flex items-center gap-2">
+                  <CircleDollarSign className="w-4 h-4 text-creo-accent" />
+                  <span>{language === 'ar' ? 'الدفع يتم عبر فواتيرك' : 'Checkout is processed via Fawaterk'}</span>
                 </div>
               </div>
 
-              {selectedPayment === 'fawaterk' && (
-                <div className="rounded-xl border border-creo-border bg-creo-bg p-4 text-sm text-creo-text-sec">
-                  {language === 'ar'
-                    ? 'بعد تأكيد الطلب سيتم تحويلك إلى صفحة دفع فواتيرك.'
-                    : 'After checkout, you will be redirected to Fawaterk payment page.'}
-                </div>
-              )}
-
-              {selectedPayment === 'wallet' && (
-                <div className="rounded-xl border border-creo-border bg-creo-bg p-4 space-y-3">
-                  <input
-                    type="text"
-                    value={walletPhone}
-                    onChange={(e) => setWalletPhone(e.target.value)}
-                    placeholder={language === 'ar' ? 'رقم هاتف المحفظة الإلكترونية' : 'Wallet phone number'}
-                    inputMode="tel"
-                    autoComplete="tel"
-                    className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
-                  />
-                  <input
-                    type="text"
-                    value={walletProvider}
-                    onChange={(e) => setWalletProvider(e.target.value)}
-                    placeholder={language === 'ar' ? 'اسم المحفظة (اختياري)' : 'Wallet provider (optional)'}
-                    className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
-                  />
-                </div>
-              )}
-
-              {selectedPayment === 'paypal' && (
-                <div className="rounded-xl border border-creo-border bg-creo-bg p-4 space-y-3">
-                    <input
-                      type="text"
-                      value={paypalId}
-                      onChange={(e) => setPaypalId(e.target.value)}
-                      placeholder={language === 'ar' ? 'PayPal ID' : 'PayPal account ID'}
-                      autoComplete="email"
-                      className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
-                    />
-                </div>
-              )}
-
-              {selectedPayment === 'card' && (
-                <div className="rounded-xl border border-creo-border bg-creo-bg p-4">
-                  <h4 className="text-white font-bold text-sm mb-3 uppercase tracking-wide">{language === 'ar' ? 'بيانات البطاقة' : 'Card details'}</h4>
-                  <div className="rounded-lg border border-creo-border p-3 space-y-3">
-                    <div className="flex flex-wrap gap-1.5 mb-1">
-                      {['/Visa.webp', '/Mastercard.webp', '/AMEX.webp', '/Meeza-Card.webp'].map((logo) => (
-                        <img key={logo} src={logo} alt="Card logo" className="h-6 object-contain rounded-sm bg-white px-1 py-0.5" />
-                      ))}
-                    </div>
-
-                    <input
-                      type="text"
-                      value={cardNumber}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, '').slice(0, 19);
-                        const chunks = digits.match(/.{1,4}/g) || [];
-                        setCardNumber(chunks.join(' '));
-                      }}
-                      placeholder={language === 'ar' ? 'رقم البطاقة' : 'Card number'}
-                      inputMode="numeric"
-                      autoComplete="cc-number"
-                      className="w-full bg-creo-bg-sec border border-creo-border rounded-md px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
-                    />
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={cardExpiry}
-                        onChange={(e) => {
-                          const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
-                          if (raw.length <= 2) {
-                            setCardExpiry(raw);
-                          } else {
-                            setCardExpiry(`${raw.slice(0, 2)}/${raw.slice(2)}`);
-                          }
-                        }}
-                        placeholder={language === 'ar' ? 'MM/YY' : 'MM/YY'}
-                        inputMode="numeric"
-                        autoComplete="cc-exp"
-                        className="w-full bg-creo-bg-sec border border-creo-border rounded-md px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
-                      />
-                      <input
-                        type="text"
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                        placeholder="CVV"
-                        inputMode="numeric"
-                        autoComplete="cc-csc"
-                        className="w-full bg-creo-bg-sec border border-creo-border rounded-md px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
-                      />
-                    </div>
-
-                    <input
-                      type="text"
-                      value={cardHolder}
-                      onChange={(e) => setCardHolder(e.target.value)}
-                      placeholder={language === 'ar' ? 'اسم صاحب البطاقة' : 'Name on card'}
-                      autoComplete="cc-name"
-                      className="w-full bg-creo-bg-sec border border-creo-border rounded-md px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-creo-accent/50"
-                    />
-                  </div>
-                </div>
-              )}
+              <div className="rounded-xl border border-creo-border bg-creo-bg p-4 text-sm text-creo-text-sec">
+                {language === 'ar'
+                  ? 'بعد تأكيد الطلب سيتم تحويلك إلى صفحة دفع فواتيرك.'
+                  : 'After checkout, you will be redirected to Fawaterk payment page.'}
+              </div>
 
               <div>
                 <h3 className="text-xl font-bold text-white mb-4 pb-4 border-b border-creo-border">{t('order_summary')}</h3>

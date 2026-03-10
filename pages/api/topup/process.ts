@@ -4,6 +4,7 @@ import { requireAdminUser, requireInternalToken } from '../../../src/lib/server/
 import { enforceRateLimit } from '../../../src/lib/server/rateLimit';
 import { enqueueTopupRequest, processQueuedTopups } from '../../../src/lib/server/queue/topupQueue';
 import { ordersService } from '../../../src/lib/server/services/orders';
+import { serverEnv } from '../../../src/lib/server/env';
 
 const authorize = async (req: NextApiRequest) => {
   try {
@@ -47,6 +48,9 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   });
 
   if (!queued.queued) {
+    if (!serverEnv.allowSyncTopupFallback) {
+      throw new ApiError(503, 'Topup queue unavailable', 'TOPUP_QUEUE_UNAVAILABLE');
+    }
     const processed = await ordersService.processPaidOrder(orderId);
     return res.status(200).json({ success: true, queued: false, order: processed });
   }

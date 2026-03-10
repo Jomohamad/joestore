@@ -3,6 +3,7 @@ import { ApiError } from '../http';
 import { fawaterkPayment } from '../payments/fawaterk';
 import type { FawaterkVerifyOptions } from '../payments/fawaterk';
 import { enqueueTopupRequest } from '../queue/topupQueue';
+import { serverEnv } from '../env';
 import { supabaseAdmin } from '../supabaseAdmin';
 import { cacheManager } from './cache/cacheManager';
 import { fraudService } from './fraud';
@@ -255,13 +256,12 @@ export const ordersService = {
   async createOrder(input: {
     userId: string;
     gameIdentifier: string;
-    packageId?: number | null;
+    packageId: number;
     packageName?: string | null;
     playerId: string;
     server?: string | null;
     quantity: number;
     paymentDetails?: Record<string, unknown>;
-    legacyAmount?: number;
     ipAddress?: string | null;
     country?: string | null;
     fraudRiskScore?: number | null;
@@ -270,54 +270,55 @@ export const ordersService = {
       throw new ApiError(400, 'Invalid order payload', 'INVALID_ORDER_PAYLOAD');
     }
 
+    if (!Number.isFinite(input.packageId) || Number(input.packageId) <= 0) {
+      throw new ApiError(400, 'package_id is required', 'PACKAGE_ID_REQUIRED');
+    }
+
     const game = await this.getGameByIdentifier(input.gameIdentifier);
     const gameId = String((game as Record<string, unknown>).id);
 
-    let packageAmount = Number(input.legacyAmount || 0);
-    let unitPrice = Number(input.legacyAmount || 0);
+    let packageAmount = 0;
+    let unitPrice = 0;
     let packageLabel = input.packageName || 'Topup';
-    let packageId: number | null = null;
+    const packageId = Number(input.packageId);
     let productId: string | null = null;
     let currency = 'EGP';
     let selectedProvider: string =
       String((game as Record<string, unknown>).provider_api || 'reloadly').toLowerCase() === 'gamesdrop' ? 'gamesdrop' : 'reloadly';
 
-    if (input.packageId && Number.isFinite(input.packageId)) {
-      const pkgRow = await supabaseAdmin
-        .from('packages')
-        .select('id, amount, price, discount_active, discount_type, discount_value, discount_ends_at')
-        .eq('id', input.packageId)
-        .eq('game_id', gameId)
-        .maybeSingle();
+    const pkgRow = await supabaseAdmin
+      .from('packages')
+      .select('id, amount, price, discount_active, discount_type, discount_value, discount_ends_at')
+      .eq('id', packageId)
+      .eq('game_id', gameId)
+      .maybeSingle();
 
-      if (pkgRow.error || !pkgRow.data) {
-        throw new ApiError(400, 'Package not found', 'PACKAGE_NOT_FOUND');
-      }
+    if (pkgRow.error || !pkgRow.data) {
+      throw new ApiError(400, 'Package not found', 'PACKAGE_NOT_FOUND');
+    }
 
-      packageId = Number(pkgRow.data.id);
-      packageAmount = Number(pkgRow.data.amount || 0);
-      unitPrice = computeDiscountedPackagePrice(pkgRow.data);
-      packageLabel =
-        input.packageName ||
-        `${pkgRow.data.amount} ${String((game as Record<string, unknown>).currency_name || '').trim()}`.trim() ||
-        'Topup';
+    packageAmount = Number(pkgRow.data.amount || 0);
+    unitPrice = computeDiscountedPackagePrice(pkgRow.data);
+    packageLabel =
+      input.packageName ||
+      `${pkgRow.data.amount} ${String((game as Record<string, unknown>).currency_name || '').trim()}`.trim() ||
+      'Topup';
 
-      const existingProduct = await safeFindProductByPackage(gameId, packageId);
-      if (existingProduct?.id) {
-        productId = String(existingProduct.id);
-        currency = String((existingProduct as Record<string, unknown>).currency || 'EGP');
-      } else {
-        const createdProduct = await safeInsertProduct({
-          gameId,
-          name: packageLabel,
-          providerProductId: `package:${packageId}`,
-          price: unitPrice,
-          currency: 'EGP',
-          active: true,
-          provider: selectedProvider === 'gamesdrop' ? 'gamesdrop' : 'reloadly',
-        });
-        productId = createdProduct?.id ? String(createdProduct.id) : null;
-      }
+    const existingProduct = await safeFindProductByPackage(gameId, packageId);
+    if (existingProduct?.id) {
+      productId = String(existingProduct.id);
+      currency = String((existingProduct as Record<string, unknown>).currency || 'EGP');
+    } else {
+      const createdProduct = await safeInsertProduct({
+        gameId,
+        name: packageLabel,
+        providerProductId: `package:${packageId}`,
+        price: unitPrice,
+        currency: 'EGP',
+        active: true,
+        provider: selectedProvider === 'gamesdrop' ? 'gamesdrop' : 'reloadly',
+      });
+      productId = createdProduct?.id ? String(createdProduct.id) : null;
     }
 
     if (productId) {
@@ -350,6 +351,16 @@ export const ordersService = {
     const totalPrice = Number((unitPrice * quantity).toFixed(2));
     const orderId = randomUUID();
 
+    const sanitizePaymentDetails = (details?: Record<string, unknown>) => {
+      const clean = details && typeof details === 'object' ? { ...details } : {};
+      delete (clean as Record<string, unknown>).cardNumber;
+      delete (clean as Record<string, unknown>).cardCvv;
+      delete (clean as Record<string, unknown>).cardExpiry;
+      delete (clean as Record<string, unknown>).cvv;
+      delete (clean as Record<string, unknown>).expiry;
+      return clean;
+    };
+
     const insertPayload: Record<string, unknown> = {
       id: orderId,
       user_id: input.userId,
@@ -365,7 +376,7 @@ export const ordersService = {
       price: totalPrice,
       status: 'pending',
       provider: selectedProvider,
-      payment_details: input.paymentDetails || {},
+      payment_details: sanitizePaymentDetails(input.paymentDetails),
       currency,
       ip_address: input.ipAddress || null,
       country: input.country || null,
@@ -499,6 +510,13 @@ export const ordersService = {
     }
 
     const order = await this.getOrder(orderId);
+    const currentStatus = String(order.status || '').toLowerCase();
+    if (currentStatus === 'completed' || currentStatus === 'processing') {
+      return order;
+    }
+    if (currentStatus === 'paid') {
+      return order;
+    }
     const paymentId = String(order.payment_id || '').trim();
     const paymentCountry = String(
       payload.country ||
@@ -565,7 +583,23 @@ export const ordersService = {
       return failed;
     }
 
-    await this.setOrderStatus(orderId, 'paid', {
+    const orderAmount = Number(order.price || 0);
+    const paidAmount = Number(verification.amount || 0);
+    if (orderAmount > 0 && paidAmount > 0) {
+      const diff = Math.abs(orderAmount - paidAmount);
+      if (diff > Math.max(1, orderAmount * 0.1)) {
+        return this.setOrderStatus(orderId, 'failed', {
+          provider_response: {
+            source: 'fawaterk',
+            message: 'Payment amount mismatch',
+            expected: orderAmount,
+            received: paidAmount,
+          },
+        });
+      }
+    }
+
+    const paidOrder = await this.setOrderStatus(orderId, 'paid', {
       transaction_id: verification.transactionId || String(order.transaction_id || ''),
       provider_response: payload,
     });
@@ -576,32 +610,32 @@ export const ordersService = {
     });
 
     if (!queued.queued) {
+      if (!serverEnv.allowSyncTopupFallback) {
+        throw new ApiError(503, 'Topup queue unavailable', 'TOPUP_QUEUE_UNAVAILABLE');
+      }
       return topupEngine.processOrder(orderId, { source: 'payment-webhook-fallback' });
     }
 
-    return this.getOrder(orderId);
+    return paidOrder;
   },
 
   async listAdminOrders(search = '', page = 1, limit = 40) {
     const offset = Math.max(0, (page - 1) * limit);
-    const base = await supabaseAdmin
+    let base = supabaseAdmin
       .from('orders')
       .select('*')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
+    const q = String(search || '').trim();
+    if (q) {
+      const like = `%${q}%`;
+      base = base.or(`id.ilike.${like},user_id.ilike.${like},package.ilike.${like},status.ilike.${like},provider.ilike.${like}`);
+    }
+
     if (base.error) throw new ApiError(500, base.error.message, 'ADMIN_ORDERS_FETCH_FAILED');
 
-    const rows = (base.data || []) as Record<string, unknown>[];
-    const q = String(search || '').trim().toLowerCase();
-    if (!q) return rows;
-
-    return rows.filter((row) => {
-      const haystack = [row.id, row.user_id, row.player_id, row.server, row.package, row.status]
-        .map((v) => String(v || '').toLowerCase())
-        .join(' ');
-      return haystack.includes(q);
-    });
+    return (base.data || []) as Record<string, unknown>[];
   },
 
   async retryFailedOrder(orderId: string) {
@@ -743,26 +777,25 @@ export const ordersService = {
 
   async listAdminUsers(search = '', page = 1, limit = 100) {
     const offset = Math.max(0, (page - 1) * limit);
-    const rows = await supabaseAdmin
+    let rows = supabaseAdmin
       .from('users')
       .select('id, email, username, role, is_blocked, fraud_risk_score, created_at')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (rows.error) {
-      if (tableOrColumnMissing(rows.error.code)) return [];
-      throw new ApiError(500, rows.error.message, 'ADMIN_USERS_FETCH_FAILED');
+    const q = String(search || '').trim();
+    if (q) {
+      const like = `%${q}%`;
+      rows = rows.or(`email.ilike.${like},username.ilike.${like},role.ilike.${like}`);
     }
 
-    const q = String(search || '').trim().toLowerCase();
-    if (!q) return rows.data || [];
+    const result = await rows;
+    if (result.error) {
+      if (tableOrColumnMissing(result.error.code)) return [];
+      throw new ApiError(500, result.error.message, 'ADMIN_USERS_FETCH_FAILED');
+    }
 
-    return (rows.data || []).filter((row) => {
-      const haystack = [row.id, row.email, row.username, row.role, row.is_blocked]
-        .map((v) => String(v || '').toLowerCase())
-        .join(' ');
-      return haystack.includes(q);
-    });
+    return result.data || [];
   },
 
   async updateAdminUserRole(userId: string, role: 'admin' | 'user') {

@@ -119,11 +119,13 @@ export const providerRouter = {
 
     const prices: Array<{ provider: ExtendedProvider; price: number; currency: string; source: string; rawResponse?: unknown }> = [];
 
-    for (const provider of candidates) {
-      try {
+    const results = await Promise.allSettled(
+      candidates.map(async (provider) => {
         const result = await providerPricingClients[provider].getPrice(input.providerProductId, currency);
         const price = Number((result as Record<string, unknown>).price || 0);
-        if (!Number.isFinite(price) || price <= 0) continue;
+        if (!Number.isFinite(price) || price <= 0) {
+          throw new Error('Provider returned invalid price');
+        }
 
         await upsertProviderPrice({
           provider,
@@ -132,18 +134,25 @@ export const providerRouter = {
           currency,
         });
 
-        prices.push({
+        return {
           provider,
           price,
           currency,
           source: String((result as Record<string, unknown>).source || 'api'),
           rawResponse: (result as Record<string, unknown>).rawResponse,
-        });
-      } catch (error) {
+        };
+      }),
+    );
+
+    for (const [index, result] of results.entries()) {
+      const provider = candidates[index];
+      if (result.status === 'fulfilled') {
+        prices.push(result.value);
+      } else {
         await this.recordProviderFailure({
           provider,
           productId: input.productId,
-          reason: error instanceof Error ? error.message : 'Provider pricing failed',
+          reason: result.reason instanceof Error ? result.reason.message : 'Provider pricing failed',
         });
       }
     }

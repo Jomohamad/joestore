@@ -25,6 +25,7 @@ const requiredWhenOrDefault = (
 
 const nodeEnv = clean(process.env.NODE_ENV) || 'development';
 const isProduction = nodeEnv === 'production';
+const sandboxDisabled = clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false';
 
 export const serverEnv = {
   nodeEnv,
@@ -32,7 +33,7 @@ export const serverEnv = {
     clean(process.env.APP_BASE_URL) ||
     clean(process.env.NEXT_PUBLIC_APP_BASE_URL) ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
-  sandboxMode: clean(process.env.SANDBOX_MODE || 'true').toLowerCase() !== 'false',
+  sandboxMode: !sandboxDisabled,
 
   supabaseUrl: required(
     'SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL or NEXT_VITE_SUPABASE_URL or VITE_SUPABASE_URL',
@@ -48,20 +49,26 @@ export const serverEnv = {
     'JWT_SECRET',
     process.env.JWT_SECRET,
     'dev-insecure-jwt-secret',
-    isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
+    isProduction && sandboxDisabled,
+  ),
+  internalApiToken: requiredWhenOrDefault(
+    'INTERNAL_API_TOKEN',
+    process.env.INTERNAL_API_TOKEN,
+    'dev-insecure-internal-token',
+    isProduction && sandboxDisabled,
   ),
 
   reloadlyClientId: requiredWhenOrDefault(
     'RELOADLY_CLIENT_ID',
     process.env.RELOADLY_CLIENT_ID,
     'sandbox-reloadly-client-id',
-    isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
+    isProduction && sandboxDisabled,
   ),
   reloadlyClientSecret: requiredWhenOrDefault(
     'RELOADLY_CLIENT_SECRET',
     process.env.RELOADLY_CLIENT_SECRET,
     'sandbox-reloadly-client-secret',
-    isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
+    isProduction && sandboxDisabled,
   ),
   reloadlyAuthBase:
     clean(process.env.RELOADLY_AUTH_BASE) ||
@@ -73,7 +80,7 @@ export const serverEnv = {
     'GAMESDROP_API_KEY',
     process.env.GAMESDROP_API_KEY,
     'sandbox-gamesdrop-api-key',
-    isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
+    isProduction && sandboxDisabled,
   ),
   gamesdropApiBase:
     clean(process.env.GAMESDROP_API_BASE) ||
@@ -94,19 +101,19 @@ export const serverEnv = {
     'FAWATERK_API_KEY',
     process.env.FAWATERK_API_KEY,
     'sandbox-fawaterk-api-key',
-    isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
+    isProduction && sandboxDisabled,
   ),
   fawaterkSecretKey: requiredWhenOrDefault(
     'FAWATERK_SECRET_KEY or FAWATERK_SECRET',
     process.env.FAWATERK_SECRET_KEY || process.env.FAWATERK_SECRET,
     'sandbox-fawaterk-secret-key',
-    isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
+    isProduction && sandboxDisabled,
   ),
   fawaterkWebhookSecret: requiredWhenOrDefault(
     'FAWATERK_WEBHOOK_SECRET',
     process.env.FAWATERK_WEBHOOK_SECRET || process.env.FAWATERK_SECRET_KEY || process.env.FAWATERK_SECRET,
     'sandbox-fawaterk-webhook-secret',
-    isProduction && clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false',
+    isProduction && sandboxDisabled,
   ),
 
   unipinApiKey: clean(process.env.UNIPIN_API_KEY || ''),
@@ -122,4 +129,7 @@ export const serverEnv = {
   geolocationApiKey: clean(process.env.GEOLOCATION_API_KEY || ''),
   fraudMaxOrdersPerMinute: Number(clean(process.env.FRAUD_MAX_ORDERS_PER_MINUTE || '6')) || 6,
   fraudBlockRiskScore: Number(clean(process.env.FRAUD_BLOCK_RISK_SCORE || '80')) || 80,
+  allowSyncTopupFallback: clean(process.env.ALLOW_SYNC_TOPUP_FALLBACK || '').toLowerCase()
+    ? clean(process.env.ALLOW_SYNC_TOPUP_FALLBACK || '').toLowerCase() === 'true'
+    : !isProduction,
 };

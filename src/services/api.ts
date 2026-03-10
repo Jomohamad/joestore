@@ -423,7 +423,7 @@ export const createOrder = async (orderData: {
   packageId: number;
   amount: number;
   quantity: number;
-  paymentMethod: 'fawaterk' | 'wallet' | 'card' | 'paypal';
+  paymentMethod: 'fawaterk';
   accountIdentifier: string;
   paymentDetails: Record<string, unknown>;
   packageName?: string;

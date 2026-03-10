@@ -38,8 +38,8 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   const server = String(req.body?.server || '').trim() || null;
   const quantity = Number(req.body?.quantity || 1);
 
-  if (!gameIdentifier || !playerId) {
-    throw new ApiError(400, 'game and player_id are required', 'INVALID_ORDER_PAYLOAD');
+  if (!gameIdentifier || !playerId || !Number.isFinite(Number(packageId))) {
+    throw new ApiError(400, 'game, player_id and package_id are required', 'INVALID_ORDER_PAYLOAD');
   }
 
   const ipAddress = getClientIp(req);
@@ -62,12 +62,11 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   const { order, price } = await ordersService.createOrder({
     userId: user.id,
     gameIdentifier,
-    packageId: packageId !== null && packageId !== undefined ? Number(packageId) : null,
+    packageId: Number(packageId),
     packageName,
     playerId,
     server,
     quantity,
-    legacyAmount: Number(req.body?.amount || 0),
     ipAddress,
     country: fraudCheck.country,
     fraudRiskScore: fraudCheck.riskScore,

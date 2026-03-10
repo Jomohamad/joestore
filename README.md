@@ -38,8 +38,10 @@ FAWATERK_SECRET_KEY=
 FAWATERK_WEBHOOK_SECRET=
 
 JWT_SECRET=
+INTERNAL_API_TOKEN=
 APP_BASE_URL=http://localhost:3000
 SANDBOX_MODE=true
+ALLOW_SYNC_TOPUP_FALLBACK=true
 ```
 
 Compatibility fallback envs are also supported:

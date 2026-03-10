@@ -40,7 +40,7 @@ export const requireAdminUser = async (req: NextApiRequest) => {
 
 export const requireInternalToken = (req: NextApiRequest) => {
   const token = String(req.headers['x-internal-token'] || '');
-  if (!token || token !== serverEnv.jwtSecret) {
+  if (!token || token !== serverEnv.internalApiToken) {
     throw new ApiError(401, 'Unauthorized internal route', 'INTERNAL_UNAUTHORIZED');
   }
 };
