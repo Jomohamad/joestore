@@ -90,7 +90,7 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
     });
 
     const paidOrder = await ordersService.setOrderStatus(String(order.id), 'paid', {
-      payment_details: { ...(order.payment_details || {}), wallet: true },
+      payment_details: { ...((order.payment_details as Record<string, unknown>) || {}), wallet: true },
     });
 
     const queued = await enqueueTopupRequest({
