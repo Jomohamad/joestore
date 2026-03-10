@@ -7,3 +7,11 @@ script = '''
 npm install
 npm run dev
 '''
+
+[[actions]]
+name = "run project"
+icon = "tool"
+command = '''
+npm install
+npm run dev
+'''

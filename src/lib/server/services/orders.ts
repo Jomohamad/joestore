@@ -633,9 +633,10 @@ export const ordersService = {
       base = base.or(`id.ilike.${like},user_id.ilike.${like},package.ilike.${like},status.ilike.${like},provider.ilike.${like}`);
     }
 
-    if (base.error) throw new ApiError(500, base.error.message, 'ADMIN_ORDERS_FETCH_FAILED');
+    const result = await base;
+    if (result.error) throw new ApiError(500, result.error.message, 'ADMIN_ORDERS_FETCH_FAILED');
 
-    return (base.data || []) as Record<string, unknown>[];
+    return (result.data || []) as Record<string, unknown>[];
   },
 
   async retryFailedOrder(orderId: string) {

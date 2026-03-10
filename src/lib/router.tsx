@@ -3,13 +3,15 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo } from 'react';
 
-type LinkProps = ComponentProps<typeof NextLink> & {
+type NextLinkProps = ComponentProps<typeof NextLink>;
+type LinkProps = Omit<NextLinkProps, 'href'> & {
   to?: string;
+  href?: NextLinkProps['href'];
 };
 
 export function Link({ to, href, ...props }: LinkProps) {
-  const target = (href || to || '/') as string;
-  return <NextLink href={target} {...props} />;
+  const target = (href || to || '/') as NextLinkProps['href'];
+  return <NextLink href={target} {...(props as Omit<NextLinkProps, 'href'>)} />;
 }
 
 export const useNavigate = () => {
@@ -45,7 +47,7 @@ export const useLocation = () => {
   }, [router.asPath]);
 };
 
-export const useParams = <T extends Record<string, string>>() => {
+export const useParams = <T extends Record<string, string | string[]>>() => {
   const router = useRouter();
   return router.query as T;
 };
