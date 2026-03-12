@@ -28,11 +28,21 @@ const runRetrySweep = async () => {
   }
 };
 
+const loop = async () => {
+  try {
+    await runRetrySweep();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[retryWorker] unhandled error', err);
+  } finally {
+    setTimeout(() => {
+      void loop();
+    }, 60_000);
+  }
+};
+
 const boot = async () => {
-  await runRetrySweep();
-  setInterval(() => {
-    void runRetrySweep();
-  }, 60_000);
+  await loop();
   setInterval(() => {
     void heartbeatService.beat('retryWorker', { intervalMs: 60000 });
   }, 30_000);

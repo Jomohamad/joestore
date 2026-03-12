@@ -33,12 +33,21 @@ const run = async () => {
   }
 };
 
-setInterval(() => {
-  void run();
-}, 15_000);
+const loop = async () => {
+  try {
+    await run();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[queueJobWorker] unhandled error', err);
+  } finally {
+    setTimeout(() => {
+      void loop();
+    }, 15_000);
+  }
+};
 
 setInterval(() => {
   void heartbeatService.beat('queueJobWorker', { intervalMs: 15000 });
 }, 30_000);
 
-void run();
+void loop();

@@ -16,8 +16,7 @@ export default function PaymentCallback() {
 
   const normalizedProvider = useMemo(() => {
     const normalized = Array.isArray(provider) ? provider[0] : provider;
-    const value = String(normalized || '').trim().toLowerCase();
-    return value === 'fawaterk' ? ('fawaterk' as const) : null;
+    return String(normalized || '').trim().toLowerCase();
   }, [provider]);
 
   useEffect(() => {

@@ -79,7 +79,7 @@ export const referralService = {
     }
     if (!rows.data) return null;
 
-    const rewardAmount = Math.max(0, Number((input.amount || 0) * 0.05).toFixed(2));
+    const rewardAmount = Math.max(0, Number(((input.amount || 0) * 0.05).toFixed(2)));
     if (rewardAmount <= 0) return null;
 
     await walletService.credit({

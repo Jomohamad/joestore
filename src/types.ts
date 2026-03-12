@@ -38,7 +38,7 @@ export interface Order {
   product_id?: string | null;
   package_id?: number | null;
   amount: number;
-  status: 'pending' | 'paid' | 'processing' | 'completed' | 'failed' | string;
+  status: 'pending' | 'paid' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded';
   account_identifier?: string | null;
   player_id?: string | null;
   server?: string | null;

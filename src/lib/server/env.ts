@@ -37,12 +37,12 @@ export const serverEnv = {
   sandboxMode: !sandboxDisabled,
 
   supabaseUrl: required(
-    'SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL or NEXT_VITE_SUPABASE_URL or VITE_SUPABASE_URL',
-    process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+    'SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL',
+    process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
   ),
   supabaseAnonKey: required(
-    'SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_ANON_KEY',
-    process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY,
+    'SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   ),
   supabaseServiceRole: required('SUPABASE_SERVICE_ROLE or SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_ROLE_KEY),
 
