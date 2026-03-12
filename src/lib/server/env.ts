@@ -25,8 +25,9 @@ const requiredWhenOrDefault = (
 
 const nodeEnv = clean(process.env.NODE_ENV) || 'development';
 const isProduction = nodeEnv === 'production';
+const isBuild = process.env.NEXT_PHASE === 'phase-production-build';
 const sandboxDisabled = clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false';
-const mustRequireProd = isProduction;
+const mustRequireProd = isProduction && !isBuild;
 
 export const serverEnv = {
   nodeEnv,
@@ -36,15 +37,24 @@ export const serverEnv = {
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
   sandboxMode: !sandboxDisabled,
 
-  supabaseUrl: required(
+  supabaseUrl: requiredWhenOrDefault(
     'SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL',
     process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
+    'https://placeholder.supabase.co',
+    mustRequireProd,
   ),
-  supabaseAnonKey: required(
+  supabaseAnonKey: requiredWhenOrDefault(
     'SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY',
     process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    'placeholder-anon-key',
+    mustRequireProd,
   ),
-  supabaseServiceRole: required('SUPABASE_SERVICE_ROLE or SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_ROLE_KEY),
+  supabaseServiceRole: requiredWhenOrDefault(
+    'SUPABASE_SERVICE_ROLE or SUPABASE_SERVICE_ROLE_KEY',
+    process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_ROLE_KEY,
+    'placeholder-service-role',
+    mustRequireProd,
+  ),
 
   jwtSecret: requiredWhenOrDefault(
     'JWT_SECRET',

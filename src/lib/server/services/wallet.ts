@@ -78,28 +78,28 @@ export const walletService = {
     };
   },
 
-  async credit(input: { userId: string; amount: number; currency?: string; source?: string; referenceType?: string; referenceId?: string; metadata?: Record<string, unknown> }) {
+  async credit(input: { userId: string; amount: number; currency?: string; source?: string; referenceType?: string | null; referenceId?: string | null; metadata?: Record<string, unknown> }) {
     return this.applyTransaction({
       userId: input.userId,
       amount: input.amount,
       type: 'credit',
       currency: input.currency,
       source: input.source,
-      referenceType: input.referenceType || null,
-      referenceId: input.referenceId || null,
+      referenceType: input.referenceType,
+      referenceId: input.referenceId,
       metadata: input.metadata,
     });
   },
 
-  async debit(input: { userId: string; amount: number; currency?: string; source?: string; referenceType?: string; referenceId?: string; metadata?: Record<string, unknown> }) {
+  async debit(input: { userId: string; amount: number; currency?: string; source?: string; referenceType?: string | null; referenceId?: string | null; metadata?: Record<string, unknown> }) {
     return this.applyTransaction({
       userId: input.userId,
       amount: input.amount,
       type: 'debit',
       currency: input.currency,
       source: input.source,
-      referenceType: input.referenceType || null,
-      referenceId: input.referenceId || null,
+      referenceType: input.referenceType,
+      referenceId: input.referenceId,
       metadata: input.metadata,
     });
   },

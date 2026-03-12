@@ -2,7 +2,7 @@ import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useEffect } from 'react';
 import AppProviders from '../src/components/AppProviders';
-import type { SsrDataPayload } from '../src/components/AppProviders';
+import type { SsrDataPayload } from '../src/context/SsrDataContext';
 import AppShell from '../src/components/AppShell';
 import PwaInstallPrompt from '../src/components/PwaInstallPrompt';
 import '../src/index.css';

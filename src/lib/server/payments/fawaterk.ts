@@ -19,6 +19,7 @@ export interface FawaterkCreateSessionResult {
 export interface FawaterkVerifyOptions {
   signature?: string | null;
   rawBody?: string | Buffer | null;
+  provider?: string;
 }
 
 const hash = (value: string) =>
