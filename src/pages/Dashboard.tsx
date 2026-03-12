@@ -1049,7 +1049,7 @@ export default function Dashboard() {
                 <button onClick={onSaveSla} disabled={savingSla} className="px-4 py-2 rounded-lg bg-creo-accent text-black font-semibold">
                   {savingSla ? 'Saving...' : 'Save SLA'}
                 </button>
-                <button onClick={onSendAdminTestAlert} className="px-4 py-2 rounded-lg border border-creo-border text-creo-text-sec">
+                <button onClick={onSendTestAlert} className="px-4 py-2 rounded-lg border border-creo-border text-creo-text-sec">
                   Send Test Alert
                 </button>
               </div>
