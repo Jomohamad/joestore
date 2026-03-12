@@ -169,6 +169,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Real-time profile updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`profile:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updatedUser = payload.new as Record<string, unknown>;
+          setProfile((prev) => ({
+            ...(prev || {
+              id: user.id,
+              email: user.email || '',
+              first_name: '',
+              last_name: '',
+              username: '',
+              onboarded: true,
+              is_admin: false,
+            }),
+            first_name: String(updatedUser.first_name || ''),
+            last_name: String(updatedUser.last_name || ''),
+            username: String(updatedUser.username || ''),
+            avatar_url: updatedUser.avatar_url ? String(updatedUser.avatar_url) : null,
+            email: String(updatedUser.email || user.email || ''),
+            is_admin: Boolean(updatedUser.is_admin || false),
+          }));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id, user?.email]);
+
   useEffect(() => {
     if (!user?.id) return;
     void refreshProfile();

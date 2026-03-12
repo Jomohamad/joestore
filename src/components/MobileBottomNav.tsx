@@ -15,8 +15,7 @@ export default function MobileBottomNav() {
   const { pathname } = useLocation();
   const { user, profile } = useAuth();
 
-  const isAdmin = Boolean(profile?.is_admin || String((user?.user_metadata as Record<string, unknown> | undefined)?.role || '').toLowerCase() === 'admin');
-  const profilePath = user ? (isAdmin ? '/admin' : '/edit-profile') : '/login';
+  const profilePath = user ? '/edit-profile' : '/login';
 
   const items: NavItem[] = [
     {
@@ -47,7 +46,7 @@ export default function MobileBottomNav() {
       to: profilePath,
       label: 'Profile',
       icon: User,
-      isActive: (path) => path.startsWith('/admin') || path.startsWith('/edit-profile') || path === '/login',
+      isActive: (path) => path.startsWith('/edit-profile') || path === '/login',
     },
   ];
 
