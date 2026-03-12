@@ -109,7 +109,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {isAdmin && (
                       <button
                         type="button"
-                        onClick={() => goTo('/dashboard')}
+                        onClick={() => goTo('/admin')}
                         className="w-full text-left flex items-center gap-3 px-4 py-3 text-black bg-creo-accent hover:bg-[#ffe04d] rounded-xl transition-colors group shadow-[0_0_22px_rgba(255,215,0,0.25)]"
                       >
                         <span className="w-7 h-7 rounded-lg bg-black/15 flex items-center justify-center">

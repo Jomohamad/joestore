@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from '../lib/router';
 import { useAuth } from '../context/AuthContext';
 import {
-  deleteAdminProduct,
   fetchAdminFraudAlerts,
   fetchAdminDiscountRules,
   fetchAdminGames,
@@ -31,6 +30,7 @@ import {
   upsertAdminGame,
   upsertAdminPricingRule,
   upsertAdminProduct,
+  deleteAdminProduct,
 } from '../services/api';
 import { DashboardWidgetsSkeleton } from '../components/skeletons';
 
@@ -239,7 +239,7 @@ export default function Dashboard() {
   useEffect(() => {
     const next: Record<string, { success: string; latency: string; enabled: boolean }> = {};
     for (const row of providerSla) {
-      const provider = String(row.provider || '').toLowerCase();
+      const provider = String(row.provider || '');
       if (!provider) continue;
       next[provider] = {
         success: String(row.target_success_rate || '95'),
@@ -495,7 +495,7 @@ export default function Dashboard() {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin) return <Navigate to="/edit-profile" replace />;
 
   return (
     <div className="flex-1 bg-creo-bg py-12 md:py-16">
@@ -1049,7 +1049,7 @@ export default function Dashboard() {
                 <button onClick={onSaveSla} disabled={savingSla} className="px-4 py-2 rounded-lg bg-creo-accent text-black font-semibold">
                   {savingSla ? 'Saving...' : 'Save SLA'}
                 </button>
-                <button onClick={onSendTestAlert} className="px-4 py-2 rounded-lg border border-creo-border text-creo-text-sec">
+                <button onClick={onSendAdminTestAlert} className="px-4 py-2 rounded-lg border border-creo-border text-creo-text-sec">
                   Send Test Alert
                 </button>
               </div>

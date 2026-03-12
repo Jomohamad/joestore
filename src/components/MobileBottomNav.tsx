@@ -13,9 +13,10 @@ interface NavItem {
 
 export default function MobileBottomNav() {
   const { pathname } = useLocation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
-  const profilePath = user ? '/dashboard' : '/login';
+  const isAdmin = Boolean(profile?.is_admin || String((user?.user_metadata as Record<string, unknown> | undefined)?.role || '').toLowerCase() === 'admin');
+  const profilePath = user ? (isAdmin ? '/admin' : '/edit-profile') : '/login';
 
   const items: NavItem[] = [
     {
@@ -46,7 +47,7 @@ export default function MobileBottomNav() {
       to: profilePath,
       label: 'Profile',
       icon: User,
-      isActive: (path) => path.startsWith('/dashboard') || path.startsWith('/edit-profile'),
+      isActive: (path) => path.startsWith('/admin') || path.startsWith('/edit-profile') || path === '/login',
     },
   ];
 

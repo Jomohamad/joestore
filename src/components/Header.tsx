@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from '../lib/router';
-import { ShoppingCart, User, Search, X, Menu, Home, Gamepad2, Grid3X3, Heart, History, Headset, Wallet } from 'lucide-react';
+import { ShoppingCart, User, Search, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
@@ -10,11 +10,9 @@ export default function Header() {
   const { language, cart, t } = useStore();
   const { user, profile } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   React.useEffect(() => {
@@ -24,26 +22,6 @@ export default function Header() {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
-
-  React.useEffect(() => {
-    const closeMobileMenu = () => setIsMobileNavOpen(false);
-    window.addEventListener('resize', closeMobileMenu);
-    return () => window.removeEventListener('resize', closeMobileMenu);
-  }, []);
-
-  React.useEffect(() => {
-    setIsMobileNavOpen(false);
-  }, [location.pathname]);
-
-  const mobileLinks = [
-    { to: '/', label: language === 'ar' ? 'الرئيسية' : 'Home', icon: Home },
-    { to: '/games', label: language === 'ar' ? 'الألعاب' : 'Games', icon: Gamepad2 },
-    { to: '/apps', label: language === 'ar' ? 'التطبيقات' : 'Apps', icon: Grid3X3 },
-    { to: '/wishlist', label: t('wishlist'), icon: Heart },
-    { to: '/orders', label: t('order_history'), icon: History },
-    { to: '/wallet', label: language === 'ar' ? 'المحفظة' : 'Wallet', icon: Wallet },
-    { to: '/support', label: t('support'), icon: Headset },
-  ];
 
   const desktopLinks = [
     { to: '/games', label: language === 'ar' ? 'الألعاب' : 'Games' },
@@ -70,21 +48,12 @@ export default function Header() {
       <header className="sticky top-0 z-40 w-full border-b border-creo-border bg-creo-bg/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between relative">
           <div className="flex items-center gap-3 md:gap-6">
-            <button
-              onClick={() => setIsMobileNavOpen((prev) => !prev)}
-              className="md:hidden p-2 text-creo-text-sec hover:text-creo-accent transition-colors rounded-lg border border-creo-border bg-creo-bg-sec/70"
-              aria-label="Toggle navigation menu"
-              aria-expanded={isMobileNavOpen}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
             <Link to="/" className="flex-shrink-0 flex items-center gap-3 hover:opacity-80 transition-all duration-300 group">
               <div className="relative">
                 <img
                   src="/logo.png"
                   alt="JOEStore logo"
-                  className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-lg p-0.5 shadow-[0_0_18px_rgba(255,215,0,0.2)] group-hover:shadow-[0_0_24px_rgba(255,215,0,0.35)] transition-all duration-300"
+                  className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-lg p-0.5 shadow-[0_0_18px_rgba(255,215,0,0.25)] group-hover:shadow-[0_0_24px_rgba(255,215,0,0.35)] transition-all duration-300"
                 />
               </div>
               <BrandWordmark className="text-base sm:text-lg md:text-xl transition-colors duration-300" />
@@ -159,57 +128,6 @@ export default function Header() {
         </div>
 
       </header>
-
-      {isMobileNavOpen && (
-        <div className="md:hidden fixed inset-0 z-50">
-          <button
-            aria-label="Close navigation"
-            onClick={() => setIsMobileNavOpen(false)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          />
-
-          <aside
-            className={`absolute top-0 ${language === 'ar' ? 'right-0' : 'left-0'} h-full w-[min(22rem,90vw)] bg-creo-card border-creo-border shadow-2xl ${
-              language === 'ar' ? 'border-l' : 'border-r'
-            }`}
-          >
-            <div className="h-16 px-4 border-b border-creo-border flex items-center justify-between">
-              <Link
-                to="/"
-                onClick={() => setIsMobileNavOpen(false)}
-                className="flex items-center gap-2 text-creo-accent"
-              >
-                <img src="/logo.png" alt="JOEStore logo" className="w-8 h-8 object-contain rounded-md" />
-                <BrandWordmark className="text-base" />
-              </Link>
-              <button
-                aria-label="Close menu"
-                onClick={() => setIsMobileNavOpen(false)}
-                className="min-h-11 min-w-11 rounded-lg border border-creo-border bg-creo-bg-sec text-creo-text-sec hover:text-creo-accent transition-colors flex items-center justify-center"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <nav className="px-4 py-4 grid grid-cols-1 gap-2 overflow-y-auto h-[calc(100%-4rem)]">
-              {mobileLinks.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setIsMobileNavOpen(false)}
-                    className="min-h-11 rounded-xl border border-creo-border bg-creo-bg-sec px-3 py-2 text-sm font-semibold text-creo-text-sec hover:text-creo-accent hover:border-creo-accent transition-colors flex items-center gap-2.5"
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </aside>
-        </div>
-      )}
 
           {/* Mobile centered search overlay */}
           {isSearchExpanded && (
