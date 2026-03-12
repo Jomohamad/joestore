@@ -2,6 +2,7 @@ import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useEffect } from 'react';
 import AppProviders from '../src/components/AppProviders';
+import type { SsrDataPayload } from '../src/components/AppProviders';
 import AppShell from '../src/components/AppShell';
 import PwaInstallPrompt from '../src/components/PwaInstallPrompt';
 import '../src/index.css';
@@ -53,7 +54,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
       </Head>
       <PwaInstallPrompt />
-      <AppProviders ssrData={(pageProps as { ssrData?: unknown }).ssrData}>
+      <AppProviders ssrData={(pageProps as { ssrData?: SsrDataPayload }).ssrData}>
         <AppShell>
           <Component {...pageProps} />
         </AppShell>
