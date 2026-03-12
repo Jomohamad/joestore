@@ -1,5 +1,29 @@
-import { Game, Package, Promotion, Order } from '../types';
+import { Game, Package, Promotion, Order, UserProfile, Transaction, WalletTransaction, AuditLog, WorkerHeartbeat, AnalyticsEvent } from '../types';
 import { supabase } from '../lib/supabase';
+
+export interface PricingRule {
+  [key: string]: any;
+  id: string;
+  productId: string;
+  marginPercent: number;
+  minProfit?: number;
+  maxProfit?: number;
+}
+
+export interface DiscountRule {
+  [key: string]: any;
+  id: string;
+  scope: string;
+  percent?: number;
+  fixed_amount?: number;
+  game_id?: string | null;
+  category?: string | null;
+  active: boolean;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  max_uses?: number | null;
+  used_count: number;
+}
 
 const API_TIMEOUT_MS = 8000;
 const isAbortLikeError = (error: unknown): boolean => {
@@ -312,16 +336,7 @@ export const loginWithBackendApi = async (payload: {
 export const fetchProfileStatus = async (): Promise<{
   exists: boolean;
   onboarded: boolean;
-  profile?: {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    username: string;
-    avatar_url?: string | null;
-    provider_avatar_url?: string | null;
-    is_admin?: boolean;
-  };
+  profile?: UserProfile;
 }> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout('/api/profile/status', { headers }, 5000);
@@ -338,7 +353,7 @@ export const completeProfileApi = async (payload: {
   email: string;
   avatarUrl?: string;
   providerAvatarUrl?: string;
-}): Promise<{ success: boolean; profile: unknown }> => {
+}): Promise<{ success: boolean; profile: UserProfile }> => {
   const fallbackClientUpdate = async () => {
     const { data: userData, error } = await supabase.auth.updateUser({
       data: {
@@ -365,6 +380,8 @@ export const completeProfileApi = async (payload: {
         avatar_url: payload.avatarUrl || null,
         provider_avatar_url: payload.providerAvatarUrl || null,
         onboarded: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
     };
   };
@@ -621,7 +638,7 @@ export const fetchWalletBalance = async (): Promise<{ balance: number; currency:
   };
 };
 
-export const fetchWalletTransactions = async (page = 1, limit = 50): Promise<Array<Record<string, unknown>>> => {
+export const fetchWalletTransactions = async (page = 1, limit = 50): Promise<Array<WalletTransaction>> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout(`/api/wallet/transactions?page=${page}&limit=${limit}`, { headers }, 8000);
   const body = await response.json().catch(() => null);
@@ -757,7 +774,7 @@ export const fetchAdminPayments = async (): Promise<Array<Record<string, unknown
   return Array.isArray(body) ? body : [];
 };
 
-export const fetchAdminLogs = async (): Promise<Array<Record<string, unknown>>> => {
+export const fetchAdminLogs = async (): Promise<Array<AuditLog>> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout('/api/admin/logs', { headers }, 10000);
   const body = await response.json().catch(() => null);
@@ -765,7 +782,7 @@ export const fetchAdminLogs = async (): Promise<Array<Record<string, unknown>>> 
   return Array.isArray(body) ? body : [];
 };
 
-export const fetchAdminTransactions = async (): Promise<Array<Record<string, unknown>>> => {
+export const fetchAdminTransactions = async (): Promise<Array<Transaction>> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout('/api/admin/transactions', { headers }, 10000);
   const body = await response.json().catch(() => null);
@@ -773,7 +790,7 @@ export const fetchAdminTransactions = async (): Promise<Array<Record<string, unk
   return Array.isArray(body) ? body : [];
 };
 
-export const fetchAdminUsers = async (search = ''): Promise<Array<Record<string, unknown>>> => {
+export const fetchAdminUsers = async (search = ''): Promise<Array<UserProfile>> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout(`/api/admin/users?search=${encodeURIComponent(search)}`, { headers }, 10000);
   const body = await response.json().catch(() => null);
@@ -933,7 +950,7 @@ export const upsertAdminPricingRule = async (payload: {
   return (body || {}) as Record<string, unknown>;
 };
 
-export const fetchAdminPricingRules = async (): Promise<Array<Record<string, unknown>>> => {
+export const fetchAdminPricingRules = async (): Promise<Array<PricingRule>> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout('/api/admin/pricing-rules', { headers }, 10000);
   const body = await response.json().catch(() => null);
@@ -941,7 +958,7 @@ export const fetchAdminPricingRules = async (): Promise<Array<Record<string, unk
   return Array.isArray(body) ? body : [];
 };
 
-export const fetchAdminDiscountRules = async (): Promise<Array<Record<string, unknown>>> => {
+export const fetchAdminDiscountRules = async (): Promise<Array<DiscountRule>> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout('/api/admin/discount-rules', { headers }, 10000);
   const body = await response.json().catch(() => null);
@@ -1073,7 +1090,7 @@ export const sendAdminTestAlert = async (): Promise<void> => {
   }
 };
 
-export const fetchAdminAlerts = async (): Promise<Array<Record<string, unknown>>> => {
+export const fetchAdminAlerts = async (): Promise<Array<AuditLog>> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout('/api/admin/alerts', { headers }, 10000);
   const body = await response.json().catch(() => null);
@@ -1081,7 +1098,7 @@ export const fetchAdminAlerts = async (): Promise<Array<Record<string, unknown>>
   return Array.isArray(body) ? body : [];
 };
 
-export const fetchAdminWorkers = async (): Promise<Array<Record<string, unknown>>> => {
+export const fetchAdminWorkers = async (): Promise<Array<WorkerHeartbeat>> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout('/api/admin/workers', { headers }, 10000);
   const body = await response.json().catch(() => null);
