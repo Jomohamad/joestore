@@ -27,11 +27,11 @@ export function AdminLayout(props: {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-[#000000] text-[#ffffff]">
       <div className="flex min-h-screen">
-        <aside className="hidden lg:block w-72 border-r border-slate-800 bg-slate-900/80 backdrop-blur-sm">
-          <div className="px-6 py-6 border-b border-slate-800">
-            <p className="text-xs uppercase tracking-[0.2em] text-cyan-400">JOESTORE ADMIN</p>
+        <aside className="hidden lg:block w-72 border-r border-[#27272a] bg-[#0a0a0a]/80 backdrop-blur-sm">
+          <div className="px-6 py-6 border-b border-[#27272a]">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#FFD700]">JOESTORE ADMIN</p>
             <h1 className="text-2xl font-semibold mt-2">Control Center</h1>
           </div>
           <nav className="p-4 space-y-1">
@@ -42,7 +42,7 @@ export function AdminLayout(props: {
                   key={item.href}
                   href={item.href}
                   className={`block rounded-xl px-4 py-3 text-sm font-medium transition ${
-                    active ? 'bg-cyan-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    active ? 'bg-[#FFD700] text-[#000000]' : 'text-[#a1a1aa] hover:bg-[#111111] hover:text-[#ffffff]'
                   }`}
                 >
                   {item.label}
@@ -59,16 +59,16 @@ export function AdminLayout(props: {
               onClick={() => setMobileMenuOpen(false)}
               className="absolute inset-0 bg-black/70"
             />
-            <aside className="absolute left-0 top-0 h-full w-[min(20rem,88vw)] border-r border-slate-800 bg-slate-900 shadow-2xl">
-              <div className="px-5 py-5 border-b border-slate-800 flex items-center justify-between">
+            <aside className="absolute left-0 top-0 h-full w-[min(20rem,88vw)] border-r border-[#27272a] bg-[#0a0a0a] shadow-2xl">
+              <div className="px-5 py-5 border-b border-[#27272a] flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-400">JOESTORE ADMIN</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-[#FFD700]">JOESTORE ADMIN</p>
                   <h1 className="text-xl font-semibold mt-2">Control Center</h1>
                 </div>
                 <button
                   aria-label="Close menu"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg border border-slate-700 p-2 text-slate-300"
+                  className="rounded-lg border border-[#27272a] p-2 text-[#a1a1aa]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -82,7 +82,7 @@ export function AdminLayout(props: {
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`block rounded-xl px-4 py-3 text-sm font-medium transition ${
-                        active ? 'bg-cyan-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        active ? 'bg-[#FFD700] text-[#000000]' : 'text-[#a1a1aa] hover:bg-[#111111] hover:text-[#ffffff]'
                       }`}
                     >
                       {item.label}
@@ -95,22 +95,22 @@ export function AdminLayout(props: {
         )}
 
         <div className="flex-1 min-w-0">
-          <header className="min-h-20 border-b border-slate-800 bg-slate-900/60 backdrop-blur-sm px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <header className="min-h-20 border-b border-[#27272a] bg-[#0a0a0a]/60 backdrop-blur-sm px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setMobileMenuOpen(true)}
-                  className="lg:hidden rounded-lg border border-slate-700 p-2 text-slate-300"
+                  className="lg:hidden rounded-lg border border-[#27272a] p-2 text-[#a1a1aa]"
                   aria-label="Open admin menu"
                 >
                   <Menu className="w-4 h-4" />
                 </button>
                 <h2 className="text-lg sm:text-xl font-semibold">{props.title}</h2>
               </div>
-              <p className="text-xs text-slate-400">Realtime ecommerce operations</p>
+              <p className="text-xs text-[#52525b]">Realtime ecommerce operations</p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden md:block rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300">
+              <div className="hidden md:block rounded-xl border border-[#27272a] bg-[#111111] px-4 py-2 text-sm text-[#a1a1aa]">
                 {props.userLabel}
               </div>
               <button
