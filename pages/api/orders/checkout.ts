@@ -6,6 +6,8 @@ import { ordersService } from '../../../src/lib/server/services/orders';
 import { enqueueTopupRequest } from '../../../src/lib/server/queue/topupQueue';
 import { serverEnv } from '../../../src/lib/server/env';
 import { fraudService } from '../../../src/lib/server/services/fraud';
+import { parseBody, trimmedString } from '../../../src/lib/server/validation';
+import { z } from 'zod';
 
 type CheckoutItem = {
   gameId?: string;
@@ -28,9 +30,31 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   await enforceRateLimit(req, { key: 'orders:checkout', windowMs: 60_000, max: 20 });
 
-  const { user } = await requireAuthUser(req);
-  const items = Array.isArray(req.body?.items) ? (req.body.items as CheckoutItem[]) : [];
-  const couponCode = String(req.body?.couponCode || req.body?.coupon_code || '').trim() || null;
+  const { user } = await requireAuthUser(req, { requireVerified: true });
+  const schema = z.object({
+    items: z.array(z.object({
+      gameId: trimmedString(1, 120).optional(),
+      game_id: trimmedString(1, 120).optional(),
+      game_slug: trimmedString(1, 120).optional(),
+      packageId: z.coerce.number().int().positive().optional(),
+      package_id: z.coerce.number().int().positive().optional(),
+      packageName: trimmedString(1, 120).optional(),
+      package: trimmedString(1, 120).optional(),
+      playerId: trimmedString(1, 120).optional(),
+      player_id: trimmedString(1, 120).optional(),
+      accountIdentifier: trimmedString(1, 120).optional(),
+      server: trimmedString(1, 120).optional(),
+      quantity: z.coerce.number().int().min(1).max(20).optional(),
+      paymentMethod: z.enum(['fawaterk', 'wallet']).optional(),
+      payment_method: z.enum(['fawaterk', 'wallet']).optional(),
+    }).strip()).min(1).max(10),
+    couponCode: trimmedString(1, 64).optional(),
+    coupon_code: trimmedString(1, 64).optional(),
+    country: trimmedString(1, 8).optional(),
+  }).strip();
+  const body = parseBody(req, schema);
+  const items = Array.isArray(body.items) ? (body.items as CheckoutItem[]) : [];
+  const couponCode = String(body.couponCode || body.coupon_code || '').trim() || null;
 
   if (!items.length) {
     throw new ApiError(400, 'Checkout items are required', 'INVALID_CHECKOUT_PAYLOAD');
@@ -61,7 +85,7 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
       playerId,
       amount: 0,
       paymentAmount: 0,
-      paymentCountry: req.body?.country ? String(req.body.country) : null,
+      paymentCountry: body.country ? String(body.country) : null,
     });
 
     if (fraudCheck.blocked) {

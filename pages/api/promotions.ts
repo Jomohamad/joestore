@@ -14,7 +14,8 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
         .from('promotions')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order', { ascending: true });
+        .order('sort_order', { ascending: true })
+        .limit(100);
 
       if (error) throw error;
       return data || [];

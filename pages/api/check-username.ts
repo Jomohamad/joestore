@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { methodNotAllowed, withErrorHandling } from '../../src/lib/server/http';
 import { profileService } from '../../src/lib/server/services/profile';
 import { requireAuthUser } from '../../src/lib/server/auth';
+import { parseQuery, trimmedString } from '../../src/lib/server/validation';
+import { z } from 'zod';
 
 const buildSuggestions = (username: string) => {
   const base = username.toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 30);
@@ -23,7 +25,8 @@ const buildSuggestions = (username: string) => {
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const rawUsername = String(req.query.username || '').trim();
+  const query = parseQuery(req, z.object({ username: trimmedString(1, 30) }).strip());
+  const rawUsername = String(query.username || '').trim();
 
   if (!profileService.validateUsername(rawUsername)) {
     return res.status(400).json({ available: false, suggestions: [], error: 'Invalid username format' });

@@ -50,7 +50,7 @@ const upsertProviderPrice = async (payload: {
 };
 
 const getProviderHealth = async () => {
-  const rows = await supabaseAdmin.from('provider_health').select('*');
+  const rows = await supabaseAdmin.from('provider_health').select('*').limit(500);
   if (rows.error) {
     if (tableOrColumnMissing(rows.error.code)) return new Map<string, Record<string, unknown>>();
     throw rows.error;
@@ -71,7 +71,8 @@ const loadCachedOrDbProviderPrices = async (productId: string) => {
     .from('provider_prices')
     .select('provider, price, currency, updated_at')
     .eq('product_id', productId)
-    .order('updated_at', { ascending: false });
+    .order('updated_at', { ascending: false })
+    .limit(50);
 
   if (rows.error) {
     if (tableOrColumnMissing(rows.error.code)) return null;

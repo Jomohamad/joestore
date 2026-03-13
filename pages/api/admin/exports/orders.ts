@@ -3,6 +3,8 @@ import { ApiError, methodNotAllowed, withErrorHandling } from '../../../../src/l
 import { requireAdminUser } from '../../../../src/lib/server/auth';
 import { supabaseAdmin } from '../../../../src/lib/server/supabaseAdmin';
 import { auditService } from '../../../../src/lib/server/services/audit';
+import { parseQuery } from '../../../../src/lib/server/validation';
+import { z } from 'zod';
 
 const toCsv = (rows: Array<Record<string, unknown>>) => {
   if (rows.length === 0) return '';
@@ -19,7 +21,8 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   const auth = await requireAdminUser(req);
 
-  const limit = Math.min(5000, Number(req.query.limit || 1000));
+  const query = parseQuery(req, z.object({ limit: z.coerce.number().int().min(1).max(5000).optional() }).strip());
+  const limit = Math.min(5000, Number(query.limit || 1000));
   const rows = await supabaseAdmin
     .from('orders')
     .select('*')

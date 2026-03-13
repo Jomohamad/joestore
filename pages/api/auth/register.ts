@@ -4,26 +4,23 @@ import { supabaseAnon } from '../../../src/lib/server/supabaseAdmin';
 import { serverEnv } from '../../../src/lib/server/env';
 import { buildAppUser, syncPublicUserFromAuth } from '../../../src/lib/server/users';
 import { enforceRateLimit } from '../../../src/lib/server/rateLimit';
-
-const USERNAME_REGEX = /^[A-Za-z0-9._-]{3,30}$/;
+import { auditService } from '../../../src/lib/server/services/audit';
+import { emailSchema, parseBody, trimmedString, usernameSchema } from '../../../src/lib/server/validation';
+import { z } from 'zod';
 
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   await enforceRateLimit(req, { key: 'auth:register', windowMs: 60_000, max: 10 });
 
-  const email = String(req.body?.email || '').trim().toLowerCase();
-  const password = String(req.body?.password || '');
-  const username = String(req.body?.username || '').trim().toLowerCase();
-  const firstName = String(req.body?.firstName || '').trim();
-  const lastName = String(req.body?.lastName || '').trim();
-
-  if (!email || !password) {
-    throw new ApiError(400, 'Email and password are required', 'VALIDATION_ERROR');
-  }
-
-  if (username && !USERNAME_REGEX.test(username)) {
-    throw new ApiError(400, 'Username must be 3-30 chars and only letters, numbers, dot, underscore, or hyphen', 'VALIDATION_ERROR');
-  }
+  const schema = z.object({
+    email: emailSchema,
+    password: z.string().min(8).max(256),
+    username: usernameSchema.optional().default(''),
+    firstName: trimmedString(1, 100),
+    lastName: trimmedString(1, 100),
+  }).strip();
+  const { email, password, username, firstName, lastName } = parseBody(req, schema);
+  const normalizedUsername = String(username || '').trim().toLowerCase();
 
   const redirectTo = `${serverEnv.appBaseUrl}/login`;
 
@@ -33,7 +30,7 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
     options: {
       emailRedirectTo: redirectTo,
       data: {
-        username,
+        username: normalizedUsername,
         first_name: firstName,
         last_name: lastName,
         email,
@@ -42,11 +39,21 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   });
 
   if (error) {
+    await auditService.log({
+      actorUserId: null,
+      action: 'auth.register.failed',
+      resourceType: 'auth',
+    });
     throw new ApiError(400, error.message, 'REGISTER_FAILED');
   }
 
   if (data.user) {
     await syncPublicUserFromAuth(data.user);
+    await auditService.log({
+      actorUserId: data.user.id,
+      action: 'auth.register.success',
+      resourceType: 'auth',
+    });
   }
 
   res.status(200).json({

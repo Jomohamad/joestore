@@ -34,6 +34,9 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   await enforceRateLimit(req, { key: 'payment:webhook', windowMs: 60_000, max: 200 });
 
   const rawBuffer = await readRawBody(req);
+  if (rawBuffer.length > 100_000) {
+    throw new ApiError(413, 'Webhook payload too large', 'PAYLOAD_TOO_LARGE');
+  }
   const rawText = rawBuffer.toString('utf8').trim();
 
   let payload: Record<string, unknown> = {};

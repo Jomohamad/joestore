@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiError, methodNotAllowed, withErrorHandling } from '../../../../src/lib/server/http';
 import { requireAdminUser } from '../../../../src/lib/server/auth';
 import { ordersService } from '../../../../src/lib/server/services/orders';
+import { parseBody, trimmedString } from '../../../../src/lib/server/validation';
+import { z } from 'zod';
 
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
   await requireAdminUser(req);
@@ -13,10 +15,20 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   }
 
   if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-    const id = req.body?.id ? String(req.body.id) : undefined;
-    const name = String(req.body?.name || '').trim();
-    const provider_api = String(req.body?.provider_api || req.body?.providerApi || 'reloadly').trim().toLowerCase();
-    const active = req.body?.active !== false;
+    const body = parseBody(
+      req,
+      z.object({
+        id: trimmedString(1, 80).optional(),
+        name: trimmedString(1, 120),
+        provider_api: z.enum(['reloadly', 'gamesdrop']).optional(),
+        providerApi: z.enum(['reloadly', 'gamesdrop']).optional(),
+        active: z.boolean().optional(),
+      }).strip(),
+    );
+    const id = body.id ? String(body.id) : undefined;
+    const name = String(body.name || '').trim();
+    const provider_api = String(body.provider_api || body.providerApi || 'reloadly').trim().toLowerCase();
+    const active = body.active !== false;
 
     if (!name) throw new ApiError(400, 'name is required', 'VALIDATION_ERROR');
     if (provider_api !== 'reloadly' && provider_api !== 'gamesdrop') {

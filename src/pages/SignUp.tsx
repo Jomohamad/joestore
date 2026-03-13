@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { isSupabaseConfigured, supabase, supabaseConfigErrorMessage } from '../lib/supabase';
 import { useStore } from '../context/StoreContext';
-import { registerWithBackendApi } from '../services/api';
+import { registerWithBackendApi, resendConfirmationEmailApi } from '../services/api';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -60,8 +60,8 @@ export default function SignUp() {
       return;
     }
 
-    if (password.length < 6) {
-      setError(language === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters');
+    if (password.length < 8) {
+      setError(language === 'ar' ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters');
       return;
     }
 
@@ -123,17 +123,7 @@ export default function SignUp() {
     setInfo(null);
     setResendingConfirmation(true);
     try {
-      if (!isSupabaseConfigured) {
-        throw new Error(supabaseConfigErrorMessage);
-      }
-      const { error: resendError } = await supabase.auth.resend({
-        type: 'signup',
-        email: targetEmail,
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`,
-        },
-      });
-      if (resendError) throw resendError;
+      await resendConfirmationEmailApi(targetEmail);
 
       setInfo(
         language === 'ar'
@@ -198,6 +188,7 @@ export default function SignUp() {
                 placeholder={language === 'ar' ? 'الاسم الأول' : 'First Name'}
                 className="w-full rounded-lg bg-creo-bg-sec border border-creo-border px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-creo-accent"
                 autoComplete="given-name"
+                maxLength={100}
               />
               <input
                 type="text"
@@ -206,6 +197,7 @@ export default function SignUp() {
                 placeholder={language === 'ar' ? 'الاسم الأخير' : 'Last Name'}
                 className="w-full rounded-lg bg-creo-bg-sec border border-creo-border px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-creo-accent"
                 autoComplete="family-name"
+                maxLength={100}
               />
             </div>
 
@@ -215,7 +207,8 @@ export default function SignUp() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder={language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
               className="w-full rounded-lg bg-creo-bg-sec border border-creo-border px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-creo-accent"
-              autoComplete="email"
+                autoComplete="email"
+                maxLength={254}
             />
 
             <div className="relative">
@@ -226,6 +219,8 @@ export default function SignUp() {
                 placeholder={language === 'ar' ? 'كلمة المرور' : 'Password'}
                 className="w-full rounded-lg bg-creo-bg-sec border border-creo-border px-4 py-3 pr-11 text-white focus:outline-none focus:ring-1 focus:ring-creo-accent"
                 autoComplete="new-password"
+                minLength={8}
+                maxLength={128}
               />
               <button
                 type="button"
@@ -245,6 +240,8 @@ export default function SignUp() {
                 placeholder={language === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
                 className="w-full rounded-lg bg-creo-bg-sec border border-creo-border px-4 py-3 pr-11 text-white focus:outline-none focus:ring-1 focus:ring-creo-accent"
                 autoComplete="new-password"
+                minLength={8}
+                maxLength={128}
               />
               <button
                 type="button"
@@ -332,3 +329,4 @@ export default function SignUp() {
     </div>
   );
 }
+

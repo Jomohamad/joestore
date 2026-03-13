@@ -4,9 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import { useStore } from '../context/StoreContext';
 import { AlertCircle, CheckCircle, Loader, Upload } from 'lucide-react';
 import { checkUsernameAvailabilityApi, completeProfileApi, fetchProfileStatus } from '../services/api';
-import { supabase } from '../lib/supabase';
 
 const USERNAME_REGEX = /^[A-Za-z0-9._-]{3,30}$/;
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
@@ -141,8 +142,13 @@ export default function CompleteProfile() {
     const file = e.target.files?.[0] || null;
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
       setError(language === 'ar' ? 'من فضلك اختر صورة صحيحة' : 'Please upload a valid image file');
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_BYTES) {
+      setError(language === 'ar' ? 'Ø­Ø¬Ù… Ø§Ù„ØµÙˆØ±Ø© ÙƒØ¨ÙŠØ± Ø¬Ø¯Ø§Ù‹' : 'Image file is too large (max 2MB)');
       return;
     }
 
@@ -153,17 +159,34 @@ export default function CompleteProfile() {
   const uploadAvatarIfNeeded = async (): Promise<string | undefined> => {
     if (!user || !avatarFile) return undefined;
 
-    const extension = avatarFile.name.split('.').pop() || 'jpg';
-    const path = `${user.id}/avatar-${Date.now()}.${extension}`;
+    const toDataUrl = (file: File) =>
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Failed to read avatar file'));
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.readAsDataURL(file);
+      });
 
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
+    const dataBase64 = await toDataUrl(avatarFile);
+    const accessToken = session?.access_token;
+    if (!accessToken) throw new Error('Session expired, please login again');
 
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-    return data.publicUrl;
+    const response = await fetch('/api/profile/avatar', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contentType: avatarFile.type,
+        dataBase64,
+      }),
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(String(body?.error || 'Avatar upload failed'));
+    }
+    return String(body?.url || '');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -262,7 +285,7 @@ export default function CompleteProfile() {
               <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-creo-bg-sec border border-creo-border text-sm hover:border-creo-accent transition-colors">
                 <Upload className="w-4 h-4" />
                 {language === 'ar' ? 'رفع' : 'Upload'}
-                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleAvatarChange} />
               </label>
             </div>
 
@@ -274,6 +297,7 @@ export default function CompleteProfile() {
                 value={formData.firstName}
                 onChange={handleInputChange}
                 required
+                maxLength={100}
                 className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-4 py-3 text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all"
                 placeholder={language === 'ar' ? 'أحمد' : 'John'}
               />
@@ -287,6 +311,7 @@ export default function CompleteProfile() {
                 value={formData.lastName}
                 onChange={handleInputChange}
                 required
+                maxLength={100}
                 className="w-full bg-creo-bg-sec border border-creo-border rounded-lg px-4 py-3 text-creo-text focus:outline-none focus:ring-1 focus:ring-creo-accent focus:border-creo-accent transition-all"
                 placeholder={language === 'ar' ? 'محمد' : 'Doe'}
               />

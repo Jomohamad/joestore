@@ -18,6 +18,7 @@ export type CanonicalOrderStatus = 'pending' | 'paid' | 'processing' | 'complete
 export type PaymentGateway = 'fawaterk';
 
 const tableOrColumnMissing = (code: string | undefined) => code === '42P01' || code === '42703' || code === '42883';
+const MAX_LIST_LIMIT = 500;
 
 const computeDiscountedPackagePrice = (pkg: {
   price: number;
@@ -247,7 +248,11 @@ export const ordersService = {
       return cached;
     }
 
-    const { data, error } = await supabaseAdmin.from('games').select('*').order('name', { ascending: true });
+    const { data, error } = await supabaseAdmin
+      .from('games')
+      .select('*')
+      .order('name', { ascending: true })
+      .limit(MAX_LIST_LIMIT);
     if (error) throw new ApiError(500, error.message, 'GAMES_FETCH_FAILED');
     const filtered = (data || []).filter((game) => (game as Record<string, unknown>).active !== false);
     await cacheManager.setCachedJson(cacheKey, filtered, 90);
@@ -267,7 +272,8 @@ export const ordersService = {
       .from('packages')
       .select('*')
       .eq('game_id', gameRef)
-      .order('price', { ascending: true });
+      .order('price', { ascending: true })
+      .limit(MAX_LIST_LIMIT);
 
     if (error) throw new ApiError(500, error.message, 'PACKAGES_FETCH_FAILED');
     return { game, packages: data || [] };
@@ -534,12 +540,13 @@ export const ordersService = {
     return data || [];
   },
 
-  async listOrderEvents(orderId: string) {
+  async listOrderEvents(orderId: string, limit = 200) {
     const rows = await supabaseAdmin
       .from('order_events')
       .select('*')
       .eq('order_id', orderId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(Math.min(limit, MAX_LIST_LIMIT));
     if (rows.error) {
       if (tableOrColumnMissing(rows.error.code)) return [];
       throw new ApiError(500, rows.error.message, 'ORDER_EVENTS_FETCH_FAILED');
@@ -1099,7 +1106,8 @@ export const ordersService = {
     const rows = await supabaseAdmin
       .from('provider_health')
       .select('*')
-      .order('updated_at', { ascending: false });
+      .order('updated_at', { ascending: false })
+      .limit(MAX_LIST_LIMIT);
 
     if (rows.error) {
       if (tableOrColumnMissing(rows.error.code)) return [];
@@ -1249,7 +1257,11 @@ export const ordersService = {
   },
 
   async listAdminSettings() {
-    const rows = await supabaseAdmin.from('settings').select('*').order('key', { ascending: true });
+    const rows = await supabaseAdmin
+      .from('settings')
+      .select('*')
+      .order('key', { ascending: true })
+      .limit(MAX_LIST_LIMIT);
     if (rows.error) {
       if (tableOrColumnMissing(rows.error.code)) return [];
       throw new ApiError(500, rows.error.message, 'ADMIN_SETTINGS_FETCH_FAILED');

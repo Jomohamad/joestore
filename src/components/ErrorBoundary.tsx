@@ -26,11 +26,12 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
 
   render() {
     if (this.state.hasError) {
+      const isProduction = process.env.NODE_ENV === 'production';
       return (
         <div className="flex-1 flex items-center justify-center bg-creo-bg text-white p-4">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
-            <p className="mb-4">{this.state.error?.message}</p>
+            <p className="mb-4">{isProduction ? 'Please try again.' : this.state.error?.message}</p>
             <button
               onClick={() => window.location.reload()}
               className="px-6 py-3 bg-creo-accent text-black rounded-lg font-bold"

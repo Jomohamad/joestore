@@ -3,14 +3,21 @@ import { ApiError, methodNotAllowed, withErrorHandling } from '../../../src/lib/
 import { requireAuthUser } from '../../../src/lib/server/auth';
 import { enforceRateLimit } from '../../../src/lib/server/rateLimit';
 import { walletTopupService } from '../../../src/lib/server/services/walletTopups';
+import { currencySchema, parseBody } from '../../../src/lib/server/validation';
+import { z } from 'zod';
 
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   await enforceRateLimit(req, { key: 'wallet:topup', windowMs: 60_000, max: 15 });
 
-  const { user } = await requireAuthUser(req);
-  const amount = Number(req.body?.amount || 0);
-  const currency = String(req.body?.currency || 'EGP').trim().toUpperCase();
+  const { user } = await requireAuthUser(req, { requireVerified: true });
+  const schema = z.object({
+    amount: z.coerce.number().positive().max(100000),
+    currency: currencySchema.optional().default('EGP'),
+  }).strip();
+  const body = parseBody(req, schema);
+  const amount = Number(body.amount || 0);
+  const currency = String(body.currency || 'EGP').trim().toUpperCase();
 
   if (!Number.isFinite(amount) || amount <= 0) {
     throw new ApiError(400, 'amount must be a positive number', 'WALLET_TOPUP_INVALID');

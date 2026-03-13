@@ -8,7 +8,7 @@ const getBearerToken = (authorization?: string) => {
   return authorization.slice('Bearer '.length).trim();
 };
 
-export const requireAuthUser = async (req: NextApiRequest) => {
+export const requireAuthUser = async (req: NextApiRequest, options?: { requireVerified?: boolean }) => {
   const token = getBearerToken(req.headers.authorization);
   if (!token) {
     throw new ApiError(401, 'Unauthorized', 'UNAUTHORIZED');
@@ -19,11 +19,19 @@ export const requireAuthUser = async (req: NextApiRequest) => {
     throw new ApiError(401, 'Invalid token', 'INVALID_TOKEN');
   }
 
+  if (options?.requireVerified) {
+    const confirmedAt = (data.user as { email_confirmed_at?: string | null; confirmed_at?: string | null }).email_confirmed_at
+      || (data.user as { confirmed_at?: string | null }).confirmed_at;
+    if (!confirmedAt) {
+      throw new ApiError(403, 'Email confirmation required', 'EMAIL_NOT_CONFIRMED');
+    }
+  }
+
   return { user: data.user, token };
 };
 
 export const requireAdminUser = async (req: NextApiRequest) => {
-  const { user, token } = await requireAuthUser(req);
+  const { user, token } = await requireAuthUser(req, { requireVerified: true });
 
   const roleLookup = await supabaseAdmin.from('users').select('role').eq('id', user.id).maybeSingle();
   if (!roleLookup.error && String(roleLookup.data?.role || '').toLowerCase() === 'admin') {

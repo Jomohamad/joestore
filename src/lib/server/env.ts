@@ -28,13 +28,17 @@ const isProduction = nodeEnv === 'production';
 const isBuild = process.env.NEXT_PHASE === 'phase-production-build';
 const sandboxDisabled = clean(process.env.SANDBOX_MODE || 'true').toLowerCase() === 'false';
 const mustRequireProd = isProduction && !isBuild;
+const rawAppBaseUrl =
+  clean(process.env.APP_BASE_URL) ||
+  clean(process.env.NEXT_PUBLIC_APP_BASE_URL) ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+if (isProduction && !rawAppBaseUrl.startsWith('https://')) {
+  throw new Error('APP_BASE_URL must use https in production');
+}
 
 export const serverEnv = {
   nodeEnv,
-  appBaseUrl:
-    clean(process.env.APP_BASE_URL) ||
-    clean(process.env.NEXT_PUBLIC_APP_BASE_URL) ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
+  appBaseUrl: rawAppBaseUrl,
   sandboxMode: !sandboxDisabled,
 
   supabaseUrl: requiredWhenOrDefault(

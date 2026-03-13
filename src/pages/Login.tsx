@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { isSupabaseConfigured, supabase, supabaseConfigErrorMessage } from '../lib/supabase';
 import { useStore } from '../context/StoreContext';
-import { loginWithBackendApi } from '../services/api';
+import { loginWithBackendApi, requestPasswordResetApi, resendConfirmationEmailApi } from '../services/api';
 
 export default function Login() {
   const [error, setError] = useState<string | null>(null);
@@ -88,13 +88,7 @@ export default function Login() {
 
     setResetting(true);
     try {
-      if (!isSupabaseConfigured) {
-        throw new Error(supabaseConfigErrorMessage);
-      }
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/login`,
-      });
-      if (resetError) throw resetError;
+      await requestPasswordResetApi(email.trim());
       setInfo(language === 'ar' ? 'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني' : 'Password reset email has been sent');
     } catch (err: any) {
       setError(err.message || (language === 'ar' ? 'تعذر إرسال رابط الاستعادة' : 'Failed to send reset email'));
@@ -114,17 +108,7 @@ export default function Login() {
 
     setResendingConfirmation(true);
     try {
-      if (!isSupabaseConfigured) {
-        throw new Error(supabaseConfigErrorMessage);
-      }
-      const { error: resendError } = await supabase.auth.resend({
-        type: 'signup',
-        email: email.trim(),
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`,
-        },
-      });
-      if (resendError) throw resendError;
+      await resendConfirmationEmailApi(email.trim());
 
       setInfo(
         language === 'ar'
@@ -188,6 +172,7 @@ export default function Login() {
               placeholder={language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
               className="w-full rounded-lg bg-creo-bg-sec border border-creo-border px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-creo-accent"
               autoComplete="email"
+              maxLength={254}
             />
 
             <div className="relative">
@@ -197,7 +182,8 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={language === 'ar' ? 'كلمة المرور' : 'Password'}
                 className="w-full rounded-lg bg-creo-bg-sec border border-creo-border px-4 py-3 pr-11 text-white focus:outline-none focus:ring-1 focus:ring-creo-accent"
-                autoComplete="current-password"
+              autoComplete="current-password"
+              maxLength={128}
               />
               <button
                 type="button"

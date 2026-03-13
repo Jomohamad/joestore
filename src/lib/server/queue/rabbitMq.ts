@@ -15,15 +15,13 @@ let connection: RabbitConnection | null = null;
 let channel: RabbitChannel | null = null;
 let disabled = false;
 
-const dynamicImport = new Function('m', 'return import(m)') as (m: string) => Promise<any>;
-
 const getChannel = async () => {
   if (disabled || !serverEnv.rabbitmqUrl) return null;
   if (channel) return channel;
 
   try {
     if (!connection) {
-      const amqplib = await dynamicImport('amqplib');
+      const amqplib = await import('amqplib');
       connection = (await amqplib.connect(serverEnv.rabbitmqUrl)) as RabbitConnection;
     }
 

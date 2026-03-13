@@ -5,6 +5,8 @@ import { enforceRateLimit } from '../../../src/lib/server/rateLimit';
 import { enqueueTopupRequest, processQueuedTopups } from '../../../src/lib/server/queue/topupQueue';
 import { ordersService } from '../../../src/lib/server/services/orders';
 import { serverEnv } from '../../../src/lib/server/env';
+import { parseBody, parseQuery, trimmedString } from '../../../src/lib/server/validation';
+import { z } from 'zod';
 
 const authorize = async (req: NextApiRequest) => {
   try {
@@ -20,9 +22,18 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   await enforceRateLimit(req, { key: 'topup:process', windowMs: 60_000, max: 80 });
   await authorize(req);
 
-  const orderId = String(req.body?.orderId || req.body?.order_id || '').trim();
+  const body = parseBody(
+    req,
+    z.object({
+      orderId: trimmedString(1, 80).optional(),
+      order_id: trimmedString(1, 80).optional(),
+      limit: z.coerce.number().int().min(1).max(100).optional(),
+    }).strip(),
+  );
+  const query = parseQuery(req, z.object({ limit: z.coerce.number().int().min(1).max(100).optional() }).strip());
+  const orderId = String(body.orderId || body.order_id || '').trim();
   if (!orderId) {
-    const limit = Math.max(1, Math.min(20, Number(req.body?.limit || req.query.limit || 1)));
+    const limit = Math.max(1, Math.min(20, Number(body.limit || query.limit || 1)));
     const queueResult = await processQueuedTopups(limit);
     return res.status(200).json({
       success: true,

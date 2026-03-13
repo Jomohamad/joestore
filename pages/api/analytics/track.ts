@@ -3,6 +3,8 @@ import { ApiError, methodNotAllowed, withErrorHandling } from '../../../src/lib/
 import { requireAuthUser } from '../../../src/lib/server/auth';
 import { enforceRateLimit } from '../../../src/lib/server/rateLimit';
 import { analyticsService } from '../../../src/lib/server/services/analytics';
+import { parseBody, trimmedString } from '../../../src/lib/server/validation';
+import { z } from 'zod';
 
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
@@ -16,13 +18,28 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
     userId = null;
   }
 
-  const eventType = String(req.body?.eventType || req.body?.event_type || '').trim();
+  const body = parseBody(
+    req,
+    z.object({
+      eventType: trimmedString(1, 80).optional(),
+      event_type: trimmedString(1, 80).optional(),
+      metadata: z.record(z.unknown()).optional(),
+    }).strip(),
+  );
+  const eventType = String(body.eventType || body.event_type || '').trim();
   if (!eventType) throw new ApiError(400, 'eventType is required', 'VALIDATION_ERROR');
+
+  if (body.metadata) {
+    const serialized = JSON.stringify(body.metadata);
+    if (serialized.length > 4000) {
+      throw new ApiError(400, 'metadata payload too large', 'VALIDATION_ERROR');
+    }
+  }
 
   await analyticsService.track({
     userId,
     eventType,
-    metadata: (req.body?.metadata && typeof req.body.metadata === 'object') ? req.body.metadata : {},
+    metadata: (body.metadata && typeof body.metadata === 'object') ? body.metadata : {},
   });
 
   res.status(200).json({ success: true });

@@ -3,6 +3,7 @@ import { supabaseAdmin } from '../supabaseAdmin';
 const tableOrColumnMissing = (code: string | undefined) => code === '42P01' || code === '42703' || code === '42883';
 
 const now = () => new Date();
+const MAX_RULES = 500;
 
 export type DiscountResult = {
   amount: number;
@@ -21,7 +22,8 @@ export const discountService = {
       .from('discount_rules')
       .select('*')
       .eq('active', true)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(MAX_RULES);
 
     if (rules.error) {
       if (tableOrColumnMissing(rules.error.code)) return { amount: 0, source: 'none' as const };

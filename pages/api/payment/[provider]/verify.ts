@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { methodNotAllowed, withErrorHandling } from '../../../../src/lib/server/http';
 import { ordersService } from '../../../../src/lib/server/services/orders';
 import { enforceRateLimit } from '../../../../src/lib/server/rateLimit';
+import { parseQuery, trimmedString } from '../../../../src/lib/server/validation';
+import { z } from 'zod';
 
 const firstHeader = (value: string | string[] | undefined) => {
   if (!value) return '';
@@ -10,7 +12,13 @@ const firstHeader = (value: string | string[] | undefined) => {
 
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const { provider } = req.query;
+  const query = parseQuery(
+    req,
+    z.object({
+      provider: z.enum(['fawaterk']),
+    }).strip(),
+  );
+  const provider = query.provider;
 
   await enforceRateLimit(req, { key: `payment:${provider}:verify`, windowMs: 60_000, max: 60 });
 

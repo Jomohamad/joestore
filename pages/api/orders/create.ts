@@ -6,21 +6,52 @@ import { ordersService } from '../../../src/lib/server/services/orders';
 import { enqueueTopupRequest } from '../../../src/lib/server/queue/topupQueue';
 import { serverEnv } from '../../../src/lib/server/env';
 import { fraudService } from '../../../src/lib/server/services/fraud';
+import { parseBody, trimmedString } from '../../../src/lib/server/validation';
+import { z } from 'zod';
 
 export default withErrorHandling(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   await enforceRateLimit(req, { key: 'orders:create', windowMs: 60_000, max: 30 });
 
-  const { user } = await requireAuthUser(req);
+  const { user } = await requireAuthUser(req, { requireVerified: true });
 
-  const gameIdentifier = String(req.body?.game_id || req.body?.game_slug || req.body?.gameId || '').trim();
-  const packageId = req.body?.package_id ?? req.body?.packageId ?? null;
-  const packageName = String(req.body?.package || req.body?.packageName || '').trim() || null;
-  const playerId = String(req.body?.player_id || req.body?.playerId || req.body?.accountIdentifier || '').trim();
-  const server = String(req.body?.server || '').trim() || null;
-  const quantity = Number(req.body?.quantity || 1);
-  const paymentMethod = String(req.body?.paymentMethod || req.body?.payment_method || 'fawaterk').trim().toLowerCase();
-  const couponCode = String(req.body?.couponCode || req.body?.coupon_code || '').trim() || null;
+  const schema = z.object({
+    game_id: trimmedString(1, 120).optional(),
+    game_slug: trimmedString(1, 120).optional(),
+    gameId: trimmedString(1, 120).optional(),
+    package_id: z.coerce.number().int().positive().optional(),
+    packageId: z.coerce.number().int().positive().optional(),
+    package: trimmedString(1, 120).optional(),
+    packageName: trimmedString(1, 120).optional(),
+    player_id: trimmedString(1, 120).optional(),
+    playerId: trimmedString(1, 120).optional(),
+    accountIdentifier: trimmedString(1, 120).optional(),
+    server: trimmedString(1, 120).optional(),
+    quantity: z.coerce.number().int().min(1).max(20).default(1),
+    paymentMethod: z.enum(['fawaterk', 'wallet']).optional(),
+    payment_method: z.enum(['fawaterk', 'wallet']).optional(),
+    couponCode: trimmedString(1, 64).optional(),
+    coupon_code: trimmedString(1, 64).optional(),
+    country: trimmedString(1, 8).optional(),
+    amount: z.coerce.number().nonnegative().optional(),
+    paymentDetails: z.record(z.unknown()).optional(),
+  }).strip();
+  const body = parseBody(req, schema);
+
+  const gameIdentifier = String(body.game_id || body.game_slug || body.gameId || '').trim();
+  const packageId = body.package_id ?? body.packageId ?? null;
+  const packageName = String(body.package || body.packageName || '').trim() || null;
+  const playerId = String(body.player_id || body.playerId || body.accountIdentifier || '').trim();
+  const server = String(body.server || '').trim() || null;
+  const quantity = Number(body.quantity || 1);
+  const paymentMethod = String(body.paymentMethod || body.payment_method || 'fawaterk').trim().toLowerCase();
+  const couponCode = String(body.couponCode || body.coupon_code || '').trim() || null;
+  if (body.paymentDetails) {
+    const serialized = JSON.stringify(body.paymentDetails);
+    if (serialized.length > 5000) {
+      throw new ApiError(400, 'paymentDetails payload is too large', 'INVALID_ORDER_PAYLOAD');
+    }
+  }
 
   if (!gameIdentifier || !playerId || !Number.isFinite(Number(packageId))) {
     throw new ApiError(400, 'game, player_id and package_id are required', 'INVALID_ORDER_PAYLOAD');
@@ -34,9 +65,9 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
     userId: user.id,
     ipAddress,
     playerId,
-    amount: Number(req.body?.amount || 0),
-    paymentAmount: Number(req.body?.amount || 0),
-    paymentCountry: req.body?.country ? String(req.body.country) : null,
+    amount: Number(body.amount || 0),
+    paymentAmount: Number(body.amount || 0),
+    paymentCountry: body.country ? String(body.country) : null,
   });
 
   if (fraudCheck.blocked) {
@@ -59,9 +90,9 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
     fraudRiskScore: fraudCheck.riskScore,
     couponCode,
     paymentDetails:
-      req.body?.paymentDetails && typeof req.body.paymentDetails === 'object'
+      body.paymentDetails && typeof body.paymentDetails === 'object'
         ? {
-            ...(req.body.paymentDetails as Record<string, unknown>),
+            ...(body.paymentDetails as Record<string, unknown>),
             fraud: {
               riskScore: fraudCheck.riskScore,
               reasons: fraudCheck.reasons,

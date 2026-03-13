@@ -171,7 +171,8 @@ export const fetchWishlist = async (userId: string): Promise<{ game_id: string }
     const { data, error } = await (supabase as any)
       .from('wishlist')
       .select('game_id')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .limit(200);
 
     if (error) throw error;
     return (data as { game_id: string }[] | null) || [];
@@ -331,6 +332,58 @@ export const loginWithBackendApi = async (payload: {
     refreshToken: String(body.refreshToken),
     user: body.user,
   };
+};
+
+export const requestPasswordResetApi = async (email: string): Promise<void> => {
+  const response = await fetchWithTimeout(
+    '/api/auth/password-reset',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    },
+    12000,
+  );
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(String(body?.error || body?.message || 'Password reset failed'));
+  }
+};
+
+export const resendConfirmationEmailApi = async (email: string): Promise<void> => {
+  const response = await fetchWithTimeout(
+    '/api/auth/resend-confirmation',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    },
+    12000,
+  );
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(String(body?.error || body?.message || 'Resend confirmation failed'));
+  }
+};
+
+export const logoutBackendApi = async (reason?: string): Promise<void> => {
+  const headers = await getAuthHeaders();
+  const response = await fetchWithTimeout(
+    '/api/auth/logout',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ reason }),
+    },
+    8000,
+  );
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(String(body?.error || body?.message || 'Logout failed'));
+  }
 };
 
 export const fetchProfileStatus = async (): Promise<{
@@ -539,7 +592,8 @@ export const fetchOrders = async (_userId?: string): Promise<Order[]> => {
       .from('orders')
       .select('*')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(200);
     return data || [];
   }
 };
@@ -1224,8 +1278,11 @@ export const subscribeToUserOrders = async (
     message?: string;
   }) => void,
 ) => {
+  const channelId =
+    (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `orders_${Math.random().toString(36).slice(2)}`)
+      .replace(/[^a-zA-Z0-9]/g, '');
   const channel = supabase
-    .channel(`orders:user:${userId}`)
+    .channel(`orders_updates_${channelId}`)
     .on(
       'postgres_changes',
       {
@@ -1235,13 +1292,19 @@ export const subscribeToUserOrders = async (
         filter: `user_id=eq.${userId}`,
       },
       (payload) => {
-        const next = payload.new as Record<string, unknown>;
+        const next = payload.new as Record<string, unknown> | null;
+        if (!next || typeof next !== 'object') return;
+        const orderId = String(next.id || '').trim();
+        const statusRaw = String(next.status || '').trim().toLowerCase();
+        if (!orderId || !['pending', 'paid', 'processing', 'completed', 'failed'].includes(statusRaw)) {
+          return;
+        }
         onStatusUpdated({
-          orderId: String(next.id || ''),
-          status: String(next.status || 'pending') as 'pending' | 'paid' | 'processing' | 'completed' | 'failed',
+          orderId,
+          status: statusRaw as 'pending' | 'paid' | 'processing' | 'completed' | 'failed',
           transactionId: next.transaction_id ? String(next.transaction_id) : null,
           updatedAt: new Date().toISOString(),
-          message: `Order status changed to ${String(next.status || '').toUpperCase()}`,
+          message: `Order status changed to ${statusRaw.toUpperCase()}`,
         });
       },
     )

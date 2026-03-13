@@ -1,12 +1,48 @@
 import type { User } from '@supabase/supabase-js';
 import { ApiError } from '../http';
 import { supabaseAdmin } from '../supabaseAdmin';
+import { serverEnv } from '../env';
 
 const USERNAME_REGEX = /^[A-Za-z0-9._-]{3,30}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const metaOf = (user: { user_metadata?: Record<string, unknown> | null }) =>
   (user.user_metadata || {}) as Record<string, unknown>;
+
+const isHttpsUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+const isAllowedAvatarUrl = (value: string) => {
+  if (!isHttpsUrl(value)) return false;
+  const allowedPrefix = `${serverEnv.supabaseUrl.replace(/\/$/, '')}/storage/v1/object/`;
+  return value.startsWith(allowedPrefix);
+};
+
+const sanitizeAvatarUrl = (value?: string | null) => {
+  if (!value) return null;
+  const url = String(value).trim();
+  if (!url) return null;
+  if (!isAllowedAvatarUrl(url)) {
+    throw new ApiError(400, 'Invalid avatar URL', 'PROFILE_AVATAR_INVALID');
+  }
+  return url;
+};
+
+const sanitizeProviderAvatarUrl = (value?: string | null) => {
+  if (!value) return null;
+  const url = String(value).trim();
+  if (!url) return null;
+  if (!isHttpsUrl(url)) {
+    throw new ApiError(400, 'Invalid provider avatar URL', 'PROFILE_PROVIDER_AVATAR_INVALID');
+  }
+  return url;
+};
 
 export const profileService = {
   validateUsername(username: string) {
@@ -103,8 +139,8 @@ export const profileService = {
       first_name: firstName,
       last_name: lastName,
       username,
-      avatar_url: params.avatarUrl || null,
-      provider_avatar_url: params.providerAvatarUrl || existing.provider_avatar_url || null,
+      avatar_url: sanitizeAvatarUrl(params.avatarUrl),
+      provider_avatar_url: sanitizeProviderAvatarUrl(params.providerAvatarUrl) || existing.provider_avatar_url || null,
       email,
       onboarded: true,
     };

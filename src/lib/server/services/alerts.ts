@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../supabaseAdmin';
 import { serverEnv } from '../env';
+import { isSafeExternalUrl } from '../urlSafety';
 
 const webhookUrl = String(serverEnv.alertWebhookUrl || '').trim();
 
@@ -18,7 +19,7 @@ export const alertsService = {
 
   async notify(type: string, message: string, metadata?: Record<string, unknown>) {
     await this.log(type, message, metadata);
-    if (!webhookUrl) return;
+    if (!webhookUrl || !isSafeExternalUrl(webhookUrl)) return;
 
     try {
       await fetch(webhookUrl, {
