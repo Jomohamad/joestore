@@ -169,9 +169,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Real-time profile updates
+  // Real-time profile updates with strict payload validation (A08: Security and Data Integrity Failures)
   useEffect(() => {
     if (!user?.id) return;
+
+    // Strict payload validation function to prevent untrusted data injection
+    function validateProfilePayload(data: unknown): Partial<Profile> | null {
+      if (!data || typeof data !== 'object') return null;
+      const d = data as Record<string, unknown>;
+      
+      // Validate required fields with strict type checking
+      if (typeof d.first_name !== 'string') return null;
+      if (typeof d.last_name !== 'string') return null;
+      if (typeof d.username !== 'string') return null;
+      
+      // Optional fields with type validation
+      const avatar_url = d.avatar_url === null || d.avatar_url === undefined 
+        ? null 
+        : typeof d.avatar_url === 'string' ? d.avatar_url : null;
+      
+      const email = typeof d.email === 'string' ? d.email : user.email || '';
+      const is_admin = Boolean(d.is_admin === true);
+      
+      // Return only whitelisted fields - never spread raw payload
+      return {
+        first_name: d.first_name,
+        last_name: d.last_name,
+        username: d.username,
+        avatar_url,
+        email,
+        is_admin,
+      };
+    }
 
     const channel = supabase
       .channel(`profile:${user.id}`)
@@ -184,7 +213,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           filter: `id=eq.${user.id}`,
         },
         (payload) => {
-          const updatedUser = payload.new as Record<string, unknown>;
+          // Validate the payload before updating state (A08 + CWE-502)
+          const validatedData = validateProfilePayload(payload.new);
+          
+          if (!validatedData) {
+            console.warn('[AuthContext] Invalid real-time profile payload received, skipping update');
+            return;
+          }
+          
           setProfile((prev) => ({
             ...(prev || {
               id: user.id,
@@ -195,12 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               onboarded: true,
               is_admin: false,
             }),
-            first_name: String(updatedUser.first_name || ''),
-            last_name: String(updatedUser.last_name || ''),
-            username: String(updatedUser.username || ''),
-            avatar_url: updatedUser.avatar_url ? String(updatedUser.avatar_url) : null,
-            email: String(updatedUser.email || user.email || ''),
-            is_admin: Boolean(updatedUser.is_admin || false),
+            ...validatedData,
           }));
         },
       )

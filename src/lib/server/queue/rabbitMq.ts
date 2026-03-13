@@ -15,7 +15,15 @@ let connection: RabbitConnection | null = null;
 let channel: RabbitChannel | null = null;
 let disabled = false;
 
-const dynamicImport = new Function('m', 'return import(m)') as (m: string) => Promise<any>;
+// Safe dynamic import wrapper - avoids using eval() or new Function() for CWE-94 security
+const safeDynamicImport = async (moduleName: string) => {
+  // Only allow known, safe module names to prevent arbitrary code injection
+  const allowedModules = new Set(['amqplib']);
+  if (!allowedModules.has(moduleName)) {
+    throw new Error(`Dynamic import not allowed for module: ${moduleName}`);
+  }
+  return await import(moduleName);
+};
 
 const getChannel = async () => {
   if (disabled || !serverEnv.rabbitmqUrl) return null;
@@ -23,7 +31,7 @@ const getChannel = async () => {
 
   try {
     if (!connection) {
-      const amqplib = await dynamicImport('amqplib');
+      const amqplib = await safeDynamicImport('amqplib');
       connection = (await amqplib.connect(serverEnv.rabbitmqUrl)) as RabbitConnection;
     }
 
