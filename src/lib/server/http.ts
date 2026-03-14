@@ -55,11 +55,12 @@ export class ApiError extends Error {
     }
     return undefined;
   }
-
-  // Get full details for logging (always redact sensitive data)
-  getLogDetails(): unknown {
-    return redactSensitive({ ...this.details, ...this.internalDetails });
-  }
+   // Get full details for logging (always redact sensitive data)
+   getLogDetails(): unknown {
+     const detailsObj = this.details && typeof this.details === "object" ? this.details : {};
+     const internalDetailsObj = this.internalDetails && typeof this.internalDetails === "object" ? this.internalDetails : {};
+     return redactSensitive({ ...detailsObj, ...internalDetailsObj });
+   }
 }
 
 export const methodNotAllowed = (res: NextApiResponse, allowed: string[]) => {

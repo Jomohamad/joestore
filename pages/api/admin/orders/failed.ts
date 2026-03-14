@@ -8,7 +8,9 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   await requireAdminUser(req);
 
-  const { page, limit } = parseQuery(req, paginationSchema);
+  const query = parseQuery(req, paginationSchema);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
   const rows = await ordersService.listAdminFailedOrders(page, limit);
   res.status(200).json(rows);
 });

@@ -10,7 +10,9 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   const auth = await requireAdminUser(req);
 
   if (req.method === 'GET') {
-    const { page, limit } = parseQuery(req, paginationSchema);
+    const query = parseQuery(req, paginationSchema);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
     const offset = Math.max(0, (page - 1) * limit);
     const rows = await supabaseAdmin
       .from('discount_rules')

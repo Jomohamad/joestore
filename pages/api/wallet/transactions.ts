@@ -8,7 +8,9 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
   const { user } = await requireAuthUser(req, { requireVerified: true });
-  const { page, limit } = parseQuery(req, paginationSchema);
+  const query = parseQuery(req, paginationSchema);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
 
   const rows = await walletService.listTransactions(user.id, page, limit);
   res.status(200).json(rows);

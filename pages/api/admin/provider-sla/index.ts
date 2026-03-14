@@ -10,7 +10,9 @@ export default withErrorHandling(async function handler(req: NextApiRequest, res
   const auth = await requireAdminUser(req);
 
   if (req.method === 'GET') {
-    const { limit, page } = parseQuery(req, paginationSchema);
+    const query = parseQuery(req, paginationSchema);
+    const limit = query.limit ?? 20;
+    const page = query.page ?? 1;
     const offset = Math.max(0, (page - 1) * limit);
     const rows = await supabaseAdmin
       .from('provider_sla')
