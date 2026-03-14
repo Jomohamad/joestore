@@ -1,13 +1,74 @@
+```
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Dependencies
 node_modules/
-build/
+.pnpm-store/
+.npm/
+.yarn/
+
+# Build outputs
 dist/
+build/
 .next/
 out/
-coverage/
-.DS_Store
-*.log
-.env*
-!.env.example
+public/build/
+*.min.js
+*.min.css
 
-.gemini/
-gha-creds-*.json
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
+
+# TypeScript/JavaScript
+*.tsbuildinfo
+*.js.map
+*.jsx.map
+*.ts.map
+
+# Database
+*.db
+*.db-journal
+
+# Temporary files
+*.tmp
+*.temp
+*~
+```
