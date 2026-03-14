@@ -188,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ? null 
         : typeof d.avatar_url === 'string' ? d.avatar_url : null;
       
-      const email = typeof d.email === 'string' ? d.email : user.email || '';
+      const email = typeof d.email === 'string' ? d.email : (user?.email || '');
       const is_admin = Boolean(d.is_admin === true);
       
       // Return only whitelisted fields - never spread raw payload
