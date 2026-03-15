@@ -42,37 +42,60 @@ const computeDiscountedPackagePrice = (pkg: {
 };
 
 const safeSelectGame = async (identifier: string) => {
-  const normalized = String(identifier || '').trim();
-  if (!normalized) return null;
+    const normalized = String(identifier || '').trim();
+    if (!normalized) return null;
 
-  const byIdOrSlug = await supabaseAdmin
-    .from('games')
-    .select('*')
-    .or(`id.eq.${normalized},slug.eq.${normalized}`)
-    .limit(1)
-    .maybeSingle();
+    // First try to find by ID
+    let result = await supabaseAdmin
+      .from('games')
+      .select('*')
+      .eq('id', normalized)
+      .limit(1)
+      .maybeSingle();
 
-  if (!byIdOrSlug.error) return byIdOrSlug.data;
-  if (tableOrColumnMissing(byIdOrSlug.error.code)) {
-    const fallback = await supabaseAdmin.from('games').select('*').eq('id', normalized).limit(1).maybeSingle();
-    if (fallback.error) throw fallback.error;
-    return fallback.data;
-  }
+    if (result.error === null && result.data) return result.data;
+    if (result.error !== null && tableOrColumnMissing(result.error.code)) {
+      const fallback = await supabaseAdmin.from('games').select('*').eq('id', normalized).limit(1).maybeSingle();
+      if (fallback.error === null) {
+        if (fallback.data) return fallback.data;
+      } else {
+        throw fallback.error;
+      }
+    }
 
-  throw byIdOrSlug.error;
+    // If not found by ID, try by slug
+    result = await supabaseAdmin
+      .from('games')
+      .select('*')
+      .eq('slug', normalized)
+      .limit(1)
+      .maybeSingle();
+
+    if (result.error === null) {
+      if (result.data) return result.data;
+    } else if (result.error !== null && tableOrColumnMissing(result.error.code)) {
+      const fallback = await supabaseAdmin.from('games').select('*').eq('slug', normalized).limit(1).maybeSingle();
+      if (fallback.error === null) {
+        if (fallback.data) return fallback.data;
+      } else {
+        throw fallback.error;
+      }
+    }
+
+    throw result.error;
 };
 
 const safeFindProductByPackage = async (gameId: string, packageId: number) => {
-  const existing = await supabaseAdmin
-    .from('products')
-    .select('*')
-    .eq('game_id', gameId)
-    .eq('provider_product_id', `package:${packageId}`)
-    .maybeSingle();
+    const existing = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('game_id', gameId)
+      .eq('provider_product_id', 'package:' + packageId)
+      .maybeSingle();
 
-  if (!existing.error && existing.data) return existing.data;
-  if (existing.error && !tableOrColumnMissing(existing.error.code)) throw existing.error;
-  return null;
+    if (existing.error === null && existing.data) return existing.data;
+    if (existing.error !== null && !tableOrColumnMissing(existing.error.code)) throw existing.error;
+    return null;
 };
 
 const safeInsertProduct = async (payload: {

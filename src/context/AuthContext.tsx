@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { fetchProfileStatus } from '../services/api';
+import { isSafeRedirectPath } from '../utils/security';
 
 interface Profile {
   id: string;
@@ -42,10 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const routeRunRef = useRef(0);
 
   const redirectTo = (path: string) => {
-    const target = `${window.location.origin}${path}`;
+    const safePath = isSafeRedirectPath(path) ? path : '/';
+    const target = `${window.location.origin}${safePath}`;
     const current = `${window.location.origin}${window.location.pathname}${window.location.search}`;
     if (target !== current) {
-      window.location.assign(path);
+      window.location.assign(safePath);
     }
   };
 
@@ -298,11 +300,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user?.id) return;
 
-    // Obfuscate channel name to prevent user ID exposure (A01/A09 fix)
-    // Use a random identifier that does not include the user id
-    const channelId =
-      (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `profile_${Math.random().toString(36).slice(2)}`)
-        .replace(/[^a-zA-Z0-9]/g, '');
+     // Obfuscate channel name to prevent user ID exposure (A01/A09 fix)
+     // Use a random identifier that does not include the user id
+     const channelId =
+       (globalThis.crypto?.randomUUID
+         ? globalThis.crypto.randomUUID()
+         : (() => {
+             const randomBytes = new Uint8Array(3);
+             crypto.getRandomValues(randomBytes);
+             return Array.from(randomBytes, b => b.toString(36)).join('');
+           })())
+         .replace(/[^a-zA-Z0-9]/g, '');
     const channel = supabase
       .channel(`profile_updates_${channelId}`)
       .on(

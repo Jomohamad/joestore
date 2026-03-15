@@ -1278,9 +1278,15 @@ export const subscribeToUserOrders = async (
     message?: string;
   }) => void,
 ) => {
-  const channelId =
-    (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `orders_${Math.random().toString(36).slice(2)}`)
-      .replace(/[^a-zA-Z0-9]/g, '');
+   const channelId =
+     (globalThis.crypto?.randomUUID
+       ? globalThis.crypto.randomUUID()
+       : (() => {
+           const randomBytes = new Uint8Array(3);
+           crypto.getRandomValues(randomBytes);
+           return Array.from(randomBytes, b => b.toString(36)).join('');
+         })())
+       .replace(/[^a-zA-Z0-9]/g, '');
   const channel = supabase
     .channel(`orders_updates_${channelId}`)
     .on(
