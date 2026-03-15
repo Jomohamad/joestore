@@ -393,6 +393,12 @@ export const fetchProfileStatus = async (): Promise<{
 }> => {
   const headers = await getAuthHeaders();
   const response = await fetchWithTimeout('/api/profile/status', { headers }, 5000);
+  
+  // Handle 404/401/403 as user not existing or unauthorized (treated as not onboarded)
+  if (response.status === 401 || response.status === 403 || response.status === 404) {
+    return { exists: false, onboarded: false };
+  }
+  
   if (!response.ok) {
     throw new Error('Failed to fetch profile status');
   }

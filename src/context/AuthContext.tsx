@@ -91,53 +91,85 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (profileStatus.onboarded && (isAuthPage(pathname) || pathname === '/complete-profile')) {
         redirectTo('/');
       }
-    } catch (error) {
-      console.error('Auth routing resolution failed:', error);
+     } catch (error) {
+       console.error('Auth routing resolution failed:', error);
 
-      // Fallback routing when API is temporarily unavailable.
-      const onboardedFallback = Boolean(currentSession?.user?.user_metadata?.onboarded);
-      const pathname = window.location.pathname;
-      const intent = localStorage.getItem('auth_intent');
+       // Fallback routing when API is temporarily unavailable.
+       const onboardedFallback = Boolean(currentSession?.user?.user_metadata?.onboarded);
+       const pathname = window.location.pathname;
+       const intent = localStorage.getItem('auth_intent');
 
-      if (intent === 'signup' && onboardedFallback) {
-        localStorage.removeItem('auth_intent');
-        await supabase.auth.signOut({ scope: 'local' });
-        redirectTo('/login?error=account_exists');
-        return;
-      }
+       // Handle case where user no longer exists in Supabase (deleted account)
+       if (!onboardedFallback && !currentSession?.user?.user_metadata?.onboarded) {
+         // Treat as not onboarded - redirect to complete profile or login
+         if (intent === 'signup') {
+           localStorage.removeItem('auth_intent');
+           await supabase.auth.signOut({ scope: 'local' });
+           redirectTo('/login?error=account_deleted');
+           return;
+         }
+         
+         if ((intent === 'signup' || intent === 'login')) {
+           localStorage.removeItem('auth_intent');
+           if (pathname !== '/complete-profile') {
+             redirectTo('/complete-profile?error=account_deleted');
+           }
+           return;
+         }
 
-      if ((intent === 'signup' || intent === 'login') && !onboardedFallback) {
-        localStorage.removeItem('auth_intent');
-        if (pathname !== '/complete-profile') {
-          redirectTo('/complete-profile');
-        }
-        return;
-      }
+         if (pathname !== '/complete-profile') {
+           redirectTo('/complete-profile?error=account_deleted');
+           return;
+         }
+       }
 
-      if (!onboardedFallback && pathname !== '/complete-profile') {
-        redirectTo('/complete-profile?error=complete_profile_required');
-        return;
-      }
+       if (intent === 'signup' && onboardedFallback) {
+         localStorage.removeItem('auth_intent');
+         await supabase.auth.signOut({ scope: 'local' });
+         redirectTo('/login?error=account_exists');
+         return;
+       }
 
-      if (onboardedFallback && (isAuthPage(pathname) || pathname === '/complete-profile')) {
-        redirectTo('/');
-      }
-    }
+       if ((intent === 'signup' || intent === 'login') && !onboardedFallback) {
+         localStorage.removeItem('auth_intent');
+         if (pathname !== '/complete-profile') {
+           redirectTo('/complete-profile');
+         }
+         return;
+       }
+
+       if (!onboardedFallback && pathname !== '/complete-profile') {
+         redirectTo('/complete-profile?error=complete_profile_required');
+         return;
+       }
+
+       if (onboardedFallback && (isAuthPage(pathname) || pathname === '/complete-profile')) {
+         redirectTo('/');
+       }
+     }
   };
 
-  const refreshProfile = useCallback(async () => {
-    if (!session) {
-      setProfile(null);
-      return;
-    }
-
-    try {
-      const status = await fetchProfileStatus();
-      setProfile((status.profile as Profile | undefined) ?? null);
-    } catch {
-      // Keep current profile to avoid UI flicker on temporary network issues.
-    }
-  }, [session]);
+   const refreshProfile = useCallback(async () => {
+     if (!session) {
+       setProfile(null);
+       return;
+     }
+ 
+     try {
+       const status = await fetchProfileStatus();
+       // If profile doesn't exist (user deleted from Supabase), clear session
+       if (!status.exists) {
+         await supabase.auth.signOut({ scope: 'local' });
+         setSession(null);
+         setUser(null);
+         setProfile(null);
+         return;
+       }
+       setProfile((status.profile as Profile | undefined) ?? null);
+     } catch {
+       // Keep current profile to avoid UI flicker on temporary network issues.
+     }
+   }, [session]);
 
   useEffect(() => {
     let mounted = true;
